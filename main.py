@@ -8,15 +8,15 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
 # Third-party imports
 import streamlit as st
+import streamlit.components.v1 as components
+
 import google.generativeai as genai
 import py3Dmol
 
-# RDKit imports
+from st_screen_stats import WindowQueryHelper
+
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, Crippen, rdMolDescriptors
-
-# Streamlit components
-import streamlit.components.v1 as components
 
 # =============================================================================
 # CONSTANTS AND CONFIGURATION
@@ -48,8 +48,15 @@ MAX_MOLECULAR_WEIGHT = 1000
 MAX_SMILES_LENGTH = 200
 
 # 3D Molecular Viewer Configuration
-MOLECULE_VIEWER_WIDTH = 700
-MOLECULE_VIEWER_HEIGHT = 450
+# Responsive viewer size based on window size
+if WindowQueryHelper().minimum_window_size(min_width=632)["status"]:
+    # PC size
+    MOLECULE_VIEWER_WIDTH = 632
+    MOLECULE_VIEWER_HEIGHT = 400
+else:
+    # Mobile size
+    MOLECULE_VIEWER_WIDTH = 280
+    MOLECULE_VIEWER_HEIGHT = 280
 MOLECULE_VIEWER_ZOOM_MIN = 0.1
 MOLECULE_VIEWER_ZOOM_MAX = 50
 MOLECULE_VIEWER_ROTATION_SPEED = 1
@@ -199,7 +206,7 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
     ],
     "🎨 色・染料": [
         "リンゴの赤い色の分子は？",
-        "ブルーベリーの青い色の分子を教えて",
+        "ブルーベリーの青い色の分子は？",
         "レモンの黄色い色の分子は？",
         "ぶどうの紫色の分子は？",
         "デニムの青い色の分子は？"
@@ -215,7 +222,7 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
         "風邪薬の成分は？",
         "頭痛薬の分子を教えて",
         "胃薬の成分は？",
-        "インフルエンザ治療薬の成分は？",
+        "インフル治療薬の成分は？",
         "抗生物質の成分は？"
     ],
     "🌲 自然・環境": [
@@ -1053,7 +1060,7 @@ if st.session_state.gemini_output and not st.session_state.smiles_error_occurred
             st.write(output_data["memo"])
         else:
             # Display molecular recommendation
-            st.write(f"あなたにオススメする分子は「 **[{output_data['name']}](https://ja.wikipedia.org/wiki/{output_data['name']})** 」だよ。{output_data['memo']}")
+            st.write(f"あなたにオススメする分子は「 **{output_data['name']}** 」だよ。{output_data['memo']}")
 
             # Generate and display 3D molecular structure
             with st.spinner("3D構造を生成中..."):
@@ -1068,16 +1075,16 @@ if st.session_state.gemini_output and not st.session_state.smiles_error_occurred
                 viewer = py3Dmol.view(width=MOLECULE_VIEWER_WIDTH, height=MOLECULE_VIEWER_HEIGHT)
                 viewer.addModel(sdf_string, 'sdf')
                 viewer.setStyle({'stick': {}})  # Stick representation
-                viewer.setZoomLimits(MOLECULE_VIEWER_ZOOM_MIN, MOLECULE_VIEWER_ZOOM_MAX)   # Set zoom limits
-                viewer.zoomTo()                 # Auto-fit molecule
-                viewer.spin('y', MOLECULE_VIEWER_ROTATION_SPEED)            # Auto-rotate around Y-axis
-                components.html(viewer._make_html(), height=MOLECULE_VIEWER_HEIGHT, width=MOLECULE_VIEWER_WIDTH)
+                viewer.setZoomLimits(MOLECULE_VIEWER_ZOOM_MIN, MOLECULE_VIEWER_ZOOM_MAX)  # Set zoom limits
+                viewer.zoomTo()  # Auto-fit molecule
+                viewer.spin('y', MOLECULE_VIEWER_ROTATION_SPEED)  # Auto-rotate around Y-axis
+                components.html(viewer._make_html(), height=MOLECULE_VIEWER_HEIGHT)
             else:
                 st.error("⚠️ 3D立体構造の生成に失敗しました。分子構造が複雑すぎるか、立体配座の生成ができませんでした。")
 
     # Display detailed molecular properties with expander (outside chat_message)
     if st.session_state.gemini_output and st.session_state.gemini_output["smiles"] is not None and not st.session_state.smiles_error_occurred:
-        with st.popover("化合物情報", icon=":material/info:", width="stretch"):
+        with st.popover("", icon=":material/info:", width="content"):
             try:
                 properties = output_data["properties"]
                 if properties:
@@ -1127,7 +1134,7 @@ if st.session_state.gemini_output and not st.session_state.smiles_error_occurred
                     with col2:
                         st.metric("薬物類似性", properties["drug_likeness"])
                     with col3:
-                        st.metric("バイオアベイラビリティ", properties["bioavailability"])
+                        st.metric("生物学的利用能", properties["bioavailability"])
                     
                 else:
                     st.warning("分子プロパティの計算に失敗しました。")

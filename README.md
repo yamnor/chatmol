@@ -79,7 +79,7 @@ streamlit run main.py
 
 - [Google Gemini API](https://ai.google.dev/)
 - [RDKit](https://www.rdkit.org/) - 分子構造の操作と物性計算のためのオープンソースツールキット
-- [py3Dmol](https://3dmol.csb.pitt.edu/), [stmol](https://github.com/napoles-uach/stmol) - インタラクティブな分子構造ビューア
+- [py3Dmol](https://3dmol.csb.pitt.edu/) - インタラクティブな分子構造ビューア
 - [Streamlit](https://streamlit.io/) - Python ベースの Web アプリケーションフレームワーク
 - Python 3.8+
 
