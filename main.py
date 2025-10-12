@@ -538,10 +538,16 @@ else:
 
 # Add Plausible analytics tracking
 # This enables traffic analytics for the application
-plausible_domain = st.secrets.get("plausible_domain", "")
-if plausible_domain:
+plausible_id = st.secrets.get("plausible_id", "")
+if plausible_id:
     st.html(f"""
-    <script defer data-domain="{plausible_domain}" src="https://plausible.io/js/script.js"></script>
+    <script async src="https://plausible.io/js/{plausible_id}.js"></script>
+    """)
+    st.html("""
+    <script>
+        window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+        plausible.init()
+    </script>
     """)
 
 # Initialize Gemini AI API with comprehensive error handling
