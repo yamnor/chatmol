@@ -536,20 +536,6 @@ else:
     MOLECULE_VIEWER_WIDTH = MOLECULE_VIEWER_WIDTH_MOBILE
     MOLECULE_VIEWER_HEIGHT = MOLECULE_VIEWER_HEIGHT_MOBILE
 
-# Add Plausible analytics tracking
-# This enables traffic analytics for the application
-plausible_id = st.secrets.get("plausible_id", "")
-if plausible_id:
-    st.html(f"""
-    <script async src="https://plausible.io/js/{plausible_id}.js"></script>
-    """)
-    st.html("""
-    <script>
-        window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
-        plausible.init()
-    </script>
-    """)
-
 # Initialize Gemini AI API with comprehensive error handling
 # This ensures the app fails gracefully if API configuration is missing
 try:
