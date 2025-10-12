@@ -22,5 +22,6 @@ jobs:
           script: |
             cd ~/apps/chatmol            
             git pull
+            pip install -r requirements.txt
             sudo systemctl restart chatmol.service
             echo "Deployment successful and Streamlit app restarted."
