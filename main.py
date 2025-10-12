@@ -49,14 +49,10 @@ MAX_SMILES_LENGTH = 200
 
 # 3D Molecular Viewer Configuration
 # Responsive viewer size based on window size
-if WindowQueryHelper().minimum_window_size(min_width=632)["status"]:
-    # PC size
-    MOLECULE_VIEWER_WIDTH = 632
-    MOLECULE_VIEWER_HEIGHT = 400
-else:
-    # Mobile size
-    MOLECULE_VIEWER_WIDTH = 280
-    MOLECULE_VIEWER_HEIGHT = 200
+MOLECULE_VIEWER_WIDTH_PC = 632
+MOLECULE_VIEWER_HEIGHT_PC = 400
+MOLECULE_VIEWER_WIDTH_MOBILE = 280
+MOLECULE_VIEWER_HEIGHT_MOBILE = 200
 MOLECULE_VIEWER_ZOOM_MIN = 0.1
 MOLECULE_VIEWER_ZOOM_MAX = 50
 MOLECULE_VIEWER_ROTATION_SPEED = 1
@@ -513,24 +509,9 @@ def validate_and_normalize_smiles(smiles: str) -> Tuple[bool, Optional[str], Opt
     except FutureTimeoutError:
         return False, None, f"SMILES検証が{SMILES_VALIDATION_TIMEOUT_SECONDS}秒以内に完了しませんでした。複雑すぎる分子の可能性があります。"
 
-
 # =============================================================================
 # APPLICATION INITIALIZATION
 # =============================================================================
-
-# Display promotional toast notifications (first time only)
-# This ensures users see important announcements without being intrusive
-if "first_time_shown" not in st.session_state:
-    # Display all promotional messages with individual icons
-    for promotion in PROMOTION_MESSAGES:
-        st.toast(promotion["message"], icon=promotion["icon"], duration = promotion["duration"])
-    
-    # Show welcome message with streaming effect for better UX
-    st.chat_message("user").write("ChatMOLとは？")
-    st.chat_message("assistant").write_stream(stream_text(ABOUT_MESSAGE))
-
-    # Mark as shown to prevent repeated display
-    st.session_state.first_time_shown = True
 
 # Configure Streamlit page settings
 # These settings control the overall appearance and behavior of the app
@@ -544,6 +525,16 @@ st.set_page_config(
         'Report a bug': MENU_ITEMS['Issues']
     }
 )
+
+# Configure molecule viewer size based on window size
+if WindowQueryHelper().minimum_window_size(min_width=MOLECULE_VIEWER_WIDTH_PC)["status"]:
+    # PC size
+    MOLECULE_VIEWER_WIDTH = MOLECULE_VIEWER_WIDTH_PC
+    MOLECULE_VIEWER_HEIGHT = MOLECULE_VIEWER_HEIGHT_PC
+else:
+    # Mobile size
+    MOLECULE_VIEWER_WIDTH = MOLECULE_VIEWER_WIDTH_MOBILE
+    MOLECULE_VIEWER_HEIGHT = MOLECULE_VIEWER_HEIGHT_MOBILE
 
 # Add Plausible analytics tracking
 # This enables traffic analytics for the application
@@ -637,13 +628,13 @@ def calculate_derived_properties(properties: Dict[str, Union[str, int, float]]) 
     
     # Solubility estimation
     if logp < 0:
-        properties["solubility"] = "高い"
+        properties["solubility"] = "💧💧💧"
     elif logp < 2:
-        properties["solubility"] = "中程度"
+        properties["solubility"] = "💧💧"
     elif logp < 4:
-        properties["solubility"] = "低い"
+        properties["solubility"] = "💧"
     else:
-        properties["solubility"] = "非常に低い"
+        properties["solubility"] = "❌"
     
     # Drug-likeness score
     drug_score = 0
@@ -654,19 +645,19 @@ def calculate_derived_properties(properties: Dict[str, Union[str, int, float]]) 
     if tpsa <= 140: drug_score += 1
     
     if drug_score >= 4:
-        properties["drug_likeness"] = "高い"
+        properties["drug_likeness"] = "💊💊💊"
     elif drug_score >= 3:
-        properties["drug_likeness"] = "中程度"
+        properties["drug_likeness"] = "💊💊"
     else:
-        properties["drug_likeness"] = "低い"
+        properties["drug_likeness"] = "💊"
     
     # Bioavailability score
     if mw <= 500 and logp <= 5 and tpsa <= 140:
-        properties["bioavailability"] = "良好"
+        properties["bioavailability"] = "🍪🍪🍪"
     elif mw <= 600 and logp <= 6 and tpsa <= 160:
-        properties["bioavailability"] = "中程度"
+        properties["bioavailability"] = "🍪🍪"
     else:
-        properties["bioavailability"] = "低い"
+        properties["bioavailability"] = "🍪"
 
 def calculate_molecular_properties(mol, mol_with_h) -> Optional[Dict[str, Union[str, int, float]]]:
     """
@@ -1028,6 +1019,20 @@ with st.sidebar:
 # This is the primary interface for user interaction
 user_input = st.chat_input(CHAT_INPUT_PLACEHOLDER, max_chars=CHAT_INPUT_MAX_CHARS)
 
+# Display promotional toast notifications (first time only)
+# This ensures users see important announcements without being intrusive
+if "first_time_shown" not in st.session_state:
+    # Display all promotional messages with individual icons
+    for promotion in PROMOTION_MESSAGES:
+        st.toast(promotion["message"], icon=promotion["icon"], duration = promotion["duration"])
+    
+    # Show welcome message with streaming effect for better UX
+    st.chat_message("user").write("ChatMOLとは？")
+    st.chat_message("assistant").write_stream(stream_text(ABOUT_MESSAGE))
+
+    # Mark as shown to prevent repeated display
+    st.session_state.first_time_shown = True
+
 # Handle user input: either from sample selection or direct input
 # This logic determines which input source to use and processes accordingly
 if st.session_state.selected_sample:
@@ -1097,7 +1102,7 @@ if st.session_state.gemini_output and not st.session_state.smiles_error_occurred
 
     # Display detailed molecular properties with expander (outside chat_message)
     if st.session_state.gemini_output and st.session_state.gemini_output["smiles"] is not None and not st.session_state.smiles_error_occurred:
-        with st.popover("", icon=":material/info:", width="content"):
+        with st.popover("", icon=":material/info:", width="stretch"):
             try:
                 properties = output_data["properties"]
                 if properties:
