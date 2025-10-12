@@ -1,0 +1,93 @@
+# ChatMOL - AI分子コンシェルジュ
+
+「バラの香りってどんな分子？」「青色を作る分子は？」そんな素朴な疑問に、AIが答えてくれるアプリだよ。
+
+普段なにげなく感じている色・香り・味。実はそれぞれに対応する分子があって、その分子の化学的な性質が、私たちのさまざまな感覚を生み出しているんだ。このアプリでは、AIと対話しながら様々な分子を探索して、その分子の立体的な形を眺めることができるよ。分子の世界の面白さを体験してみよう！
+
+## 🌟 できること
+
+- **AIとの対話で分子を発見**: 「甘い香りの分子は？」「解熱作用がある分子は？」など、自然な言葉で質問できるよ
+- **分子の立体的な形を観察**: 平面の図ではなく、マウスで自由に動かせる立体的な分子モデルで、リアルな形を理解できるよ
+- **分子の詳しい情報**: 分子式や分子量の他に、予測されるさまざまな化学的な性質を表示するよ
+- **豊富な入力例**: 香り、色、味、薬効など、様々な切り口から分子の世界を探索できるよ
+
+## 🚀 デモ
+
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://chatmol.yamlab.app/)
+
+## 📦 自分のパソコンで動かしてみよう
+
+### 必要なもの
+
+- Python 3.8以上（プログラミング言語）
+- Google Gemini API キー（AIを使うための鍵、無料で取得できるよ）
+
+### セットアップ手順
+
+#### 1. このプロジェクトをダウンロード
+
+```bash
+git clone https://github.com/yamnor/chatmol.git
+cd chatmol
+```
+
+#### 2. condaで仮想環境を作成してパッケージをインストール
+
+```bash
+# condaで仮想環境を作成
+conda create -n chatmol python=3.14 -y
+
+# 仮想環境をアクティベート
+conda activate chatmol
+
+# 必要なパッケージをインストール
+pip install -r requirements.txt
+```
+
+#### 3. API キーを設定
+
+1. [Google AI Studio](https://makersuite.google.com/app/apikey) で Gemini APIキーを取得（無料枠もあるよ）
+2. `.streamlit/secrets.toml` ファイルを作成して、取得したAPIキーを下記のように書き込む：
+
+```toml
+api_key = "ここに取得したAPIキーを貼り付け"
+```
+
+#### 4. アプリを起動
+
+```bash
+# 仮想環境をアクティベート（まだアクティベートしていない場合）
+conda activate chatmol
+
+# アプリを起動
+streamlit run main.py
+```
+
+ブラウザが自動で開いて、アプリが使えるようになるよ！
+
+## 🛠️ 使用している技術
+
+- **生成AI**: [Google Gemini API](https://ai.google.dev/) (Gemini 2.5 Flash Lite)
+- **ケモインフォマティクス**: [RDKit](https://www.rdkit.org/) - 分子構造の操作と物性計算のためのオープンソースツールキット
+- **分子の可視化**: [py3Dmol](https://3dmol.csb.pitt.edu/), [stmol](https://github.com/napoles-uach/stmol) - インタラクティブな分子構造ビューア
+- **Webフレームワーク**: [Streamlit](https://streamlit.io/) - Python ベースの Web アプリケーションフレームワーク
+- **開発言語**: Python 3.8+
+
+## 👨‍💻 開発者
+
+**yamnor** ([@yamnor](https://github.com/yamnor))
+
+大学教員。専門は計算化学。化学の学びを身近にすることにも興味を持っています。
+
+- Website: [yamlab.jp](https://yamlab.jp/)
+- Blog: [yamnor.me](https://yamnor.me/)
+- SNS (X): [@yamnor](https://twitter.com/yamnor)
+- Contact: お気軽に[こちら](https://letterbird.co/yamnor)からお声がけください
+
+## 📄 ライセンス
+
+このプロジェクトは MIT ライセンスで公開しているよ。自由に使ってもらって大丈夫！詳細は [LICENSE](LICENSE) ファイルを見てね。
+
+## 💬 質問や提案があれば
+
+「こんな機能があったらいいな」「うまく動かない」など、何かあれば [Issues](https://github.com/yamnor/ChatMOL/issues) で教えてね。化学の楽しさを一緒に広げていきましょう！

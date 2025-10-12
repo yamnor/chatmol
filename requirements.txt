@@ -1,0 +1,8 @@
+streamlit
+rdkit
+google-generativeai
+stmol
+# Note: Due to recent changes in the 3Dmol.js package, it is recommended to install py3Dmol in the following way
+# Reference: https://github.com/napoles-uach/stmol
+py3Dmol==2.0.0.post2
+ipython_genutils
