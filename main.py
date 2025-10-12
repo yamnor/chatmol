@@ -25,7 +25,7 @@ from rdkit.Chem import AllChem, Descriptors, Crippen, rdMolDescriptors
 PROMOTION_MESSAGES: List[Dict[str, str]] = [
     { "message": "デモモード。サービス全体で可能なリクエスト数は「15 回 / 分」まで。", "icon": ":material/timer:", "duration": "short" },
     { "message": "出力される分子の情報や構造について、正しくないことがあります。", "icon": ":material/warning:", "duration": "short" },
-    { "message": "10/25~26開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://yamlab.jp/sciago2025)**", "icon": ":material/festival:", "duration": "infinite" },
+    # { "message": "10/25,26開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://yamlab.jp/sciago2025)**", "icon": ":material/festival:", "duration": "infinite" },
 ]
 
 # Gemini AI Configuration
@@ -945,6 +945,7 @@ if "current_category" not in st.session_state:
 # Create sidebar with sample input examples
 # This provides users with inspiration and common use cases
 with st.sidebar:
+    st.logo("images/logo.png", size="large")
     st.header("入力例")
         
     # Category selection with selectbox for organized sample queries
@@ -993,6 +994,12 @@ with st.sidebar:
             else:
                 st.session_state.random_samples = []
             st.rerun()
+        st.divider()
+
+        # Promotion message
+        st.header("お知らせ")
+        st.image("images/scienceagora.png")
+        st.write("10/25, 26 開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://yamlab.jp/sciago2025)**")
     else:
         # For other categories, clear random samples and display samples normally
         if st.session_state.current_category == "🎲 ランダム":
