@@ -116,6 +116,18 @@ ABOUT_MESSAGE: str = """
 分子の世界の面白さを体験してみよう！
 """
 
+MENU_ITEMS: Dict[str, str] = {
+    'About' : f'''
+            **ChatMOL** was created by [yamnor](https://yamnor.me),
+            a chemist 🧪 specializing in molecular simulation 🖥️ living in Japan 🇯🇵.
+
+            If you have any questions, thoughts, or comments,
+            feel free to [contact me](https://letterbird.co/yamnor) ✉️
+            or find me on [X (Twitter)](https://x.com/yamnor) 🐦.
+            ''',
+    'Issues' : 'https://github.com/yamnor/chatmol/issues',
+}
+
 SYSTEM_PROMPT: str = """
 # SYSTEM
 あなたは「分子コンシェルジュ」です。
@@ -528,7 +540,8 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="expanded",
     menu_items={
-        'about': "https://github.com/yamnor/ChatMOL"
+        'About': MENU_ITEMS['About'],
+        'Report a bug': MENU_ITEMS['Issues']
     }
 )
 
