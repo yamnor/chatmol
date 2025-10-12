@@ -25,7 +25,7 @@
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://chatmol.yamlab.app/)
 
-![](https://i.gyazo.com/040cd1a8a1053cd0b67d6cc993c180a6.gif)
+![](https://i.gyazo.com/78b543e0b1226cfec85124add2d0b6f8.gif)
 
 ## 📦 自分のパソコンで動かしてみよう
 
