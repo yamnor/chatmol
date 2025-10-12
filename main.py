@@ -56,7 +56,7 @@ if WindowQueryHelper().minimum_window_size(min_width=632)["status"]:
 else:
     # Mobile size
     MOLECULE_VIEWER_WIDTH = 280
-    MOLECULE_VIEWER_HEIGHT = 280
+    MOLECULE_VIEWER_HEIGHT = 200
 MOLECULE_VIEWER_ZOOM_MIN = 0.1
 MOLECULE_VIEWER_ZOOM_MAX = 50
 MOLECULE_VIEWER_ROTATION_SPEED = 1
