@@ -1,6 +1,9 @@
 # Standard library imports
 import time
+import signal
+import threading
 from typing import Dict, List, Optional, Tuple, Union, Generator
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 # Third-party imports
 import streamlit as st
@@ -9,7 +12,7 @@ import py3Dmol
 
 # RDKit imports
 from rdkit import Chem
-from rdkit.Chem import AllChem, Descriptors, Crippen, Lipinski, rdMolDescriptors
+from rdkit.Chem import AllChem, Descriptors, Crippen, rdMolDescriptors
 
 # Streamlit molecular visualization
 from stmol import showmol
@@ -18,14 +21,21 @@ from stmol import showmol
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
 
+# Timeout settings for preventing freezes
+API_TIMEOUT_SECONDS = 30  # Gemini API timeout
+STRUCTURE_GENERATION_TIMEOUT_SECONDS = 15  # 3D structure generation timeout
+SMILES_VALIDATION_TIMEOUT_SECONDS = 5  # SMILES validation timeout
+
 PROMOTION_MESSAGES: List[Dict[str, str]] = [
     {
-        "message": "10/25~26開催の「サイエンスアゴラ」に出展するよ。詳細は [こちら](https://peatix.com/event/4534946/)",
-        "icon": "🎪"
+        "message": "デモモード。サービス全体で可能なリクエスト数は「15 回 / 分」まで。",
+        "icon": ":material/timer:",
+        "duration": "short"
     },
     {
-        "message": "ChatMOLの最新情報は [GitHub](https://github.com/yamnor/ChatMOL) でチェック！",
-        "icon": "📚"
+        "message": "10/25~26開催の「サイエンスアゴラ」に出展するよ。詳細は [こちら](https://peatix.com/event/4534946/)",
+        "icon": ":material/festival:",
+        "duration": "infinite"
     },
 ]
 
@@ -51,6 +61,8 @@ SYSTEM_PROMPT: str = """
 ## 重要なルール
 - **必ず実在する化学物質**のみを提案してください
 - SMILESは**標準的な形式（canonical SMILES）**で正確に記述してください
+- **SMILESは必ず短く、シンプルな構造の分子のみ**を提案してください（原子数50以下を推奨）
+- **複雑な高分子や長い鎖状構造は避けてください**
 - 不確実な場合や適切な分子が見当たらない場合は、正直にその旨を伝えてください
 - ひとこと理由は、小学生にもわかるように、1 行でフレンドリーに表現してください
 - 薬理作用・香り・色など科学的根拠が薄い場合は「伝統的に～とされる」等と表現し、医学的助言は行わないでください
@@ -119,11 +131,11 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
         "キンモクセイの香り成分は？"
     ],
     "🎨 色・染料": [
-        "赤い色の分子は？",
-        "青い色の分子を教えて",
-        "黄色い色の分子は？",
-        "緑色の分子を教えて",
-        "紫色の分子は？"
+        "リンゴの赤い色の分子は？",
+        "ブルーベリーの青い色の分子を教えて",
+        "レモンの黄色い色の分子は？",
+        "ぶどうの紫色の分子は？",
+        "デニムの青い色の分子は？"
     ],
     "👅 味覚": [
         "甘い味の分子は？",
@@ -136,8 +148,8 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
         "風邪薬の成分は？",
         "頭痛薬の分子を教えて",
         "胃薬の成分は？",
-        "目薬の分子を教えて",
-        "鎮痛剤の成分は？"
+        "インフルエンザ治療薬の成分は？",
+        "抗生物質の成分は？"
     ],
     "🌲 自然・環境": [
         "森の香り成分は？",
@@ -151,7 +163,7 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
         "シャンプーの香り分子は？",
         "石鹸の香り成分は？",
         "柔軟剤の香り分子は？",
-        "日焼け止めの成分は？"
+        "消臭剤の成分は？"
     ],
     "💪 スポーツ・運動": [
         "筋肉に良い分子は？",
@@ -179,7 +191,7 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
         "勉強に集中したい",
         "記憶力を良くしたい",
         "エナジードリンクの成分は？",
-        "ツンとくる刺激臭の分子は？"
+        "スッキリした香りの分子は？"
     ],
     "✨ 美容・スキンケア": [
         "肌を美しく保ちたい",
@@ -196,7 +208,7 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
 
 def stream_text(text: str) -> Generator[str, None, None]:
     """
-    Stream text character by character with delay for better user experience.
+    Stream text character by character with optimized delay for better user experience.
     
     Args:
         text: The text to stream character by character
@@ -205,11 +217,14 @@ def stream_text(text: str) -> Generator[str, None, None]:
         str: Individual characters from the input text
         
     Note:
-        Adds a 0.01 second delay between characters for visual effect
+        Uses adaptive delay based on text length to prevent long waits
     """
+    # Adaptive delay based on text length
+    delay = 0.01 if len(text) < 100 else 0.005 if len(text) < 500 else 0.002
+    
     for char in text:
         yield char
-        time.sleep(0.01)
+        time.sleep(delay)
 
 def safe_calculate(calculation_func, default_value=None, error_message: Optional[str] = None):
     """
@@ -259,10 +274,10 @@ def safe_descriptor_calculation(mol, descriptor_func, default_value: Union[int, 
 
 def get_gemini_response(user_input_text: str) -> Optional[str]:
     """
-    Send user input to Gemini AI and retrieve molecular recommendation response.
+    Send user input to Gemini AI and retrieve molecular recommendation response with timeout protection.
     
     This function constructs a prompt using the system prompt and user input,
-    then sends it to the Gemini AI model for processing.
+    then sends it to the Gemini AI model for processing with timeout protection.
     
     Args:
         user_input_text: User's request for molecular properties/effects
@@ -271,7 +286,7 @@ def get_gemini_response(user_input_text: str) -> Optional[str]:
         Gemini's response text containing molecular information, or None if error
         
     Raises:
-        Displays error message to user if API request fails
+        Displays error message to user if API request fails or times out
         
     Example:
         >>> response = get_gemini_response("甘い香りの分子は？")
@@ -281,16 +296,56 @@ def get_gemini_response(user_input_text: str) -> Optional[str]:
         【メモ】: バニラの香りの主成分で、甘く温かい香りが特徴だよ。
     """
     prompt = f"{SYSTEM_PROMPT}\nユーザー: {user_input_text}\nアシスタント:"
+    
+    def api_call():
+        """Execute API call in separate thread for timeout control."""
+        return model.generate_content(prompt)
+    
     try:
-        response = model.generate_content(prompt)
-        return response.text
+        # Use ThreadPoolExecutor for timeout control
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(api_call)
+            response = future.result(timeout=API_TIMEOUT_SECONDS)
+            return response.text
+            
+    except FutureTimeoutError:
+        st.error(f"""
+        ⏰ **API応答タイムアウト**
+        
+        Gemini APIからの応答が{API_TIMEOUT_SECONDS}秒以内に得られませんでした。
+        
+        **対処法：**
+        - ネットワーク接続を確認してください
+        - しばらく待ってから再度お試しください
+        - より短い質問に変更してみてください
+        
+        ご不便をおかけして申し訳ありません 🙏
+        """)
+        return None
+        
     except Exception as e:
-        st.error(f"Gemini API へのリクエスト中にエラーが発生しました: {e}")
+        error_str = str(e)
+        
+        # Check for rate limit error (429)
+        if "429" in error_str or "quota" in error_str.lower() or "rate" in error_str.lower():
+            st.error("""
+            ⏰ **APIの利用制限に達しました**
+            
+            現在、APIの利用制限（15回/分）に達しているため、しばらくお待ちください。
+            
+            **対処法：**
+            - 約10秒〜1分程度お待ちいただいてから、再度お試しください
+            - デモモードでは1分間に15回までリクエスト可能です
+            
+            ご不便をおかけして申し訳ありません 🙏
+            """)
+        else:
+            st.error(f"Gemini API へのリクエスト中にエラーが発生しました: {e}")
         return None
 
 def validate_and_normalize_smiles(smiles: str) -> Tuple[bool, Optional[str], Optional[str]]:
     """
-    Validate and normalize SMILES string using RDKit with comprehensive checks.
+    Validate and normalize SMILES string using RDKit with comprehensive checks and timeout protection.
     
     This function performs multiple validation steps:
     1. Basic syntax validation using RDKit
@@ -318,31 +373,58 @@ def validate_and_normalize_smiles(smiles: str) -> Tuple[bool, Optional[str], Opt
     if not smiles:
         return False, None, "SMILESが空です"
     
+    # Pre-validation: Check SMILES length to prevent extremely long strings
+    if len(smiles) > 200:
+        return False, None, f"SMILES文字列が長すぎます（{len(smiles)}文字）。シンプルな分子を提案してください。"
+    
+    def validate_smiles():
+        """Execute SMILES validation in separate thread for timeout control."""
+        try:
+            # Try to parse SMILES with timeout protection
+            mol = Chem.MolFromSmiles(smiles)
+            if mol is None:
+                return False, None, "無効なSMILES形式です"
+            
+            # Basic sanity checks
+            num_atoms = mol.GetNumAtoms()
+            if num_atoms == 0:
+                return False, None, "原子が含まれていません"
+            if num_atoms > 50:
+                return False, None, f"分子が大きすぎます（原子数: {num_atoms}）。シンプルな分子を提案してください。"
+            
+            # Check molecular weight
+            mol_weight = Chem.Descriptors.MolWt(mol)
+            if mol_weight > 1000:
+                return False, None, f"分子量が大きすぎます（{mol_weight:.1f}）。シンプルな分子を提案してください。"
+            
+            # Canonicalize SMILES with error handling
+            try:
+                canonical_smiles = Chem.CanonSmiles(smiles)
+                if not canonical_smiles:
+                    return False, None, "SMILESの正規化に失敗しました"
+            except Exception as canon_error:
+                return False, None, f"SMILES正規化エラー: {str(canon_error)}"
+            
+            return True, canonical_smiles, None
+            
+        except Exception as e:
+            # Catch all RDKit parsing errors
+            error_msg = str(e)
+            if "extra open parentheses" in error_msg:
+                return False, None, "SMILESの括弧の対応が取れていません。複雑すぎる分子です。"
+            elif "parsing" in error_msg.lower():
+                return False, None, f"SMILES解析エラー: {error_msg}"
+            else:
+                return False, None, f"SMILES検証中にエラー: {error_msg}"
+    
     try:
-        # Try to parse SMILES
-        mol = Chem.MolFromSmiles(smiles)
-        if mol is None:
-            return False, None, "無効なSMILES形式です"
-        
-        # Basic sanity checks
-        num_atoms = mol.GetNumAtoms()
-        if num_atoms == 0:
-            return False, None, "原子が含まれていません"
-        if num_atoms > 200:
-            return False, None, f"分子が大きすぎます（原子数: {num_atoms}）"
-        
-        # Check molecular weight
-        mol_weight = Chem.Descriptors.MolWt(mol)
-        if mol_weight > 2000:
-            return False, None, f"分子量が大きすぎます（{mol_weight:.1f}）"
-        
-        # Canonicalize SMILES
-        canonical_smiles = Chem.CanonSmiles(smiles)
-        
-        return True, canonical_smiles, None
-        
-    except Exception as e:
-        return False, None, f"SMILES検証中にエラー: {str(e)}"
+        # Use ThreadPoolExecutor for timeout control
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(validate_smiles)
+            return future.result(timeout=SMILES_VALIDATION_TIMEOUT_SECONDS)
+            
+    except FutureTimeoutError:
+        return False, None, f"SMILES検証が{SMILES_VALIDATION_TIMEOUT_SECONDS}秒以内に完了しませんでした。複雑すぎる分子の可能性があります。"
 
 
 # =============================================================================
@@ -354,7 +436,7 @@ def validate_and_normalize_smiles(smiles: str) -> Tuple[bool, Optional[str], Opt
 if "first_time_shown" not in st.session_state:
     # Display all promotional messages with individual icons
     for promotion in PROMOTION_MESSAGES:
-        st.toast(promotion["message"], icon=promotion["icon"], duration = "infinite")
+        st.toast(promotion["message"], icon=promotion["icon"], duration = promotion["duration"])
     
     # Show welcome message with streaming effect for better UX
     st.chat_message("user").write("ChatMOLとは？")
@@ -375,6 +457,14 @@ st.set_page_config(
     }
 )
 
+# Add Plausible analytics tracking
+# This enables traffic analytics for the application
+plausible_domain = st.secrets.get("plausible_domain", "")
+if plausible_domain:
+    st.html(f"""
+    <script defer data-domain="{plausible_domain}" src="https://plausible.io/js/script.js"></script>
+    """)
+
 # Initialize Gemini AI API with comprehensive error handling
 # This ensures the app fails gracefully if API configuration is missing
 try:
@@ -388,66 +478,6 @@ except KeyError:
 except Exception as e:
     st.error(f"Gemini API の初期化に失敗しました: {e}")
     st.stop()
-
-# --- Function Definitions ---
-
-def get_gemini_response(user_input_text):
-    """
-    Send user input to Gemini AI and get molecular recommendation response.
-    
-    Args:
-        user_input_text (str): User's request for molecular properties/effects
-        
-    Returns:
-        str: Gemini's response text containing molecular information
-    """
-
-    prompt = f"{SYSTEM_PROMPT}\nユーザー: {user_input_text}\nアシスタント:"
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        st.error(f"Gemini API へのリクエスト中にエラーが発生しました: {e}")
-        return None
-
-def validate_and_normalize_smiles(smiles):
-    """
-    Validate and normalize SMILES string using RDKit.
-    
-    Args:
-        smiles (str): SMILES notation to validate
-        
-    Returns:
-        tuple: (is_valid: bool, canonical_smiles: str or None, error_message: str or None)
-    """
-    if not smiles:
-        return False, None, "SMILESが空です"
-    
-    try:
-        # Try to parse SMILES
-        mol = Chem.MolFromSmiles(smiles)
-        if mol is None:
-            return False, None, "無効なSMILES形式です"
-        
-        # Basic sanity checks
-        num_atoms = mol.GetNumAtoms()
-        if num_atoms == 0:
-            return False, None, "原子が含まれていません"
-        if num_atoms > 200:
-            return False, None, f"分子が大きすぎます（原子数: {num_atoms}）"
-        
-        # Check molecular weight
-        mol_weight = Chem.Descriptors.MolWt(mol)
-        if mol_weight > 2000:
-            return False, None, f"分子量が大きすぎます（{mol_weight:.1f}）"
-        
-        # Canonicalize SMILES
-        canonical_smiles = Chem.CanonSmiles(smiles)
-        
-        return True, canonical_smiles, None
-        
-    except Exception as e:
-        return False, None, f"SMILES検証中にエラー: {str(e)}"
 
 # =============================================================================
 # MOLECULAR PROPERTY CALCULATION FUNCTIONS
@@ -552,7 +582,7 @@ def calculate_derived_properties(properties: Dict[str, Union[str, int, float]]) 
 
 def calculate_molecular_properties(mol, mol_with_h) -> Optional[Dict[str, Union[str, int, float]]]:
     """
-    Calculate and cache molecular properties with optimized error handling.
+    Calculate and cache molecular properties with optimized error handling and memory management.
     
     Args:
         mol: RDKit molecule object
@@ -560,20 +590,43 @@ def calculate_molecular_properties(mol, mol_with_h) -> Optional[Dict[str, Union[
         
     Returns:
         Cached molecular properties or None if calculation fails
+        
+    Note:
+        Includes memory usage checks and timeout protection for large molecules
     """
     if not mol or not mol_with_h:
         return None
     
-    # Calculate basic properties
-    properties = calculate_basic_properties(mol, mol_with_h)
-    if not properties:
+    # Check molecule size to prevent memory issues
+    num_atoms = mol_with_h.GetNumAtoms()
+    if num_atoms > 200:
+        st.warning(f"分子が大きすぎます（原子数: {num_atoms}）。プロパティ計算をスキップします。")
         return None
     
-    # Add fraction_csp3 and derived properties
-    properties["fraction_csp3"] = calculate_fraction_csp3(mol)
-    calculate_derived_properties(properties)
-    
-    return properties
+    try:
+        # Calculate basic properties with timeout protection
+        def calculate_properties():
+            properties = calculate_basic_properties(mol, mol_with_h)
+            if not properties:
+                return None
+            
+            # Add fraction_csp3 and derived properties
+            properties["fraction_csp3"] = calculate_fraction_csp3(mol)
+            calculate_derived_properties(properties)
+            
+            return properties
+        
+        # Use ThreadPoolExecutor for timeout control
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(calculate_properties)
+            return future.result(timeout=10)  # 10 second timeout for property calculation
+            
+    except FutureTimeoutError:
+        st.warning("分子プロパティの計算がタイムアウトしました。分子が複雑すぎる可能性があります。")
+        return None
+    except Exception as e:
+        st.warning(f"分子プロパティの計算中にエラーが発生しました: {e}")
+        return None
 
 # =============================================================================
 # RESPONSE PARSING AND VISUALIZATION FUNCTIONS
@@ -628,46 +681,139 @@ def _process_smiles_line(line: str, data: Dict[str, Union[str, None]]) -> None:
         data["smiles"] = canonical_smiles
         _create_molecular_objects(canonical_smiles, data)
     else:
+        # Clear all molecular data to prevent further processing
         data["smiles"] = None
-        data["memo"] = f"申し訳ありません。提案された分子のSMILESに問題がありました（{error_msg}）。別の分子をお探ししましょうか？"
-        st.warning(f"⚠️ SMILES検証エラー: {error_msg} (入力: {raw_smiles})")
-
-def _create_molecular_objects(canonical_smiles: str, data: Dict[str, Union[str, None]]) -> None:
-    """Create molecular objects and calculate properties."""
-    try:
-        data["mol"] = Chem.MolFromSmiles(canonical_smiles)
-        data["mol_with_h"] = Chem.AddHs(data["mol"]) if data["mol"] else None
-        data["properties"] = calculate_molecular_properties(data["mol"], data["mol_with_h"])
-    except Exception as e:
-        st.warning(f"分子オブジェクトの作成に失敗しました: {e}")
         data["mol"] = None
         data["mol_with_h"] = None
         data["properties"] = None
+        data["memo"] = f"申し訳ありません。提案された分子のSMILESに問題がありました（{error_msg}）。別の分子をお探ししましょうか？"
+        
+        # Show error message and stop processing
+        st.error(f"⚠️ SMILES検証エラー: {error_msg}")
+        st.error(f"無効なSMILES: {raw_smiles[:100]}{'...' if len(raw_smiles) > 100 else ''}")
+        
+        # Set session state to prevent further processing
+        if "smiles_error_occurred" not in st.session_state:
+            st.session_state.smiles_error_occurred = True
+
+def _create_molecular_objects(canonical_smiles: str, data: Dict[str, Union[str, None]]) -> None:
+    """Create molecular objects and calculate properties with enhanced error handling."""
+    try:
+        # Additional validation before creating molecular objects
+        if not canonical_smiles or len(canonical_smiles) > 200:
+            raise ValueError("SMILES文字列が無効または長すぎます")
+        
+        # Create molecular object with additional error handling
+        data["mol"] = Chem.MolFromSmiles(canonical_smiles)
+        if data["mol"] is None:
+            raise ValueError("SMILESから分子オブジェクトの作成に失敗しました")
+        
+        # Check molecule complexity before adding hydrogens
+        num_atoms = data["mol"].GetNumAtoms()
+        if num_atoms > 100:
+            st.warning(f"分子が大きすぎます（原子数: {num_atoms}）。3D表示をスキップする可能性があります。")
+        
+        # Add hydrogens and calculate properties
+        data["mol_with_h"] = Chem.AddHs(data["mol"])
+        
+        # Calculate properties with timeout protection
+        def calculate_props():
+            return calculate_molecular_properties(data["mol"], data["mol_with_h"])
+        
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(calculate_props)
+            data["properties"] = future.result(timeout=15)  # 15 second timeout
+        
+    except FutureTimeoutError:
+        st.warning("分子プロパティの計算がタイムアウトしました。基本的な情報のみ表示します。")
+        data["properties"] = None
+    except Exception as e:
+        # Clear all molecular data and set error state
+        st.error(f"⚠️ 分子オブジェクトの作成に失敗しました: {e}")
+        data["mol"] = None
+        data["mol_with_h"] = None
+        data["properties"] = None
+        data["smiles"] = None
+        data["memo"] = f"申し訳ありません。分子の処理中にエラーが発生しました（{str(e)}）。別の分子をお探ししましょうか？"
+        
+        # Set error state to prevent further processing
+        st.session_state.smiles_error_occurred = True
 
 def get_molecule_structure_3d_sdf(mol_with_h) -> Optional[str]:
     """
-    Generate 3D molecular structure from molecular object with optimized error handling.
+    Generate 3D molecular structure from molecular object with timeout protection and optimized error handling.
     
     Args:
         mol_with_h: RDKit molecule object with hydrogens
         
     Returns:
         SDF format string for 3D visualization or None if failed
+        
+    Note:
+        Uses timeout protection to prevent freezes during 3D structure generation
     """
     if not mol_with_h:
         return None
     
-    return safe_calculate(
-        lambda: _generate_3d_structure(mol_with_h),
-        None,
-        "3D立体構造の生成に失敗"
-    )
+    def generate_3d_structure():
+        """Execute 3D structure generation in separate thread for timeout control."""
+        return _generate_3d_structure(mol_with_h)
+    
+    try:
+        # Use ThreadPoolExecutor for timeout control
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(generate_3d_structure)
+            return future.result(timeout=STRUCTURE_GENERATION_TIMEOUT_SECONDS)
+            
+    except FutureTimeoutError:
+        st.error(f"""
+        ⏰ **3D構造生成タイムアウト**
+        
+        3D立体構造の生成が{STRUCTURE_GENERATION_TIMEOUT_SECONDS}秒以内に完了しませんでした。
+        
+        **対処法：**
+        - よりシンプルな分子を試してみてください
+        - 分子が複雑すぎる可能性があります
+        - ページを再読み込みして再度お試しください
+        
+        ご不便をおかけして申し訳ありません 🙏
+        """)
+        return None
+        
+    except Exception as e:
+        st.error(f"⚠️ 3D立体構造の生成に失敗しました: {e}")
+        return None
 
 def _generate_3d_structure(mol_with_h) -> str:
-    """Generate 3D structure and convert to SDF format."""
-    mol_copy = Chem.Mol(mol_with_h)
-    AllChem.EmbedMolecule(mol_copy, AllChem.ETKDG())
-    return Chem.MolToMolBlock(mol_copy)
+    """Generate 3D structure and convert to SDF format with enhanced error handling."""
+    try:
+        # Create a copy to avoid modifying the original molecule
+        mol_copy = Chem.Mol(mol_with_h)
+        if mol_copy is None:
+            raise ValueError("分子オブジェクトのコピーに失敗しました")
+        
+        # Check molecule complexity before embedding
+        num_atoms = mol_copy.GetNumAtoms()
+        if num_atoms > 100:
+            raise ValueError(f"分子が大きすぎます（原子数: {num_atoms}）。シンプルな分子を提案してください。")
+        
+        # Try to embed molecule with error handling
+        embed_result = AllChem.EmbedMolecule(mol_copy, AllChem.ETKDG())
+        if embed_result != 0:
+            # Try alternative embedding method for difficult molecules
+            embed_result = AllChem.EmbedMolecule(mol_copy, AllChem.ETKDGv2())
+            if embed_result != 0:
+                raise ValueError(f"3D構造の埋め込みに失敗しました（コード: {embed_result}）")
+        
+        # Convert to SDF format
+        sdf_string = Chem.MolToMolBlock(mol_copy)
+        if not sdf_string:
+            raise ValueError("SDF形式への変換に失敗しました")
+        
+        return sdf_string
+        
+    except Exception as e:
+        raise ValueError(f"3D構造生成エラー: {str(e)}")
 
 # =============================================================================
 # MAIN APPLICATION LOGIC
@@ -681,6 +827,8 @@ if "gemini_output" not in st.session_state:
     st.session_state.gemini_output = None
 if "selected_sample" not in st.session_state:
     st.session_state.selected_sample = ""
+if "smiles_error_occurred" not in st.session_state:
+    st.session_state.smiles_error_occurred = False
 
 # Create sidebar with sample input examples
 # This provides users with inspiration and common use cases
@@ -698,13 +846,13 @@ with st.sidebar:
     # Each button triggers a sample query when clicked
     for sample in SAMPLE_QUERIES[selected_category]:
         # Create clickable sample buttons with consistent styling
-        if st.button(sample, key=f"sample_{sample}", width="content", icon=":material/face:"):
+        if st.button(sample, key=f"sample_{sample}", width="content"):
             st.session_state.selected_sample = sample
             st.rerun()  # Trigger app rerun to process the sample query
 
 # Display chat input field for user queries
 # This is the primary interface for user interaction
-user_input = st.chat_input("分子のイメージや求める効果を教えて", max_chars=50)
+user_input = st.chat_input("分子のイメージや求める効果を教えて", max_chars=25)
 
 # Handle user input: either from sample selection or direct input
 # This logic determines which input source to use and processes accordingly
@@ -713,29 +861,36 @@ if st.session_state.selected_sample:
     user_input = st.session_state.selected_sample
     st.session_state.user_query = user_input
     st.session_state.selected_sample = ""  # Reset selection to prevent reuse
+    st.session_state.smiles_error_occurred = False  # Reset error state
 elif user_input:
     # Use direct user input from chat interface
     st.session_state.user_query = user_input
+    st.session_state.smiles_error_occurred = False  # Reset error state
 
 # Process user input and get AI response
 # This is the core functionality of the application
-if user_input:
+if user_input and not st.session_state.smiles_error_occurred:
     # Display user message in chat interface
     with st.chat_message("user"):
         st.write(user_input)
 
-    # Get AI response with loading spinner for better UX
+    # Get AI response with loading spinner
     with st.spinner("AI (Gemini) に問い合わせ中..."):
-        response_text = get_gemini_response(user_input)
-        if response_text:
-            # Parse and store successful response
-            st.session_state.gemini_output = parse_gemini_response(response_text)
-        else:
-            # Handle error case gracefully
+        try:
+            response_text = get_gemini_response(user_input)
+            if response_text:
+                # Parse and store successful response
+                st.session_state.gemini_output = parse_gemini_response(response_text)
+            else:
+                # Handle error case gracefully
+                st.session_state.gemini_output = None
+                
+        except Exception as e:
+            st.error(f"予期しないエラーが発生しました: {e}")
             st.session_state.gemini_output = None
 
 # Display AI response and molecular visualization
-if st.session_state.gemini_output:
+if st.session_state.gemini_output and not st.session_state.smiles_error_occurred:
     output_data = st.session_state.gemini_output
 
     with st.chat_message("assistant"):
@@ -748,76 +903,80 @@ if st.session_state.gemini_output:
 
             # Generate and display 3D molecular structure
             with st.spinner("3D構造を生成中..."):
-                sdf_string = get_molecule_structure_3d_sdf(output_data["mol_with_h"])
+                try:
+                    sdf_string = get_molecule_structure_3d_sdf(output_data["mol_with_h"])
+                except Exception as e:
+                    st.error(f"3D構造生成中にエラーが発生しました: {e}")
+                    sdf_string = None
             
             if sdf_string:
                 # Create 3D molecular viewer
-                viewer = py3Dmol.view(width=600, height=450)
+                viewer = py3Dmol.view(width=700, height=500)
                 viewer.addModel(sdf_string, 'sdf')
                 viewer.setStyle({'stick': {}})  # Stick representation
                 viewer.setZoomLimits(0.1,100)   # Set zoom limits
                 viewer.zoomTo()                 # Auto-fit molecule
                 viewer.spin('y', 1)            # Auto-rotate around Y-axis
-                showmol(viewer, width=600, height=450)
+                showmol(viewer, width=700, height=500)
             else:
                 st.error("⚠️ 3D立体構造の生成に失敗しました。分子構造が複雑すぎるか、立体配座の生成ができませんでした。")
-            
-            # Display detailed molecular properties with expander (after 3D structure)
-            with st.expander("この分子の性質・特徴は？", icon=":material/info:"):
-                try:
-                    properties = output_data["properties"]
-                    if properties:
+
+    # Display detailed molecular properties with expander (outside chat_message)
+    if st.session_state.gemini_output and st.session_state.gemini_output["smiles"] is not None and not st.session_state.smiles_error_occurred:
+        with st.popover("化合物情報", icon=":material/info:", width="stretch"):
+            try:
+                properties = output_data["properties"]
+                if properties:
+
+                    col1, col2 = st.columns([1, 2])
+                    with col1:
                         # Molecular formula
-                        st.write("分子式")
+                        st.caption("分子式")
                         st.code(properties["formula"], language=None)
-
-                        # Basic molecular information
-                        col1, col2, col3, col4 = st.columns(4)
-                        with col1:
-                            st.metric("原子数", f"{properties['num_atoms']}")
-                        with col2:
-                            st.metric("分子量（g/mol）", f"{properties['mol_weight']:.2f}")
-                        with col3:
-                            st.metric("結合数", f"{properties['num_bonds']}")
-                        with col4:
-                            st.metric("立体中心数", f"{properties['stereo_centers']}")
-                                                
-                        # Physical and chemical properties
-                        col1, col2, col3, col4 = st.columns(4)
-                        with col1:
-                            st.metric("脂溶性指標（LogP）", f"{properties['logp']:.2f}")
-                        with col2:
-                            st.metric("極性表面積（TPSA）", f"{properties['tpsa']:.1f}")
-                        with col3:
-                            st.metric("水素結合供与体", f"{properties['hbd']}")
-                        with col4:
-                            st.metric("水素結合受容体", f"{properties['hba']}")
-
-                        # Structural features
-                        col1, col2, col3, col4 = st.columns(4)
-                        with col1:
-                            st.metric("芳香環数", f"{properties['aromatic_rings']}")
-                        with col2:
-                            st.metric("回転可能結合", f"{properties['rotatable_bonds']}")
-                        with col3:
-                            st.metric("立体中心数", f"{properties['stereo_centers']}")
-                        with col4:
-                            st.metric("sp³炭素比", f"{properties['fraction_csp3']:.2f}")
-                        
-                        # Solubility and drug-likeness
-                        col1, col2, col3 = st.columns(3)
-                        with col1:
-                            st.metric("水溶性", properties["solubility"])
-                        with col2:
-                            st.metric("薬物類似性", properties["drug_likeness"])
-                        with col3:
-                            st.metric("bioavailability", properties["bioavailability"])
-                        
+                    with col2:
                         # SMILES notation
-                        st.write("SMILES 記法")
+                        st.caption("SMILES 記法")
                         st.code(f"{output_data['smiles']}", language=None)
-                    else:
-                        st.warning("分子プロパティの計算に失敗しました。")
-                                                
-                except Exception as e:
-                    st.warning(f"分子情報の取得に失敗しました: {e}")
+
+
+                    # Basic molecular information
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("原子数", f"{properties['num_atoms']}")
+                    with col2:
+                        st.metric("分子量（g/mol）", f"{properties['mol_weight']:.2f}")
+                    with col3:
+                        st.metric("結合数", f"{properties['num_bonds']}")
+                                            
+                    # Physical and chemical properties
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("LogP", f"{properties['logp']:.2f}")
+                    with col2:
+                        st.metric("tPSA", f"{properties['tpsa']:.1f}")
+                    with col3:
+                        st.metric("sp³炭素比", f"{properties['fraction_csp3']:.2f}")
+
+                    # Structural features
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("芳香環数", f"{properties['aromatic_rings']}")
+                    with col2:
+                        st.metric("回転可能結合", f"{properties['rotatable_bonds']}")
+                    with col3:
+                        st.metric("立体中心数", f"{properties['stereo_centers']}")
+                    
+                    # Solubility and drug-likeness
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("水溶性", properties["solubility"])
+                    with col2:
+                        st.metric("薬物類似性", properties["drug_likeness"])
+                    with col3:
+                        st.metric("バイオアベイラビリティ", properties["bioavailability"])
+                    
+                else:
+                    st.warning("分子プロパティの計算に失敗しました。")
+                                            
+            except Exception as e:
+                st.warning(f"分子情報の取得に失敗しました: {e}")

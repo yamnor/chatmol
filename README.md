@@ -35,7 +35,7 @@ cd chatmol
 
 ```bash
 # condaで仮想環境を作成
-conda create -n chatmol python=3.14 -y
+conda create -n chatmol python=3.13 -y
 
 # 仮想環境をアクティベート
 conda activate chatmol
@@ -67,11 +67,11 @@ streamlit run main.py
 
 ## 🛠️ 使用している技術
 
-- **生成AI**: [Google Gemini API](https://ai.google.dev/) (Gemini 2.5 Flash Lite)
-- **ケモインフォマティクス**: [RDKit](https://www.rdkit.org/) - 分子構造の操作と物性計算のためのオープンソースツールキット
-- **分子の可視化**: [py3Dmol](https://3dmol.csb.pitt.edu/), [stmol](https://github.com/napoles-uach/stmol) - インタラクティブな分子構造ビューア
-- **Webフレームワーク**: [Streamlit](https://streamlit.io/) - Python ベースの Web アプリケーションフレームワーク
-- **開発言語**: Python 3.8+
+- [Google Gemini API](https://ai.google.dev/) (Gemini 2.5 Flash Lite)
+- [RDKit](https://www.rdkit.org/) - 分子構造の操作と物性計算のためのオープンソースツールキット
+- [py3Dmol](https://3dmol.csb.pitt.edu/), [stmol](https://github.com/napoles-uach/stmol) - インタラクティブな分子構造ビューア
+- [Streamlit](https://streamlit.io/) - Python ベースの Web アプリケーションフレームワーク
+- Python 3.8+
 
 ## 👨‍💻 開発者
 
