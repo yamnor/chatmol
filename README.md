@@ -11,6 +11,16 @@
 - 分子式や分子量の他に、水への溶解性など、いろいろな化学的な性質を予測できるよ
 - 香り・色・味・薬効など、さまざまな観点から分子の世界を探索できるよ
 
+## ⚠️ 注意事項
+
+**出力される分子の情報や化学構造（SMILES）について、正しくないことがあります。**
+
+- `gemini-2.5-flash` モデルでは、不正確な情報が出力されることが多いです
+- `gemini-2.5-pro` モデルにすると改善されますが、応答に時間がかかります
+- デフォルトでは、レスポンスの良い `gemini-2.5-flash-lite` を使用していますが、不正確な場合があります
+
+このアプリは学習・教育目的で使用することをお勧めします。正確な情報が必要な場合は、専門的な化学データベースや文献を参照してください。
+
 ## 🚀 デモ
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://chatmol.yamlab.app/)
@@ -63,11 +73,11 @@ conda activate chatmol
 streamlit run main.py
 ```
 
-ブラウザが自動で開いて、アプリが使えるようになるよ！
+ブラウザが自動で開いて、アプリが使えるよ！
 
 ## 🛠️ 使用している技術
 
-- [Google Gemini API](https://ai.google.dev/) (Gemini 2.5 Flash Lite)
+- [Google Gemini API](https://ai.google.dev/)
 - [RDKit](https://www.rdkit.org/) - 分子構造の操作と物性計算のためのオープンソースツールキット
 - [py3Dmol](https://3dmol.csb.pitt.edu/), [stmol](https://github.com/napoles-uach/stmol) - インタラクティブな分子構造ビューア
 - [Streamlit](https://streamlit.io/) - Python ベースの Web アプリケーションフレームワーク
