@@ -13,13 +13,11 @@
 
 ## ⚠️ 注意事項
 
-**出力される分子の情報や構造について、正しくないことがあります。**
+出力される分子の情報や構造について、**正確ではない** ことがあります。
 
 - `gemini-2.5-flash` モデルでは、不正確な情報が出力されることが多いです
 - `gemini-2.5-pro` モデルにすると改善されますが、応答に時間がかかります
-- デフォルトでは、レスポンスの良い `gemini-2.5-flash-lite` を使用しています
-
-このアプリは学習・教育目的でのみ使用することをお勧めします。正確な情報が必要な場合は、専門的な化学データベースや文献を参照してください。
+- デフォルトでは、応答が早い・コストの安い `gemini-2.5-flash-lite` を使っています
 
 ## 🚀 デモ
 
@@ -27,12 +25,15 @@
 
 ![](https://i.gyazo.com/78b543e0b1226cfec85124add2d0b6f8.gif)
 
+> [!NOTE]
+> 上記の動画では、`gemini-2.5-flash-lite` モデルを使っています。「リナロール」は正確に出力されていますが、「グルタミン酸」は一部が正確ではありません。このように、出力される分子の情報や構造について、正確ではないことがあります。
+
 ## 📦 自分のパソコンで動かしてみよう
 
 ### 必要なもの
 
-- Python 3.8以上（プログラミング言語）
-- Google Gemini API キー（AIを使うための鍵、無料で取得できるよ）
+- Python 3.8 以上（プログラミング環境）
+- Google Gemini API キー（無料枠もあるよ）
 
 ### セットアップ手順
 
@@ -58,11 +59,11 @@ pip install -r requirements.txt
 
 #### 3. API キーを設定
 
-1. [Google AI Studio](https://makersuite.google.com/app/apikey) で Gemini APIキーを取得（無料枠もあるよ）
-2. `.streamlit/secrets.toml` ファイルを作成して、取得したAPIキーを下記のように書き込む：
+1. [Google AI Studio](https://makersuite.google.com/app/apikey) で Gemini API キーを取得（無料枠もあるよ）
+2. `.streamlit/secrets.toml` ファイルを作成して、取得した API キーを下記のように書き込む：
 
 ```toml
-api_key = "ここに取得したAPIキーを貼り付け"
+api_key = "ここに取得した API キーを貼り付け"
 ```
 
 #### 4. アプリを起動
