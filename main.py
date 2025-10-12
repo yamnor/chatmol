@@ -15,8 +15,8 @@ import py3Dmol
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, Crippen, rdMolDescriptors
 
-# Streamlit molecular visualization
-from stmol import showmol
+# Streamlit components
+import streamlit.components.v1 as components
 
 # =============================================================================
 # CONSTANTS AND CONFIGURATION
@@ -1071,7 +1071,7 @@ if st.session_state.gemini_output and not st.session_state.smiles_error_occurred
                 viewer.setZoomLimits(MOLECULE_VIEWER_ZOOM_MIN, MOLECULE_VIEWER_ZOOM_MAX)   # Set zoom limits
                 viewer.zoomTo()                 # Auto-fit molecule
                 viewer.spin('y', MOLECULE_VIEWER_ROTATION_SPEED)            # Auto-rotate around Y-axis
-                showmol(viewer, width=MOLECULE_VIEWER_WIDTH, height=MOLECULE_VIEWER_HEIGHT)
+                components.html(viewer._make_html(), height=MOLECULE_VIEWER_HEIGHT, width=MOLECULE_VIEWER_WIDTH)
             else:
                 st.error("⚠️ 3D立体構造の生成に失敗しました。分子構造が複雑すぎるか、立体配座の生成ができませんでした。")
 
