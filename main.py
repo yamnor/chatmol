@@ -25,7 +25,7 @@ from rdkit.Chem import AllChem, Descriptors, Crippen, rdMolDescriptors
 PROMOTION_MESSAGES: List[Dict[str, str]] = [
     { "message": "デモモード。サービス全体で可能なリクエスト数は「15 回 / 分」まで。", "icon": ":material/timer:", "duration": "short" },
     { "message": "出力される分子の情報や構造について、正しくないことがあります。", "icon": ":material/warning:", "duration": "short" },
-    { "message": "10/25~26開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://peatix.com/event/4534946/)**", "icon": ":material/festival:", "duration": "infinite" },
+    { "message": "10/25~26開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://yamlab.jp/sciago2025)**", "icon": ":material/festival:", "duration": "infinite" },
 ]
 
 # Gemini AI Configuration
