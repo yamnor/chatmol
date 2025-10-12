@@ -78,24 +78,22 @@ streamlit run main.py
 
 ブラウザが自動で開いて、アプリが使えるよ！
 
-## 🛠️ 使用している技術
+## 🛠️ 使用した技術
 
-- [Google Gemini API](https://ai.google.dev/)
-- [RDKit](https://www.rdkit.org/) - 分子構造の操作と物性計算のためのオープンソースツールキット
+- [Google Gemini](https://ai.google.dev/) - Google が開発している生成 AI モデル
+- [Streamlit](https://streamlit.io/) - Python ベースの Web フレームワーク
+- [RDKit](https://www.rdkit.org/) - 分子構造の操作と物性計算のためのツールキット
 - [py3Dmol](https://3dmol.csb.pitt.edu/) - インタラクティブな分子構造ビューア
-- [Streamlit](https://streamlit.io/) - Python ベースの Web アプリケーションフレームワーク
-- Python 3.8+
 
 ## 👨‍💻 開発者
 
 **yamnor** ([@yamnor](https://github.com/yamnor))
 
-大学教員。専門は計算化学。化学の学びを身近にすることにも興味を持っています。
+大学教員。専門は計算化学。化学の学びを身近にすることにも興味を持っています。お気軽に[こちら](https://letterbird.co/yamnor)からお声がけください。
 
-- Website: [yamlab.jp](https://yamlab.jp/)
+- ラボ: [yamlab.jp](https://yamlab.jp/)
 - Blog: [yamnor.me](https://yamnor.me/)
-- SNS (X): [@yamnor](https://twitter.com/yamnor)
-- Contact: お気軽に[こちら](https://letterbird.co/yamnor)からお声がけください
+- X: [@yamnor](https://x.com/yamnor)
 
 ## 📄 ライセンス
 
@@ -103,4 +101,4 @@ streamlit run main.py
 
 ## 💬 質問や提案があれば
 
-「こんな機能があったらいいな」「うまく動かない」など、何かあれば [Issues](https://github.com/yamnor/ChatMOL/issues) で教えてね。化学の楽しさを一緒に広げていきましょう！
+「こんな機能があったらいいな」「うまく動かない」など、何かあれば [Issues](https://github.com/yamnor/ChatMOL/issues) で教えてね。
