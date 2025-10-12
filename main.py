@@ -2,6 +2,7 @@
 import time
 import signal
 import threading
+import random
 from typing import Dict, List, Optional, Tuple, Union, Generator
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
@@ -109,6 +110,7 @@ SYSTEM_PROMPT: str = """
 """
 
 SAMPLE_QUERIES: Dict[str, List[str]] = {
+    "🎲 ランダム": [],
     "🌸 香り": [
         "良い香りのする分子は？",
         "甘い香りのする分子は？",
@@ -829,6 +831,10 @@ if "selected_sample" not in st.session_state:
     st.session_state.selected_sample = ""
 if "smiles_error_occurred" not in st.session_state:
     st.session_state.smiles_error_occurred = False
+if "random_samples" not in st.session_state:
+    st.session_state.random_samples = []
+if "current_category" not in st.session_state:
+    st.session_state.current_category = ""
 
 # Create sidebar with sample input examples
 # This provides users with inspiration and common use cases
@@ -842,13 +848,58 @@ with st.sidebar:
         key="category_selector"
     )
     
-    # Display sample queries as buttons for selected category
-    # Each button triggers a sample query when clicked
-    for sample in SAMPLE_QUERIES[selected_category]:
-        # Create clickable sample buttons with consistent styling
-        if st.button(sample, key=f"sample_{sample}", width="content"):
-            st.session_state.selected_sample = sample
-            st.rerun()  # Trigger app rerun to process the sample query
+    # Check if category has changed and generate new random samples if needed
+    if selected_category == "🎲 ランダム":
+        if (st.session_state.current_category != selected_category or 
+            not st.session_state.random_samples):
+            # Generate new random samples when switching to random category
+            all_samples = []
+            for category_name, category_samples in SAMPLE_QUERIES.items():
+                if category_name != "🎲 ランダム" and category_samples:  # Skip random category and empty categories
+                    all_samples.extend(category_samples)
+            
+            # Select 5 random samples and store in session state
+            if all_samples:
+                st.session_state.random_samples = random.sample(all_samples, min(5, len(all_samples)))
+            else:
+                st.session_state.random_samples = []
+        
+        # Update current category
+        st.session_state.current_category = selected_category
+        
+        # Display the stored random samples
+        for sample in st.session_state.random_samples:
+            # Create clickable sample buttons with consistent styling
+            if st.button(sample, key=f"random_sample_{sample}", width="content"):
+                st.session_state.selected_sample = sample
+                st.rerun()  # Trigger app rerun to process the sample query
+        
+        # Add button to generate new random samples
+        if st.button("", key="new_random_samples", width="stretch", icon=":material/refresh:", type="tertiary"):
+            # Generate new random samples
+            all_samples = []
+            for category_name, category_samples in SAMPLE_QUERIES.items():
+                if category_name != "🎲 ランダム" and category_samples:  # Skip random category and empty categories
+                    all_samples.extend(category_samples)
+            
+            if all_samples:
+                st.session_state.random_samples = random.sample(all_samples, min(5, len(all_samples)))
+            else:
+                st.session_state.random_samples = []
+            st.rerun()
+    else:
+        # For other categories, clear random samples and display samples normally
+        if st.session_state.current_category == "🎲 ランダム":
+            st.session_state.random_samples = []
+        
+        # Update current category
+        st.session_state.current_category = selected_category
+        
+        for sample in SAMPLE_QUERIES[selected_category]:
+            # Create clickable sample buttons with consistent styling
+            if st.button(sample, key=f"sample_{sample}", width="content"):
+                st.session_state.selected_sample = sample
+                st.rerun()  # Trigger app rerun to process the sample query
 
 # Display chat input field for user queries
 # This is the primary interface for user interaction
@@ -911,13 +962,13 @@ if st.session_state.gemini_output and not st.session_state.smiles_error_occurred
             
             if sdf_string:
                 # Create 3D molecular viewer
-                viewer = py3Dmol.view(width=700, height=500)
+                viewer = py3Dmol.view(width=700, height=450)
                 viewer.addModel(sdf_string, 'sdf')
                 viewer.setStyle({'stick': {}})  # Stick representation
                 viewer.setZoomLimits(0.1,100)   # Set zoom limits
                 viewer.zoomTo()                 # Auto-fit molecule
                 viewer.spin('y', 1)            # Auto-rotate around Y-axis
-                showmol(viewer, width=700, height=500)
+                showmol(viewer, width=700, height=450)
             else:
                 st.error("⚠️ 3D立体構造の生成に失敗しました。分子構造が複雑すぎるか、立体配座の生成ができませんでした。")
 
