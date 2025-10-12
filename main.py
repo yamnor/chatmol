@@ -22,6 +22,12 @@ from stmol import showmol
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
 
+PROMOTION_MESSAGES: List[Dict[str, str]] = [
+    { "message": "デモモード。サービス全体で可能なリクエスト数は「15 回 / 分」まで。", "icon": ":material/timer:", "duration": "short" },
+    { "message": "出力される分子の情報や構造について、正しくないことがあります。", "icon": ":material/warning:", "duration": "short" },
+    { "message": "10/25~26開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://peatix.com/event/4534946/)**", "icon": ":material/festival:", "duration": "infinite" },
+]
+
 # Gemini AI Configuration
 GEMINI_MODEL_NAME = "gemini-2.5-flash-lite"
 GEMINI_API_KEY_SECRET = "api_key"
@@ -34,7 +40,7 @@ MOLECULAR_PROPERTY_CALCULATION_TIMEOUT_SECONDS = 10  # Property calculation time
 MOLECULAR_OBJECT_CREATION_TIMEOUT_SECONDS = 15  # Molecular object creation timeout
 
 # Molecular Size Limits
-MAX_ATOMS_FOR_SIMPLE_MOLECULE = 50
+MAX_ATOMS_FOR_SIMPLE_MOLECULE = 75
 MAX_ATOMS_FOR_PROPERTY_CALCULATION = 200
 MAX_ATOMS_FOR_3D_DISPLAY = 100
 MAX_ATOMS_FOR_3D_GENERATION = 100
@@ -45,7 +51,7 @@ MAX_SMILES_LENGTH = 200
 MOLECULE_VIEWER_WIDTH = 700
 MOLECULE_VIEWER_HEIGHT = 450
 MOLECULE_VIEWER_ZOOM_MIN = 0.1
-MOLECULE_VIEWER_ZOOM_MAX = 100
+MOLECULE_VIEWER_ZOOM_MAX = 50
 MOLECULE_VIEWER_ROTATION_SPEED = 1
 
 # User Input Configuration
@@ -90,19 +96,6 @@ STRUCTURE_GENERATION_TIMEOUT_ERROR_MESSAGE = """
 
 ご不便をおかけして申し訳ありません 🙏
 """
-
-PROMOTION_MESSAGES: List[Dict[str, str]] = [
-    {
-        "message": "デモモード。サービス全体で可能なリクエスト数は「15 回 / 分」まで。",
-        "icon": ":material/timer:",
-        "duration": "short"
-    },
-    {
-        "message": "10/25~26開催の「サイエンスアゴラ」に出展するよ。詳細は [こちら](https://peatix.com/event/4534946/)",
-        "icon": ":material/festival:",
-        "duration": "infinite"
-    },
-]
 
 ABOUT_MESSAGE: str = """
 「バラの香りってどんな分子？」そんな素朴な疑問に、AI が答えてくれるよ。
@@ -151,26 +144,32 @@ SYSTEM_PROMPT: str = """
 ユーザー: リラックスして眠りやすくなるものは？  
 アシスタント:  
 【分子】: リナロール  
-【SMILES】: CC(=CCCC(C)(C=C)O)C
+【SMILES】: CC(O)(C=C)CCC=C(C)C
 【メモ】: ラベンダーの香気成分で、アロマテラピーで鎮静が期待されるよ。
 
 ユーザー: バラの香りってどんな分子？
 アシスタント:  
 【分子】: ゲラニオール  
-【SMILES】: CC(=CCCC(=CCO)C)C
+【SMILES】: CC(C)=CCC/C(C)=C/CO
 【メモ】: バラの香りの主成分で、甘くフローラルな香りが特徴だよ。
 
 ユーザー: レモンの香り成分は？
 アシスタント:  
 【分子】: リモネン  
-【SMILES】: CC(=C)C1CCC(=CC1)C
+【SMILES】: CC1=CCC(CC1)C(=C)C
 【メモ】: 柑橘類の皮に豊富に含まれる爽やかな香りの成分だよ。
 
 ユーザー: 甘い味の分子は？
 アシスタント:  
-【分子】: スクロース（砂糖）  
-【SMILES】: C(C1C(C(C(C(O1)OC2(C(C(C(O2)CO)O)O)CO)O)O)O)O
+【分子】: スクロース
+【SMILES】: O1[C@H](CO)[C@@H](O)[C@H](O)[C@@H](O)[C@H]1O[C@@]2(O[C@@H]([C@@H](O)[C@@H]2O)CO)CO
 【メモ】: 私たちが毎日使っているお砂糖の主成分で、強い甘味があるよ。
+
+ユーザー：疲労回復に良い分子は？
+アシスタント:  
+【分子】: クエン酸
+【SMILES】: OC(=O)CC(O)(C(=O)O)CC(=O)O
+【メモ】: レモンなどの柑橘類に多く含まれていて、疲労回復に効果的だよ。
 
 # END OF SYSTEM
 """
@@ -943,7 +942,7 @@ if "current_category" not in st.session_state:
 # Create sidebar with sample input examples
 # This provides users with inspiration and common use cases
 with st.sidebar:
-    st.header(":material/chat: 入力例")
+    st.header("入力例")
         
     # Category selection with selectbox for organized sample queries
     selected_category = st.selectbox(
@@ -1054,7 +1053,7 @@ if st.session_state.gemini_output and not st.session_state.smiles_error_occurred
             st.write(output_data["memo"])
         else:
             # Display molecular recommendation
-            st.write(f"あなたにオススメする分子は「**{output_data['name']}**」だよ。{output_data['memo']}")
+            st.write(f"あなたにオススメする分子は「 **[{output_data['name']}](https://ja.wikipedia.org/wiki/{output_data['name']})** 」だよ。{output_data['memo']}")
 
             # Generate and display 3D molecular structure
             with st.spinner("3D構造を生成中..."):

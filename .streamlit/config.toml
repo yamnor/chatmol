@@ -2,3 +2,4 @@
 
 primaryColor = "#0277bd"
 linkColor = "#ad1457"
+linkUnderline = false
