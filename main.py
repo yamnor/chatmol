@@ -241,7 +241,7 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
     ],
     "💊 医薬品": [
         "風邪薬の成分は？",
-        "頭痛薬の分子を教えて",
+        "頭痛薬の成分を教えて",
         "胃薬の成分は？",
         "インフル治療薬の成分は？",
         "抗生物質の成分は？"
@@ -285,7 +285,7 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
         "集中力を高めたい",
         "勉強に集中したい",
         "思考力を高めたい",
-        "成績を良くしたい"
+        "脳を活性化したい"
     ],
     "✨ 美容・スキンケア": [
         "肌を美しく保ちたい",
@@ -995,7 +995,7 @@ with st.sidebar:
         # Display the stored random samples
         for sample in st.session_state.random_samples:
             # Create clickable sample buttons with consistent styling
-            if st.button(sample, key=f"random_sample_{sample}", width="content"):
+            if st.button(sample, key=f"random_sample_{sample}", width="stretch"):
                 st.session_state.selected_sample = sample
                 st.rerun()  # Trigger app rerun to process the sample query
         
@@ -1013,13 +1013,6 @@ with st.sidebar:
                 st.session_state.random_samples = []
             st.rerun()
 
-        # Promotion message
-        st.divider()
-        if st.checkbox("お知らせを表示", value=st.session_state.announcement_visible, key="announcement_checkbox") and ANNOUNCEMENT_MESSAGE:
-            st.session_state.announcement_visible = True
-            st.write(ANNOUNCEMENT_MESSAGE)
-        else:
-            st.session_state.announcement_visible = False
     else:
         # For other categories, clear random samples and display samples normally
         if st.session_state.current_category == "🎲 ランダム":
@@ -1030,9 +1023,18 @@ with st.sidebar:
         
         for sample in SAMPLE_QUERIES[selected_category]:
             # Create clickable sample buttons with consistent styling
-            if st.button(sample, key=f"sample_{sample}", width="content"):
+            if st.button(sample, key=f"sample_{sample}", width="stretch"):
                 st.session_state.selected_sample = sample
                 st.rerun()  # Trigger app rerun to process the sample query
+
+    # Promotion message
+    st.divider()
+    if st.checkbox("お知らせを表示", value=st.session_state.announcement_visible, key="announcement_checkbox") and ANNOUNCEMENT_MESSAGE:
+        st.session_state.announcement_visible = True
+        st.write(ANNOUNCEMENT_MESSAGE)
+    else:
+        st.session_state.announcement_visible = False
+
 
 # Display chat input field for user queries
 # This is the primary interface for user interaction
