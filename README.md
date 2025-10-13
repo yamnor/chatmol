@@ -28,7 +28,7 @@ URL: [chatmol.yamlab.app](https://chatmol.yamlab.app)
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://chatmol.yamlab.app/) 
 
 <p align="center">
-    <img src="https://i.gyazo.com/3b3cd1dda9191e5ca7c27a0fbe715c57.gif" alt="ChatMOL Demo">
+    <img src="https://i.gyazo.com/43c299b12d2a6222a90062dd2a90bc3b.gif" alt="ChatMOL Demo">
 </p>
 
 > [!NOTE]
