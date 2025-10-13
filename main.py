@@ -61,6 +61,10 @@ MOLECULE_VIEWER_ROTATION_SPEED = 1
 CHAT_INPUT_PLACEHOLDER = "分子のイメージや求める効果を教えて"
 CHAT_INPUT_MAX_CHARS = 25
 
+# Molecular Property Calculation Configuration
+ENABLE_MOLECULAR_PROPERTY_CALCULATION = False  # Set to False to disable property calculation
+ENABLE_MOLECULAR_PROPERTY_DISPLAY = False      # Set to False to disable property display
+
 # Error Messages
 API_TIMEOUT_ERROR_MESSAGE = """
 ⏰ **API応答タイムアウト**
@@ -110,6 +114,15 @@ ABOUT_MESSAGE: str = """
 このアプリでは、AI と対話しながら様々な分子を探索して、その分子の立体的な形を眺めることができるよ。
 
 分子の世界の面白さを体験してみよう！
+"""
+
+# Announcement Configuration
+ANNOUNCEMENT_MESSAGE: str = """
+![サイエンスアゴラ2025](https://i.gyazo.com/208ecdf2f06260f4d90d58ae291f0104.png)
+
+10/25, 26 開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://yamlab.jp/sciago2025)**
+
+ChatMOL、分子パズル PuzMol、元素楽章などなど、分子を「つくる」「うごかす」「感じる」体験
 """
 
 MENU_ITEMS: Dict[str, str] = {
@@ -665,6 +678,10 @@ def calculate_molecular_properties(mol, mol_with_h) -> Optional[Dict[str, Union[
     Note:
         Includes memory usage checks and timeout protection for large molecules
     """
+    # Check if property calculation is enabled
+    if not ENABLE_MOLECULAR_PROPERTY_CALCULATION:
+        return None
+        
     if not mol or not mol_with_h:
         return None
     
@@ -997,10 +1014,8 @@ with st.sidebar:
 
         # Promotion message
         st.divider()
-        if st.checkbox("お知らせを表示", value=False):
-            st.header("お知らせ")
-            st.image("images/scienceagora.png")
-            st.write("10/25, 26 開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://yamlab.jp/sciago2025)**")
+        if st.checkbox("お知らせを表示", value=False) and ANNOUNCEMENT_MESSAGE:
+            st.write(ANNOUNCEMENT_MESSAGE)
     else:
         # For other categories, clear random samples and display samples normally
         if st.session_state.current_category == "🎲 ランダム":
@@ -1101,7 +1116,10 @@ if st.session_state.gemini_output and not st.session_state.smiles_error_occurred
                 st.error("⚠️ 3D立体構造の生成に失敗しました。分子構造が複雑すぎるか、立体配座の生成ができませんでした。")
 
     # Display detailed molecular properties with expander (outside chat_message)
-    if st.session_state.gemini_output and st.session_state.gemini_output["smiles"] is not None and not st.session_state.smiles_error_occurred:
+    if (st.session_state.gemini_output and 
+        st.session_state.gemini_output["smiles"] is not None and 
+        not st.session_state.smiles_error_occurred and
+        ENABLE_MOLECULAR_PROPERTY_DISPLAY):
         with st.popover("", icon=":material/info:", width="stretch"):
             try:
                 properties = output_data["properties"]
