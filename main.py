@@ -3,6 +3,8 @@ import time
 import signal
 import threading
 import random
+import json
+import re
 from typing import Dict, List, Optional, Tuple, Union, Generator
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
@@ -119,7 +121,7 @@ SYSTEM_PROMPT: str = """
 あなたは「分子コンシェルジュ」です。
 ユーザーが求める効能・イメージ・用途・ニーズなどを 1 文でもらったら、  
 ❶ それに最も関連すると考えられる既知の分子を 1 つ選び、
-❷ 分子名、SMILES 文字列、ひとこと理由 を返してください。
+❷ 分子名、SMILES 文字列、ひとこと理由 をJSON形式で返してください。
 
 ## 重要なルール
 - **必ず実在する化学物質**のみを提案してください
@@ -132,49 +134,77 @@ SYSTEM_PROMPT: str = """
 - 薬理作用・香り・色など科学的根拠が薄い場合は「伝統的に～とされる」等と表現し、医学的助言は行わないでください
 - SMILESは必ず化学的に正しい構造を表すものにしてください（不確実なら提案しない）
 - **立体異性体が存在する場合は、最も一般的な立体異性体を提案してください**
+- **必ず有効なJSON形式で出力してください**
 
-出力フォーマット：
-
-【分子】: <分子名>  
-【SMILES】: <SMILES 文字列>  
-【メモ】: <選んだ理由を 1 行で>
+出力フォーマット（JSON）：
+```json
+{
+  "molecule_name": "<分子名>",
+  "smiles": "<SMILES 文字列>",
+  "memo": "<選んだ理由を 1 行で>"
+}
+```
 
 # EXAMPLES
 ユーザー: 気分をすっきりさせたい  
 アシスタント:  
-【分子】: カフェイン  
-【SMILES】: CN1C=NC2=C1C(=O)N(C(=O)N2C)C
-【メモ】: 中枢神経を刺激して覚醒感を高める代表的なアルカロイドだよ。
+```json
+{
+  "molecule_name": "カフェイン",
+  "smiles": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+  "memo": "中枢神経を刺激して覚醒感を高める代表的なアルカロイドだよ。"
+}
+```
 
 ユーザー: リラックスして眠りやすくなるものは？  
 アシスタント:  
-【分子】: リナロール  
-【SMILES】: CC(O)(C=C)CCC=C(C)C
-【メモ】: ラベンダーの香気成分で、アロマテラピーで鎮静が期待されるよ。
+```json
+{
+  "molecule_name": "リナロール",
+  "smiles": "CC(O)(C=C)CCC=C(C)C",
+  "memo": "ラベンダーの香気成分で、アロマテラピーで鎮静が期待されるよ。"
+}
+```
 
 ユーザー: バラの香りってどんな分子？
 アシスタント:  
-【分子】: ゲラニオール  
-【SMILES】: CC(C)=CCC/C(C)=C/CO
-【メモ】: バラの香りの主成分で、甘くフローラルな香りが特徴だよ。
+```json
+{
+  "molecule_name": "ゲラニオール",
+  "smiles": "CC(C)=CCC/C(C)=C/CO",
+  "memo": "バラの香りの主成分で、甘くフローラルな香りが特徴だよ。"
+}
+```
 
 ユーザー: レモンの香り成分は？
 アシスタント:  
-【分子】: リモネン  
-【SMILES】: CC1=CCC(CC1)C(=C)C
-【メモ】: 柑橘類の皮に豊富に含まれる爽やかな香りの成分だよ。
+```json
+{
+  "molecule_name": "リモネン",
+  "smiles": "CC1=CCC(CC1)C(=C)C",
+  "memo": "柑橘類の皮に豊富に含まれる爽やかな香りの成分だよ。"
+}
+```
 
 ユーザー: 甘い味の分子は？
 アシスタント:  
-【分子】: スクロース
-【SMILES】: O1[C@H](CO)[C@@H](O)[C@H](O)[C@@H](O)[C@H]1O[C@@]2(O[C@@H]([C@@H](O)[C@@H]2O)CO)CO
-【メモ】: 私たちが毎日使っているお砂糖の主成分で、強い甘味があるよ。
+```json
+{
+  "molecule_name": "スクロース",
+  "smiles": "O1[C@H](CO)[C@@H](O)[C@H](O)[C@@H](O)[C@H]1O[C@@]2(O[C@@H]([C@@H](O)[C@@H]2O)CO)CO",
+  "memo": "私たちが毎日使っているお砂糖の主成分で、強い甘味があるよ。"
+}
+```
 
 ユーザー：疲労回復に良い分子は？
 アシスタント:  
-【分子】: クエン酸
-【SMILES】: OC(=O)CC(O)(C(=O)O)CC(=O)O
-【メモ】: レモンなどの柑橘類に多く含まれていて、疲労回復に効果的だよ。
+```json
+{
+  "molecule_name": "クエン酸",
+  "smiles": "OC(=O)CC(O)(C(=O)O)CC(=O)O",
+  "memo": "レモンなどの柑橘類に多く含まれていて、疲労回復に効果的だよ。"
+}
+```
 
 # END OF SYSTEM
 """
@@ -546,10 +576,10 @@ except Exception as e:
 
 def parse_gemini_response(response_text: str) -> Dict[str, Union[str, None]]:
     """
-    Parse Gemini's response text to extract molecular information with optimized error handling.
+    Parse Gemini's JSON response to extract molecular information with comprehensive error handling.
     
     Args:
-        response_text: Raw response from Gemini AI
+        response_text: Raw JSON response from Gemini AI
         
     Returns:
         Parsed data containing name, SMILES, memo, and molecular object
@@ -567,27 +597,128 @@ def parse_gemini_response(response_text: str) -> Dict[str, Union[str, None]]:
         return data
     
     try:
-        _parse_response_lines(response_text, data)
+        # Extract JSON from response text
+        json_data = _extract_json_from_response(response_text)
+        
+        if json_data:
+            # Parse JSON data
+            molecule_name = json_data.get("molecule_name", "").strip()
+            smiles = json_data.get("smiles", "").strip()
+            memo = json_data.get("memo", "").strip()
+            
+            if molecule_name and smiles:
+                data["name"] = molecule_name
+                data["memo"] = memo if memo else "分子の詳細情報を取得中..."
+                
+                # Validate and process SMILES
+                _process_smiles_data(smiles, data)
+            else:
+                # Handle incomplete JSON response
+                if not molecule_name:
+                    data["memo"] = "申し訳ありません。分子名を取得できませんでした。"
+                elif not smiles:
+                    data["memo"] = "申し訳ありません。SMILES文字列を取得できませんでした。"
+        else:
+            # Fallback to text parsing if JSON extraction fails
+            _fallback_text_parsing(response_text, data)
+            
     except Exception as e:
         st.warning(f"応答の解析中にエラーが発生しました: {e}")
+        # Try fallback text parsing
+        _fallback_text_parsing(response_text, data)
     
     return data
 
+def _extract_json_from_response(response_text: str) -> Optional[Dict]:
+    """
+    Extract JSON data from Gemini response text.
+    
+    Args:
+        response_text: Raw response text that may contain JSON
+        
+    Returns:
+        Parsed JSON dictionary or None if extraction fails
+    """
+    try:
+        # Look for JSON code blocks first
+        json_pattern = r'```json\s*(\{.*?\})\s*```'
+        match = re.search(json_pattern, response_text, re.DOTALL)
+        
+        if match:
+            json_str = match.group(1)
+            return json.loads(json_str)
+        
+        # Look for JSON without code blocks - more flexible pattern
+        json_pattern = r'(\{[^{}]*"molecule_name"[^{}]*"smiles"[^{}]*"memo"[^{}]*\})'
+        match = re.search(json_pattern, response_text, re.DOTALL)
+        
+        if match:
+            json_str = match.group(1)
+            return json.loads(json_str)
+        
+        # Try to find any JSON object containing molecule_name
+        json_pattern = r'(\{[^{}]*"molecule_name"[^{}]*\})'
+        match = re.search(json_pattern, response_text, re.DOTALL)
+        
+        if match:
+            json_str = match.group(1)
+            return json.loads(json_str)
+        
+        # Try to find any JSON object in the response
+        json_pattern = r'(\{[^{}]*\})'
+        matches = re.findall(json_pattern, response_text, re.DOTALL)
+        
+        for json_str in matches:
+            try:
+                parsed = json.loads(json_str)
+                if isinstance(parsed, dict) and "molecule_name" in parsed:
+                    return parsed
+            except json.JSONDecodeError:
+                continue
+            
+        return None
+        
+    except json.JSONDecodeError as e:
+        st.warning(f"JSON解析エラー: {e}")
+        return None
+    except Exception as e:
+        st.warning(f"JSON抽出エラー: {e}")
+        return None
+
+def _fallback_text_parsing(response_text: str, data: Dict[str, Union[str, None]]) -> None:
+    """
+    Fallback to original text parsing method if JSON parsing fails.
+    
+    Args:
+        response_text: Raw response text
+        data: Data dictionary to populate
+    """
+    try:
+        _parse_response_lines(response_text, data)
+    except Exception as e:
+        st.warning(f"フォールバック解析中にエラーが発生しました: {e}")
+
 def _parse_response_lines(response_text: str, data: Dict[str, Union[str, None]]) -> None:
-    """Parse individual lines of the response."""
+    """Parse individual lines of the response (fallback method)."""
     for line in response_text.split('\n'):
         if line.startswith("【分子】:"):
             data["name"] = line.split(":", 1)[1].strip()
         elif line.startswith("【SMILES】:"):
-            _process_smiles_line(line, data)
+            raw_smiles = line.split(":", 1)[1].strip()
+            _process_smiles_data(raw_smiles, data)
         elif line.startswith("【メモ】:"):
             if data["smiles"] is not None:
                 data["memo"] = line.split(":", 1)[1].strip()
 
-def _process_smiles_line(line: str, data: Dict[str, Union[str, None]]) -> None:
-    """Process SMILES line and create molecular objects."""
-    raw_smiles = line.split(":", 1)[1].strip()
-    is_valid, canonical_smiles, error_msg = validate_and_normalize_smiles(raw_smiles)
+def _process_smiles_data(smiles: str, data: Dict[str, Union[str, None]]) -> None:
+    """
+    Process SMILES data and create molecular objects.
+    
+    Args:
+        smiles: SMILES string to process
+        data: Data dictionary to populate
+    """
+    is_valid, canonical_smiles, error_msg = validate_and_normalize_smiles(smiles)
     
     if is_valid:
         data["smiles"] = canonical_smiles
@@ -602,7 +733,7 @@ def _process_smiles_line(line: str, data: Dict[str, Union[str, None]]) -> None:
         
         # Show error message and stop processing
         st.error(f"⚠️ SMILES検証エラー: {error_msg}")
-        st.error(f"無効なSMILES: {raw_smiles[:100]}{'...' if len(raw_smiles) > 100 else ''}")
+        st.error(f"無効なSMILES: {smiles[:100]}{'...' if len(smiles) > 100 else ''}")
         
         # Set session state to prevent further processing
         if "smiles_error_occurred" not in st.session_state:
