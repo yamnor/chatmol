@@ -441,7 +441,6 @@ try:
     except KeyError:
         # Fallback to default model if not specified in secrets
         model_name = DEFAULT_MODEL_NAME
-        st.warning(f"⚠️ model_name が設定されていません。デフォルトモデル '{DEFAULT_MODEL_NAME}' を使用します。")
     
     # Initialize the Gemini model
     model = genai.GenerativeModel(model_name)
