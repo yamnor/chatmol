@@ -9,9 +9,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      APP_PATH: ~/apps/chatmol
+      APP_PATH: /home/yamnor/apps/chatmol
       SERVICE_NAME: chatmol.service
-      PIP_INSTALL: source ~/opt/miniconda3/etc/profile.d/conda.sh && conda activate chatmol && pip install -r requirements.txt
+      PIP_INSTALL: source /home/yamnor/opt/miniconda3/etc/profile.d/conda.sh && conda activate chatmol && pip install -r requirements.txt
     steps:
       - name: Setup SSH Key
         uses: webfactory/ssh-agent@v0.8.0
