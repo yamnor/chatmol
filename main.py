@@ -232,9 +232,9 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
     ],
     "🌲 自然・環境": [
         "森の香り成分は？",
-        "海の香り分子を教えて",
+        "海の香り成分は？",
         "土の匂い成分は？",
-        "木の香り分子は？",
+        "木の香り成分は？",
         "草の香り成分は？"
     ],
     "🧴 日用品": [
@@ -245,7 +245,7 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
         "消臭剤の成分は？"
     ],
     "💪 スポーツ・運動": [
-        "筋肉に良い分子は？",
+        "筋肉を鍛えたい",
         "疲労を回復させたい",
         "持久力をアップさせたい",
         "瞬発力をアップさせたい",
@@ -285,18 +285,7 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
 # =============================================================================
 
 def stream_text(text: str) -> Generator[str, None, None]:
-    """
-    Stream text character by character with optimized delay for better user experience.
-    
-    Args:
-        text: The text to stream character by character
-        
-    Yields:
-        str: Individual characters from the input text
-        
-    Note:
-        Uses adaptive delay based on text length to prevent long waits
-    """
+    """Stream text character by character with adaptive delay."""
     # Adaptive delay based on text length
     delay = 0.01 if len(text) < 100 else 0.005 if len(text) < 500 else 0.002
     
@@ -305,20 +294,7 @@ def stream_text(text: str) -> Generator[str, None, None]:
         time.sleep(delay)
 
 def safe_calculate(calculation_func, default_value=None, error_message: Optional[str] = None):
-    """
-    Safely execute a calculation function with comprehensive error handling.
-    
-    Args:
-        calculation_func: Function to execute safely
-        default_value: Value to return if calculation fails (default: None)
-        error_message: Optional error message to display to user
-        
-    Returns:
-        Result of calculation_func() or default_value if exception occurs
-        
-    Note:
-        Displays warning message to user if error_message is provided
-    """
+    """Safely execute a calculation function with error handling."""
     try:
         return calculation_func()
     except Exception as e:
@@ -327,20 +303,7 @@ def safe_calculate(calculation_func, default_value=None, error_message: Optional
         return default_value
 
 def safe_descriptor_calculation(mol, descriptor_func, default_value: Union[int, float] = 0) -> Union[int, float]:
-    """
-    Safely calculate RDKit molecular descriptor with fallback value.
-    
-    Args:
-        mol: RDKit molecule object
-        descriptor_func: RDKit descriptor function to apply
-        default_value: Value to return if calculation fails (default: 0)
-        
-    Returns:
-        Calculated descriptor value or default_value if exception occurs
-        
-    Note:
-        Silently handles exceptions to prevent application crashes
-    """
+    """Safely calculate RDKit molecular descriptor with fallback value."""
     try:
         return descriptor_func(mol)
     except Exception:
@@ -351,28 +314,7 @@ def safe_descriptor_calculation(mol, descriptor_func, default_value: Union[int, 
 # =============================================================================
 
 def get_gemini_response(user_input_text: str) -> Optional[str]:
-    """
-    Send user input to Gemini AI and retrieve molecular recommendation response with timeout protection.
-    
-    This function constructs a prompt using the system prompt and user input,
-    then sends it to the Gemini AI model for processing with timeout protection.
-    
-    Args:
-        user_input_text: User's request for molecular properties/effects
-        
-    Returns:
-        Gemini's response text containing molecular information, or None if error
-        
-    Raises:
-        Displays error message to user if API request fails or times out
-        
-    Example:
-        >>> response = get_gemini_response("甘い香りの分子は？")
-        >>> print(response)
-        【分子】: バニリン
-        【SMILES】: COc1ccc(C=O)cc1O
-        【メモ】: バニラの香りの主成分で、甘く温かい香りが特徴だよ。
-    """
+    """Send user input to Gemini AI and retrieve molecular recommendation response."""
     prompt = f"{SYSTEM_PROMPT}\nユーザー: {user_input_text}\nアシスタント:"
     
     def api_call():
@@ -401,33 +343,7 @@ def get_gemini_response(user_input_text: str) -> Optional[str]:
         return None
 
 def validate_and_normalize_smiles(smiles: str) -> Tuple[bool, Optional[str], Optional[str]]:
-    """
-    Validate and normalize SMILES string using RDKit with comprehensive checks and timeout protection.
-    
-    This function performs multiple validation steps:
-    1. Basic syntax validation using RDKit
-    2. Molecular size checks (atom count, molecular weight)
-    3. Stereochemistry validation and analysis
-    4. Canonicalization to standard format with stereochemistry preservation
-    
-    Args:
-        smiles: SMILES notation string to validate
-        
-    Returns:
-        Tuple containing:
-        - is_valid (bool): Whether SMILES is valid
-        - canonical_smiles (str|None): Canonicalized SMILES or None if invalid
-        - error_message (str|None): Error description or None if valid
-        
-    Example:
-        >>> is_valid, canonical, error = validate_and_normalize_smiles("CCO")
-        >>> print(is_valid, canonical)
-        True CCO
-        
-        >>> is_valid, canonical, error = validate_and_normalize_smiles("invalid")
-        >>> print(is_valid, error)
-        False 無効なSMILES形式です
-    """
+    """Validate and normalize SMILES string using RDKit with timeout protection."""
     if not smiles:
         return False, None, "SMILESが空です"
     
@@ -552,15 +468,7 @@ except Exception as e:
 # =============================================================================
 
 def parse_gemini_response(response_text: str) -> Dict[str, Union[str, None]]:
-    """
-    Parse Gemini's JSON response to extract molecular information with comprehensive error handling.
-    
-    Args:
-        response_text: Raw JSON response from Gemini AI
-        
-    Returns:
-        Parsed data containing name, SMILES, memo, and molecular object
-    """
+    """Parse Gemini's JSON response to extract molecular information."""
     data = {
         "name": "分子が見つかりませんでした",
         "smiles": None,
@@ -607,15 +515,7 @@ def parse_gemini_response(response_text: str) -> Dict[str, Union[str, None]]:
     return data
 
 def _extract_json_from_response(response_text: str) -> Optional[Dict]:
-    """
-    Extract JSON data from Gemini response text.
-    
-    Args:
-        response_text: Raw response text that may contain JSON
-        
-    Returns:
-        Parsed JSON dictionary or None if extraction fails
-    """
+    """Extract JSON data from Gemini response text."""
     try:
         # Look for JSON code blocks first
         json_pattern = r'```json\s*(\{.*?\})\s*```'
@@ -663,13 +563,7 @@ def _extract_json_from_response(response_text: str) -> Optional[Dict]:
         return None
 
 def _fallback_text_parsing(response_text: str, data: Dict[str, Union[str, None]]) -> None:
-    """
-    Fallback to original text parsing method if JSON parsing fails.
-    
-    Args:
-        response_text: Raw response text
-        data: Data dictionary to populate
-    """
+    """Fallback to original text parsing method if JSON parsing fails."""
     try:
         _parse_response_lines(response_text, data)
     except Exception as e:
@@ -688,13 +582,7 @@ def _parse_response_lines(response_text: str, data: Dict[str, Union[str, None]])
                 data["memo"] = line.split(":", 1)[1].strip()
 
 def _process_smiles_data(smiles: str, data: Dict[str, Union[str, None]]) -> None:
-    """
-    Process SMILES data and create molecular objects.
-    
-    Args:
-        smiles: SMILES string to process
-        data: Data dictionary to populate
-    """
+    """Process SMILES data and create molecular objects."""
     is_valid, canonical_smiles, error_msg = validate_and_normalize_smiles(smiles)
     
     if is_valid:
@@ -751,18 +639,7 @@ def _create_molecular_objects(canonical_smiles: str, data: Dict[str, Union[str, 
         st.session_state.smiles_error_occurred = True
 
 def get_molecule_structure_3d_sdf(mol_with_h) -> Optional[str]:
-    """
-    Generate 3D molecular structure from molecular object with timeout protection and optimized error handling.
-    
-    Args:
-        mol_with_h: RDKit molecule object with hydrogens
-        
-    Returns:
-        SDF format string for 3D visualization or None if failed
-        
-    Note:
-        Uses timeout protection to prevent freezes during 3D structure generation
-    """
+    """Generate 3D molecular structure from molecular object with timeout protection."""
     if not mol_with_h:
         return None
     
@@ -785,7 +662,7 @@ def get_molecule_structure_3d_sdf(mol_with_h) -> Optional[str]:
         return None
 
 def _generate_3d_structure(mol_with_h) -> str:
-    """Generate 3D structure and convert to SDF format with enhanced error handling and stereochemistry preservation."""
+    """Generate 3D structure and convert to SDF format."""
     try:
         # Create a copy to avoid modifying the original molecule
         mol_copy = Chem.Mol(mol_with_h)
