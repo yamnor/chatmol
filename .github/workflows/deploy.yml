@@ -28,4 +28,3 @@ jobs:
             cd ${{ env.APP_PATH }}
             git pull
             ${{ env.PIP_INSTALL }}
-            sudo systemctl restart ${{ env.SERVICE_NAME }}
