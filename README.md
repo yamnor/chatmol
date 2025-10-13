@@ -26,7 +26,7 @@
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://chatmol.yamlab.app/)
 
 <p align="center">
-    <img src="https://i.gyazo.com/78b543e0b1226cfec85124add2d0b6f8.gif" alt="ChatMOL Demo" width="100%">
+    <img src="https://i.gyazo.com/78b543e0b1226cfec85124add2d0b6f8.gif" alt="ChatMOL Demo">
 </p>
 
 > [!NOTE]
