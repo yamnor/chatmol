@@ -31,9 +31,6 @@ URL: [chatmol.yamlab.app](https://chatmol.yamlab.app)
     <img src="https://i.gyazo.com/e308accb0eebe0fd1233d67feda75bb7.gif" alt="ChatMOL Demo">
 </p>
 
-> [!NOTE]
-> 上記の動画では、「リナロール」の構造は正しく出力されていますが、「グルタミン酸」は正確ではありません。このように、出力される分子の情報は不正確なことがあります。
-
 ## 📦 自分のパソコンで動かしてみよう
 
 ### 必要なもの
