@@ -1,7 +1,5 @@
 # Standard library imports
 import time
-import signal
-import threading
 import random
 import json
 import re
@@ -23,12 +21,6 @@ from rdkit.Chem import AllChem, Descriptors
 # =============================================================================
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
-
-
-# Gemini AI Configuration
-GEMINI_MODEL_NAME = "gemini-2.5-flash-lite"
-# GEMINI_MODEL_NAME = "gemini-2.5-pro"
-GEMINI_API_KEY_SECRET = "api_key"
 
 # Timeout settings for preventing freezes
 API_TIMEOUT_SECONDS = 30  # Gemini API timeout
@@ -54,15 +46,8 @@ MOLECULE_VIEWER_ZOOM_MAX = 50
 MOLECULE_VIEWER_ROTATION_SPEED = 1
 
 # User Input Configuration
-CHAT_INPUT_PLACEHOLDER = "分子のイメージや求める効果を教えて"
+CHAT_INPUT_PLACEHOLDER = "どんな分子を探しているの？"
 CHAT_INPUT_MAX_CHARS = 25
-
-# Error Messages
-API_TIMEOUT_ERROR_MESSAGE = "⏰ API応答タイムアウト（{timeout_seconds}秒）"
-
-API_RATE_LIMIT_ERROR_MESSAGE = "⏰ API利用制限に達しました。しばらく待ってから再試行してください。"
-
-STRUCTURE_GENERATION_TIMEOUT_ERROR_MESSAGE = "⏰ 3D構造生成タイムアウト（{timeout_seconds}秒）"
 
 ABOUT_MESSAGE: str = """
 「チョコレートの成分は？」「肌を美しく保ちたい」「スパイシーな香りが欲しい」、そんな質問・疑問・要望に応えてくれる AI 分子コンシェルジェだよ。
@@ -79,19 +64,16 @@ ANNOUNCEMENT_MESSAGE: str = """
 10/25, 26 の サイエンスアゴラ で、分子を作る / 動かす/ 感じる体験 & 展示を出展。詳細は **[【こちら】](https://yamlab.jp/sciago2025)**
 """
 
-MENU_ITEMS: Dict[str, str] = {
-    'About' : f'''
-            **ChatMOL** was created by [yamnor](https://yamnor.me),
-            a chemist 🧪 specializing in molecular simulation 🖥️ living in Japan 🇯🇵.
+MENU_ITEMS_ABOUT: str = '''
+**ChatMOL** was created by [yamnor](https://yamnor.me),
+a chemist 🧪 specializing in molecular simulation 🖥️ living in Japan 🇯🇵.
 
-            If you have any questions, thoughts, or comments,
-            feel free to [contact me](https://letterbird.co/yamnor) ✉️
-            or find me on [X (Twitter)](https://x.com/yamnor) 🐦.
+If you have any questions, thoughts, or comments,
+feel free to [contact me](https://letterbird.co/yamnor) ✉️
+or find me on [X (Twitter)](https://x.com/yamnor) 🐦.
 
-            GitHub: [yamnor/chatmol](https://github.com/yamnor/chatmol)
-            ''',
-    'Issues' : 'https://github.com/yamnor/chatmol/issues',
-}
+GitHub: [yamnor/chatmol](https://github.com/yamnor/chatmol)
+'''
 
 SYSTEM_PROMPT: str = """
 # SYSTEM
@@ -284,6 +266,18 @@ SAMPLE_QUERIES: Dict[str, List[str]] = {
 # UTILITY FUNCTIONS
 # =============================================================================
 
+def generate_random_samples() -> List[str]:
+    """Generate random samples from all categories except random category."""
+    all_samples = []
+    for category_name, category_samples in SAMPLE_QUERIES.items():
+        if category_name != "🎲 ランダム" and category_samples:  # Skip random category and empty categories
+            all_samples.extend(category_samples)
+    
+    if all_samples:
+        return random.sample(all_samples, min(5, len(all_samples)))
+    else:
+        return []
+
 def stream_text(text: str) -> Generator[str, None, None]:
     """Stream text character by character with adaptive delay."""
     # Adaptive delay based on text length
@@ -293,21 +287,6 @@ def stream_text(text: str) -> Generator[str, None, None]:
         yield char
         time.sleep(delay)
 
-def safe_calculate(calculation_func, default_value=None, error_message: Optional[str] = None):
-    """Safely execute a calculation function with error handling."""
-    try:
-        return calculation_func()
-    except Exception as e:
-        if error_message:
-            st.warning(f"{error_message}: {e}")
-        return default_value
-
-def safe_descriptor_calculation(mol, descriptor_func, default_value: Union[int, float] = 0) -> Union[int, float]:
-    """Safely calculate RDKit molecular descriptor with fallback value."""
-    try:
-        return descriptor_func(mol)
-    except Exception:
-        return default_value
 
 # =============================================================================
 # AI AND MOLECULAR PROCESSING FUNCTIONS
@@ -329,7 +308,7 @@ def get_gemini_response(user_input_text: str) -> Optional[str]:
             return response.text
             
     except FutureTimeoutError:
-        st.error(API_TIMEOUT_ERROR_MESSAGE.format(timeout_seconds=API_TIMEOUT_SECONDS))
+        st.error(f"⏰ API応答タイムアウト（{API_TIMEOUT_SECONDS}秒）")
         return None
         
     except Exception as e:
@@ -337,7 +316,7 @@ def get_gemini_response(user_input_text: str) -> Optional[str]:
         
         # Check for rate limit error (429)
         if "429" in error_str or "quota" in error_str.lower() or "rate" in error_str.lower():
-            st.error(API_RATE_LIMIT_ERROR_MESSAGE)
+            st.error("⏰ API利用制限に達しました。しばらく待ってから再試行してください。")
         else:
             st.error(f"Gemini API へのリクエスト中にエラーが発生しました: {e}")
         return None
@@ -433,8 +412,7 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="expanded",
     menu_items={
-        'About': MENU_ITEMS['About'],
-        'Report a bug': MENU_ITEMS['Issues']
+        'About': MENU_ITEMS_ABOUT,
     }
 )
 
@@ -452,16 +430,28 @@ else:
 # This ensures the app fails gracefully if API configuration is missing
 try:
     # Configure API key from Streamlit secrets
-    genai.configure(api_key=st.secrets[GEMINI_API_KEY_SECRET])
-    # Initialize the Gemini model with latest version
-    model = genai.GenerativeModel(GEMINI_MODEL_NAME)
-except KeyError:
-    st.error("GEMINI_API_KEY が設定されていません。Streamlit の Secrets で設定してください。")
+    genai.configure(api_key=st.secrets["api_key"])
+    
+    # Get model name from Streamlit secrets with fallback
+    try:
+        model_name = st.secrets["model_name"]
+    except KeyError:
+        # Fallback to default model if not specified in secrets
+        model_name = "gemini-2.5-flash-lite"
+        st.warning("⚠️ model_name が設定されていません。デフォルトモデル 'gemini-2.5-flash-lite' を使用します。")
+    
+    # Initialize the Gemini model
+    model = genai.GenerativeModel(model_name)
+    
+except KeyError as e:
+    if str(e) == "'api_key'":
+        st.error("api_key が設定されていません。Streamlit の Secrets で設定してください。")
+    else:
+        st.error(f"設定が見つかりません: {e}")
     st.stop()
 except Exception as e:
     st.error(f"Gemini API の初期化に失敗しました: {e}")
     st.stop()
-
 
 # =============================================================================
 # RESPONSE PARSING AND VISUALIZATION FUNCTIONS
@@ -654,7 +644,7 @@ def get_molecule_structure_3d_sdf(mol_with_h) -> Optional[str]:
             return future.result(timeout=STRUCTURE_GENERATION_TIMEOUT_SECONDS)
             
     except FutureTimeoutError:
-        st.error(STRUCTURE_GENERATION_TIMEOUT_ERROR_MESSAGE.format(timeout_seconds=STRUCTURE_GENERATION_TIMEOUT_SECONDS))
+        st.error(f"⏰ 3D構造生成タイムアウト（{STRUCTURE_GENERATION_TIMEOUT_SECONDS}秒）")
         return None
         
     except Exception as e:
@@ -779,16 +769,7 @@ with st.sidebar:
         if (st.session_state.current_category != selected_category or 
             not st.session_state.random_samples):
             # Generate new random samples when switching to random category
-            all_samples = []
-            for category_name, category_samples in SAMPLE_QUERIES.items():
-                if category_name != "🎲 ランダム" and category_samples:  # Skip random category and empty categories
-                    all_samples.extend(category_samples)
-            
-            # Select 5 random samples and store in session state
-            if all_samples:
-                st.session_state.random_samples = random.sample(all_samples, min(5, len(all_samples)))
-            else:
-                st.session_state.random_samples = []
+            st.session_state.random_samples = generate_random_samples()
         
         # Update current category
         st.session_state.current_category = selected_category
@@ -803,15 +784,7 @@ with st.sidebar:
         # Add button to generate new random samples
         if st.button("", key="new_random_samples", width="stretch", icon=":material/refresh:", type="tertiary"):
             # Generate new random samples
-            all_samples = []
-            for category_name, category_samples in SAMPLE_QUERIES.items():
-                if category_name != "🎲 ランダム" and category_samples:  # Skip random category and empty categories
-                    all_samples.extend(category_samples)
-            
-            if all_samples:
-                st.session_state.random_samples = random.sample(all_samples, min(5, len(all_samples)))
-            else:
-                st.session_state.random_samples = []
+            st.session_state.random_samples = generate_random_samples()
             st.rerun()
 
     else:
@@ -872,7 +845,7 @@ if user_input and not st.session_state.smiles_error_occurred:
         st.write(user_input)
 
     # Get AI response with loading spinner
-    with st.spinner(f"AI (`{GEMINI_MODEL_NAME}`) に問い合わせ中..."):
+    with st.spinner(f"AI (`{model_name}`) に問い合わせ中..."):
         try:
             response_text = get_gemini_response(user_input)
             if response_text:
