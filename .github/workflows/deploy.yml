@@ -28,4 +28,7 @@ jobs:
             cd ${{ env.APP_PATH }}
             git pull
             ${{ env.PIP_INSTALL }}
+            # Reset environment before sudo command
+            unset CONDA_PREFIX
+            unset CONDA_DEFAULT_ENV
             sudo systemctl restart ${{ env.SERVICE_NAME }}
