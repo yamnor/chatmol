@@ -57,35 +57,12 @@ MOLECULE_VIEWER_ROTATION_SPEED = 1
 CHAT_INPUT_PLACEHOLDER = "分子のイメージや求める効果を教えて"
 CHAT_INPUT_MAX_CHARS = 25
 
-
 # Error Messages
-API_TIMEOUT_ERROR_MESSAGE = """
-⏰ **API応答タイムアウト**
+API_TIMEOUT_ERROR_MESSAGE = "⏰ API応答タイムアウト（{timeout_seconds}秒）"
 
-Gemini APIからの応答が{timeout_seconds}秒以内に得られませんでした。
+API_RATE_LIMIT_ERROR_MESSAGE = "⏰ API利用制限に達しました。しばらく待ってから再試行してください。"
 
-しばらく待ってから、ネットワーク接続を確認して、再度お試しください。
-
-ご不便をおかけして申し訳ありません 🙏
-"""
-
-API_RATE_LIMIT_ERROR_MESSAGE = """
-⏰ **APIの利用制限に達しました**
-
-現在、APIの利用制限に達しているため、約10秒〜1分程度お待ちいただいてから、再度お試しください.
-
-ご不便をおかけして申し訳ありません 🙏
-"""
-
-STRUCTURE_GENERATION_TIMEOUT_ERROR_MESSAGE = """
-⏰ **3D構造生成タイムアウト**
-
-3D立体構造の生成が{timeout_seconds}秒以内に完了しませんでした。
-
-分子が複雑すぎる可能性があります。もう一度試してみてください。
-
-ご不便をおかけして申し訳ありません 🙏
-"""
+STRUCTURE_GENERATION_TIMEOUT_ERROR_MESSAGE = "⏰ 3D構造生成タイムアウト（{timeout_seconds}秒）"
 
 ABOUT_MESSAGE: str = """
 「チョコレートの成分は？」「肌を美しく保ちたい」「スパイシーな香りが欲しい」、そんな質問・疑問・要望に応えてくれる AI 分子コンシェルジェだよ。
