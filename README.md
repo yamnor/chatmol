@@ -1,4 +1,6 @@
-# 🤖 ChatMOL
+<p align="center">
+  <img src="https://i.gyazo.com/e6424c1c7f3d48c212fadc993e253481.png" alt="ChatMOL" width="200">
+</p>
 
 「バラの香りってどんな分子？」「青色を作る分子は？」そんな素朴な疑問に、AI が答えてくれるアプリだよ。
 
@@ -23,7 +25,9 @@
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://chatmol.yamlab.app/)
 
-![](https://i.gyazo.com/78b543e0b1226cfec85124add2d0b6f8.gif)
+<p align="center">
+    <img src="https://i.gyazo.com/78b543e0b1226cfec85124add2d0b6f8.gif" alt="ChatMOL Demo" width="100%">
+</p>
 
 > [!NOTE]
 > 上記の動画では、「リナロール」の構造は正しく出力されていますが、「グルタミン酸」は正確ではありません。このように、出力される分子の情報は不正確なことがあります。
