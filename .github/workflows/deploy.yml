@@ -31,4 +31,5 @@ jobs:
             # Reset environment before sudo command
             unset CONDA_PREFIX
             unset CONDA_DEFAULT_ENV
+            export PATH="/usr/local/bin:/usr/bin:/bin"
             sudo systemctl restart ${{ env.SERVICE_NAME }}
