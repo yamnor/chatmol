@@ -118,11 +118,9 @@ ABOUT_MESSAGE: str = """
 
 # Announcement Configuration
 ANNOUNCEMENT_MESSAGE: str = """
-![サイエンスアゴラ2025](https://i.gyazo.com/208ecdf2f06260f4d90d58ae291f0104.png)
+[![サイエンスアゴラ2025](https://i.gyazo.com/208ecdf2f06260f4d90d58ae291f0104.png)](https://yamlab.jp/sciago2025)
 
-10/25, 26 の サイエンスアゴラ に出展するよ。分子を作る・動かす・感じる展示＆体験。詳細は **[こちら](https://yamlab.jp/sciago2025)**
-
-
+10/25, 26 の サイエンスアゴラ で、分子を作る / 動かす/ 感じる体験 & 展示を出展。詳細は **[【こちら】](https://yamlab.jp/sciago2025)**
 """
 
 MENU_ITEMS: Dict[str, str] = {
