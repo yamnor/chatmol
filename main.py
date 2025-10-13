@@ -24,7 +24,7 @@ from rdkit.Chem import AllChem, Descriptors, Crippen, rdMolDescriptors
 
 PROMOTION_MESSAGES: List[Dict[str, str]] = [
     # { "message": "デモモード。サービス全体で可能なリクエスト数は「15 回 / 分」まで。", "icon": ":material/timer:", "duration": "short" },
-    { "message": "出力される分子の情報や構造について、正しくないことがあります。", "icon": ":material/warning:", "duration": "short" },
+    # { "message": "出力される分子の情報や構造について、正しくないことがあります。", "icon": ":material/warning:", "duration": "short" },
     # { "message": "10/25,26開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://yamlab.jp/sciago2025)**", "icon": ":material/festival:", "duration": "infinite" },
 ]
 
@@ -72,9 +72,7 @@ API_TIMEOUT_ERROR_MESSAGE = """
 
 Gemini APIからの応答が{timeout_seconds}秒以内に得られませんでした。
 
-**対処法：**
-- ネットワーク接続を確認してください
-- しばらく待ってから再度お試しください
+しばらく待ってから、ネットワーク接続を確認して、再度お試しください。
 
 ご不便をおかけして申し訳ありません 🙏
 """
@@ -92,23 +90,17 @@ STRUCTURE_GENERATION_TIMEOUT_ERROR_MESSAGE = """
 
 3D立体構造の生成が{timeout_seconds}秒以内に完了しませんでした。
 
-**対処法：**
-- もう一度試してみてください
-- 分子が複雑すぎる可能性があります
+分子が複雑すぎる可能性があります。もう一度試してみてください。
 
 ご不便をおかけして申し訳ありません 🙏
 """
 
 ABOUT_MESSAGE: str = """
-「バラの香りってどんな分子？」そんな素朴な疑問に、AI が答えてくれるよ。
+「チョコレートの成分は？」「肌を美しく保ちたい」「スパイシーな香りが欲しい」、そんな質問・疑問・要望に応えてくれる AI 分子コンシェルジェだよ。
 
-普段なにげなく感じている色・香り・味。
+AI と対話しながら、分子の世界を探索してみよう！
 
-実はそれぞれに対応する分子があって、分子の化学的な性質が、私たちのさまざまな感覚を生み出しているんだ。
-
-このアプリでは、AI と対話しながら様々な分子を探索して、その分子の立体的な形を眺めることができるよ。
-
-分子の世界の面白さを体験してみよう！
+:material/warning: 注意： 出力される分子の情報は、正しくない・間違っていることがあります。
 """
 
 # Announcement Configuration
@@ -126,6 +118,8 @@ MENU_ITEMS: Dict[str, str] = {
             If you have any questions, thoughts, or comments,
             feel free to [contact me](https://letterbird.co/yamnor) ✉️
             or find me on [X (Twitter)](https://x.com/yamnor) 🐦.
+
+            GitHub: [yamnor/chatmol](https://github.com/yamnor/chatmol)
             ''',
     'Issues' : 'https://github.com/yamnor/chatmol/issues',
 }
