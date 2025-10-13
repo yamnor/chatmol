@@ -89,13 +89,12 @@ streamlit run main.py
 
 ## 👨‍💻 開発者
 
-**yamnor** ([@yamnor](https://github.com/yamnor))
+Nori Yamamoto (yamnor) です、こんにちは。
 
 大学教員。専門は計算化学。化学の学びを身近にすることにも興味を持っているよ。お気軽に[こちら](https://letterbird.co/yamnor)から声をかけてね。
 
-- ラボ: [yamlab.jp](https://yamlab.jp/)
+- Labo: [yamlab.jp](https://yamlab.jp/)
 - Blog: [yamnor.me](https://yamnor.me/)
-- X: [@yamnor](https://x.com/yamnor)
 
 ## 📄 ライセンス
 
