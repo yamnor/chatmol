@@ -25,7 +25,7 @@ from rdkit.Chem import AllChem, Descriptors, Crippen, rdMolDescriptors
 PROMOTION_MESSAGES: List[Dict[str, str]] = [
     { "message": "デモモード。サービス全体で可能なリクエスト数は「15 回 / 分」まで。", "icon": ":material/timer:", "duration": "short" },
     { "message": "出力される分子の情報や構造について、正しくないことがあります。", "icon": ":material/warning:", "duration": "short" },
-    { "message": "10/25,26開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://yamlab.jp/sciago2025)**", "icon": ":material/festival:", "duration": "infinite" },
+    # { "message": "10/25,26開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://yamlab.jp/sciago2025)**", "icon": ":material/festival:", "duration": "infinite" },
 ]
 
 # Gemini AI Configuration
@@ -120,9 +120,9 @@ ABOUT_MESSAGE: str = """
 ANNOUNCEMENT_MESSAGE: str = """
 ![サイエンスアゴラ2025](https://i.gyazo.com/208ecdf2f06260f4d90d58ae291f0104.png)
 
-10/25, 26 開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://yamlab.jp/sciago2025)**
+10/25, 26 の サイエンスアゴラ に出展するよ。分子を作る・動かす・感じる体験。詳細は **[こちら](https://yamlab.jp/sciago2025)**
 
-ChatMOL、分子パズル PuzMol、元素楽章などなど、分子を「つくる」「うごかす」「感じる」体験
+
 """
 
 MENU_ITEMS: Dict[str, str] = {
@@ -530,7 +530,7 @@ def validate_and_normalize_smiles(smiles: str) -> Tuple[bool, Optional[str], Opt
 # These settings control the overall appearance and behavior of the app
 st.set_page_config(
     page_title="ChatMOL",
-    page_icon=":material/smart_toy:",
+    page_icon="images/favicon.png",
     layout="centered",
     initial_sidebar_state="expanded",
     menu_items={
@@ -958,6 +958,8 @@ if "random_samples" not in st.session_state:
     st.session_state.random_samples = []
 if "current_category" not in st.session_state:
     st.session_state.current_category = ""
+if "announcement_visible" not in st.session_state:
+    st.session_state.announcement_visible = True
 
 # Create sidebar with sample input examples
 # This provides users with inspiration and common use cases
@@ -1014,8 +1016,11 @@ with st.sidebar:
 
         # Promotion message
         st.divider()
-        if st.checkbox("お知らせを表示", value=False) and ANNOUNCEMENT_MESSAGE:
+        if st.checkbox("お知らせを表示", value=st.session_state.announcement_visible, key="announcement_checkbox") and ANNOUNCEMENT_MESSAGE:
+            st.session_state.announcement_visible = True
             st.write(ANNOUNCEMENT_MESSAGE)
+        else:
+            st.session_state.announcement_visible = False
     else:
         # For other categories, clear random samples and display samples normally
         if st.session_state.current_category == "🎲 ランダム":
