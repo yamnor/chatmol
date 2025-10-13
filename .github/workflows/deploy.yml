@@ -8,6 +8,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      APP_PATH: ~/apps/chatmol
+      SERVICE_NAME: chatmol.service
+      PIP_INSTALL: source ~/opt/miniconda3/etc/profile.d/conda.sh && conda activate chatmol && pip install -r requirements.txt
     steps:
       - name: Setup SSH Key
         uses: webfactory/ssh-agent@v0.8.0
@@ -20,7 +24,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/apps/chatmol            
+            cd ${{ env.APP_PATH }}
             git pull
-            sudo systemctl restart chatmol.service
-            echo "Deployment successful and Streamlit app restarted."
+            ${{ env.PIP_INSTALL }}
+            sudo systemctl restart ${{ env.SERVICE_NAME }}
