@@ -16,17 +16,12 @@ import py3Dmol
 from st_screen_stats import WindowQueryHelper
 
 from rdkit import Chem
-from rdkit.Chem import AllChem, Descriptors, Crippen, rdMolDescriptors
+from rdkit.Chem import AllChem, Descriptors
 
 # =============================================================================
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
 
-PROMOTION_MESSAGES: List[Dict[str, str]] = [
-    # { "message": "デモモード。サービス全体で可能なリクエスト数は「15 回 / 分」まで。", "icon": ":material/timer:", "duration": "short" },
-    # { "message": "出力される分子の情報や構造について、正しくないことがあります。", "icon": ":material/warning:", "duration": "short" },
-    # { "message": "10/25,26開催の「サイエンスアゴラ」に出展するよ。詳細は **[こちら](https://yamlab.jp/sciago2025)**", "icon": ":material/festival:", "duration": "infinite" },
-]
 
 # Gemini AI Configuration
 GEMINI_MODEL_NAME = "gemini-2.5-flash-lite"
@@ -37,12 +32,10 @@ GEMINI_API_KEY_SECRET = "api_key"
 API_TIMEOUT_SECONDS = 30  # Gemini API timeout
 STRUCTURE_GENERATION_TIMEOUT_SECONDS = 15  # 3D structure generation timeout
 SMILES_VALIDATION_TIMEOUT_SECONDS = 5  # SMILES validation timeout
-MOLECULAR_PROPERTY_CALCULATION_TIMEOUT_SECONDS = 10  # Property calculation timeout
 MOLECULAR_OBJECT_CREATION_TIMEOUT_SECONDS = 15  # Molecular object creation timeout
 
 # Molecular Size Limits
 MAX_ATOMS_FOR_SIMPLE_MOLECULE = 75
-MAX_ATOMS_FOR_PROPERTY_CALCULATION = 200
 MAX_ATOMS_FOR_3D_DISPLAY = 100
 MAX_ATOMS_FOR_3D_GENERATION = 100
 MAX_MOLECULAR_WEIGHT = 1000
@@ -62,9 +55,6 @@ MOLECULE_VIEWER_ROTATION_SPEED = 1
 CHAT_INPUT_PLACEHOLDER = "分子のイメージや求める効果を教えて"
 CHAT_INPUT_MAX_CHARS = 25
 
-# Molecular Property Calculation Configuration
-ENABLE_MOLECULAR_PROPERTY_CALCULATION = False  # Set to False to disable property calculation
-ENABLE_MOLECULAR_PROPERTY_DISPLAY = False      # Set to False to disable property display
 
 # Error Messages
 API_TIMEOUT_ERROR_MESSAGE = """
@@ -549,158 +539,6 @@ except Exception as e:
     st.error(f"Gemini API の初期化に失敗しました: {e}")
     st.stop()
 
-# =============================================================================
-# MOLECULAR PROPERTY CALCULATION FUNCTIONS
-# =============================================================================
-
-def calculate_basic_properties(mol, mol_with_h) -> Optional[Dict[str, Union[str, int, float]]]:
-    """Calculate basic molecular properties with optimized error handling."""
-    if not mol or not mol_with_h:
-        return None
-    
-    # Use safe calculation functions for all properties
-    properties = {
-        "formula": safe_calculate(
-            lambda: rdMolDescriptors.CalcMolFormula(mol),
-            "Unknown",
-            "分子式の計算に失敗"
-        ),
-        "num_atoms": mol_with_h.GetNumAtoms(),
-        "num_bonds": mol_with_h.GetNumBonds(),
-        "mol_weight": safe_descriptor_calculation(mol, Descriptors.MolWt, 0.0),
-        "logp": safe_descriptor_calculation(mol, Crippen.MolLogP, 0.0),
-        "tpsa": safe_descriptor_calculation(mol, Descriptors.TPSA, 0.0),
-        "hbd": safe_descriptor_calculation(mol, Descriptors.NumHDonors, 0),
-        "hba": safe_descriptor_calculation(mol, Descriptors.NumHAcceptors, 0),
-        "aromatic_rings": safe_descriptor_calculation(mol, Descriptors.NumAromaticRings, 0),
-        "rotatable_bonds": safe_descriptor_calculation(mol, Descriptors.NumRotatableBonds, 0),
-    }
-    
-    # Calculate stereo centers with optimized fallback
-    properties["stereo_centers"] = safe_calculate(
-        lambda: Descriptors.NumStereocenters(mol) if hasattr(Descriptors, 'NumStereocenters') 
-                else sum(1 for atom in mol.GetAtoms() if atom.HasProp('_ChiralityPossible')),
-        0,
-        "立体中心数の計算に失敗"
-    )
-    
-    return properties
-
-def calculate_fraction_csp3(mol) -> float:
-    """Calculate sp3 carbon ratio with optimized error handling."""
-    return safe_calculate(
-        lambda: (
-            rdMolDescriptors.FractionCsp3(mol) if hasattr(rdMolDescriptors, 'FractionCsp3')
-            else Descriptors.FractionCsp3(mol) if hasattr(Descriptors, 'FractionCsp3')
-            else _manual_fraction_csp3(mol)
-        ),
-        0,
-        "sp3炭素比の計算に失敗"
-    )
-
-def _manual_fraction_csp3(mol) -> float:
-    """Manual calculation of sp3 carbon ratio."""
-    csp3_count = 0
-    total_carbons = 0
-    for atom in mol.GetAtoms():
-        if atom.GetAtomicNum() == 6:  # Carbon
-            total_carbons += 1
-            if atom.GetHybridization() == Chem.HybridizationType.SP3:
-                csp3_count += 1
-    return csp3_count / total_carbons if total_carbons > 0 else 0
-
-def calculate_derived_properties(properties: Dict[str, Union[str, int, float]]) -> None:
-    """Calculate derived properties like solubility and drug-likeness."""
-    mw = properties["mol_weight"]
-    logp = properties["logp"]
-    hbd = properties["hbd"]
-    hba = properties["hba"]
-    tpsa = properties["tpsa"]
-    
-    # Solubility estimation
-    if logp < 0:
-        properties["solubility"] = "💧💧💧"
-    elif logp < 2:
-        properties["solubility"] = "💧💧"
-    elif logp < 4:
-        properties["solubility"] = "💧"
-    else:
-        properties["solubility"] = "❌"
-    
-    # Drug-likeness score
-    drug_score = 0
-    if mw <= 500: drug_score += 1
-    if logp <= 5: drug_score += 1
-    if hbd <= 5: drug_score += 1
-    if hba <= 10: drug_score += 1
-    if tpsa <= 140: drug_score += 1
-    
-    if drug_score >= 4:
-        properties["drug_likeness"] = "💊💊💊"
-    elif drug_score >= 3:
-        properties["drug_likeness"] = "💊💊"
-    else:
-        properties["drug_likeness"] = "💊"
-    
-    # Bioavailability score
-    if mw <= 500 and logp <= 5 and tpsa <= 140:
-        properties["bioavailability"] = "🍪🍪🍪"
-    elif mw <= 600 and logp <= 6 and tpsa <= 160:
-        properties["bioavailability"] = "🍪🍪"
-    else:
-        properties["bioavailability"] = "🍪"
-
-def calculate_molecular_properties(mol, mol_with_h) -> Optional[Dict[str, Union[str, int, float]]]:
-    """
-    Calculate and cache molecular properties with optimized error handling and memory management.
-    
-    Args:
-        mol: RDKit molecule object
-        mol_with_h: RDKit molecule object with hydrogens
-        
-    Returns:
-        Cached molecular properties or None if calculation fails
-        
-    Note:
-        Includes memory usage checks and timeout protection for large molecules
-    """
-    # Check if property calculation is enabled
-    if not ENABLE_MOLECULAR_PROPERTY_CALCULATION:
-        return None
-        
-    if not mol or not mol_with_h:
-        return None
-    
-    # Check molecule size to prevent memory issues
-    num_atoms = mol_with_h.GetNumAtoms()
-    if num_atoms > MAX_ATOMS_FOR_PROPERTY_CALCULATION:
-        st.warning(f"分子が大きすぎます（原子数: {num_atoms}）。プロパティ計算をスキップします。")
-        return None
-    
-    try:
-        # Calculate basic properties with timeout protection
-        def calculate_properties():
-            properties = calculate_basic_properties(mol, mol_with_h)
-            if not properties:
-                return None
-            
-            # Add fraction_csp3 and derived properties
-            properties["fraction_csp3"] = calculate_fraction_csp3(mol)
-            calculate_derived_properties(properties)
-            
-            return properties
-        
-        # Use ThreadPoolExecutor for timeout control
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(calculate_properties)
-            return future.result(timeout=MOLECULAR_PROPERTY_CALCULATION_TIMEOUT_SECONDS)
-            
-    except FutureTimeoutError:
-        st.warning("分子プロパティの計算がタイムアウトしました。分子が複雑すぎる可能性があります。")
-        return None
-    except Exception as e:
-        st.warning(f"分子プロパティの計算中にエラーが発生しました: {e}")
-        return None
 
 # =============================================================================
 # RESPONSE PARSING AND VISUALIZATION FUNCTIONS
@@ -787,19 +625,10 @@ def _create_molecular_objects(canonical_smiles: str, data: Dict[str, Union[str, 
         if num_atoms > MAX_ATOMS_FOR_3D_DISPLAY:
             st.warning(f"分子が大きすぎます（原子数: {num_atoms}）。3D表示をスキップする可能性があります。")
         
-        # Add hydrogens and calculate properties
+        # Add hydrogens
         data["mol_with_h"] = Chem.AddHs(data["mol"])
         
-        # Calculate properties with timeout protection
-        def calculate_props():
-            return calculate_molecular_properties(data["mol"], data["mol_with_h"])
-        
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(calculate_props)
-            data["properties"] = future.result(timeout=MOLECULAR_OBJECT_CREATION_TIMEOUT_SECONDS)
-        
-    except FutureTimeoutError:
-        st.warning("分子プロパティの計算がタイムアウトしました。基本的な情報のみ表示します。")
+        # Set properties to None since we're not calculating them
         data["properties"] = None
     except Exception as e:
         # Clear all molecular data and set error state
@@ -1030,10 +859,6 @@ user_input = st.chat_input(CHAT_INPUT_PLACEHOLDER, max_chars=CHAT_INPUT_MAX_CHAR
 # Display promotional toast notifications (first time only)
 # This ensures users see important announcements without being intrusive
 if "first_time_shown" not in st.session_state:
-    # Display all promotional messages with individual icons
-    for promotion in PROMOTION_MESSAGES:
-        st.toast(promotion["message"], icon=promotion["icon"], duration = promotion["duration"])
-    
     # Show welcome message with streaming effect for better UX
     st.chat_message("user").write("ChatMOLとは？")
     st.chat_message("assistant").write_stream(stream_text(ABOUT_MESSAGE))
@@ -1108,65 +933,3 @@ if st.session_state.gemini_output and not st.session_state.smiles_error_occurred
             else:
                 st.error("⚠️ 3D立体構造の生成に失敗しました。分子構造が複雑すぎるか、立体配座の生成ができませんでした。")
 
-    # Display detailed molecular properties with expander (outside chat_message)
-    if (st.session_state.gemini_output and 
-        st.session_state.gemini_output["smiles"] is not None and 
-        not st.session_state.smiles_error_occurred and
-        ENABLE_MOLECULAR_PROPERTY_DISPLAY):
-        with st.popover("", icon=":material/info:", width="stretch"):
-            try:
-                properties = output_data["properties"]
-                if properties:
-
-                    col1, col2 = st.columns([1, 2])
-                    with col1:
-                        # Molecular formula
-                        st.caption("分子式")
-                        st.code(properties["formula"], language=None)
-                    with col2:
-                        # SMILES notation
-                        st.caption("SMILES 記法")
-                        st.code(f"{output_data['smiles']}", language=None)
-
-
-                    # Basic molecular information
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("原子数", f"{properties['num_atoms']}")
-                    with col2:
-                        st.metric("分子量（g/mol）", f"{properties['mol_weight']:.2f}")
-                    with col3:
-                        st.metric("結合数", f"{properties['num_bonds']}")
-                                            
-                    # Physical and chemical properties
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("LogP", f"{properties['logp']:.2f}")
-                    with col2:
-                        st.metric("tPSA", f"{properties['tpsa']:.1f}")
-                    with col3:
-                        st.metric("sp³炭素比", f"{properties['fraction_csp3']:.2f}")
-
-                    # Structural features
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("芳香環数", f"{properties['aromatic_rings']}")
-                    with col2:
-                        st.metric("回転可能結合", f"{properties['rotatable_bonds']}")
-                    with col3:
-                        st.metric("立体中心数", f"{properties['stereo_centers']}")
-                    
-                    # Solubility and drug-likeness
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("水溶性", properties["solubility"])
-                    with col2:
-                        st.metric("薬物類似性", properties["drug_likeness"])
-                    with col3:
-                        st.metric("生物学的利用能", properties["bioavailability"])
-                    
-                else:
-                    st.warning("分子プロパティの計算に失敗しました。")
-                                            
-            except Exception as e:
-                st.warning(f"分子情報の取得に失敗しました: {e}")
