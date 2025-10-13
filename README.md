@@ -62,11 +62,23 @@ pip install -r requirements.txt
 #### 3. API キーを設定
 
 1. [Google AI Studio](https://makersuite.google.com/app/apikey) で Gemini API キーを取得（無料枠もあるよ）
-2. `.streamlit/secrets.toml` ファイルを作成して、取得した API キーを下記のように書き込む：
+2. `.streamlit/secrets.toml` ファイルを作成して、取得した API キーと使用するモデルを下記のように書き込む：
 
 ```toml
+# Gemini API Key
 api_key = "ここに取得した API キーを貼り付け"
+
+# Gemini Model Name (optional)
+model_name = "gemini-2.5-flash-lite"
 ```
+
+- `model_name` の設定は**オプション**です
+- 設定しない場合は、デフォルトで `gemini-2.5-flash-lite` が使用されます
+- `secrets.toml` に `model_name` を記述すれば、そちらが優先されます
+- 利用可能なモデル：
+  - `gemini-2.5-flash-lite`（デフォルト）：応答が早く、コストが安い
+  - `gemini-2.5-flash`：バランス型だが、不正確な情報が出ることがある
+  - `gemini-2.5-pro`：最も正確だが、応答が遅く、コストが高い
 
 #### 4. アプリを起動
 

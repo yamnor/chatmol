@@ -49,6 +49,9 @@ MOLECULE_VIEWER_ROTATION_SPEED = 1
 CHAT_INPUT_PLACEHOLDER = "どんな分子を探しているの？"
 CHAT_INPUT_MAX_CHARS = 25
 
+# Default AI Model Configuration
+DEFAULT_MODEL_NAME = "gemini-2.5-flash-lite"
+
 ABOUT_MESSAGE: str = """
 「チョコレートの成分は？」「肌を美しく保ちたい」「スパイシーな香りが欲しい」、そんな質問・疑問・要望に応えてくれる AI 分子コンシェルジェだよ。
 
@@ -437,8 +440,8 @@ try:
         model_name = st.secrets["model_name"]
     except KeyError:
         # Fallback to default model if not specified in secrets
-        model_name = "gemini-2.5-flash-lite"
-        st.warning("⚠️ model_name が設定されていません。デフォルトモデル 'gemini-2.5-flash-lite' を使用します。")
+        model_name = DEFAULT_MODEL_NAME
+        st.warning(f"⚠️ model_name が設定されていません。デフォルトモデル '{DEFAULT_MODEL_NAME}' を使用します。")
     
     # Initialize the Gemini model
     model = genai.GenerativeModel(model_name)
