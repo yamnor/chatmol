@@ -30,6 +30,7 @@ PROMOTION_MESSAGES: List[Dict[str, str]] = [
 
 # Gemini AI Configuration
 GEMINI_MODEL_NAME = "gemini-2.5-flash-lite"
+# GEMINI_MODEL_NAME = "gemini-2.5-pro"
 GEMINI_API_KEY_SECRET = "api_key"
 
 # Timeout settings for preventing freezes
@@ -74,7 +75,6 @@ Gemini APIからの応答が{timeout_seconds}秒以内に得られませんで�
 **対処法：**
 - ネットワーク接続を確認してください
 - しばらく待ってから再度お試しください
-- より短い質問に変更してみてください
 
 ご不便をおかけして申し訳ありません 🙏
 """
@@ -82,11 +82,7 @@ Gemini APIからの応答が{timeout_seconds}秒以内に得られませんで�
 API_RATE_LIMIT_ERROR_MESSAGE = """
 ⏰ **APIの利用制限に達しました**
 
-現在、APIの利用制限（15回/分）に達しているため、しばらくお待ちください。
-
-**対処法：**
-- 約10秒〜1分程度お待ちいただいてから、再度お試しください
-- デモモードでは1分間に15回までリクエスト可能です
+現在、APIの利用制限に達しているため、約10秒〜1分程度お待ちいただいてから、再度お試しください.
 
 ご不便をおかけして申し訳ありません 🙏
 """
@@ -97,9 +93,8 @@ STRUCTURE_GENERATION_TIMEOUT_ERROR_MESSAGE = """
 3D立体構造の生成が{timeout_seconds}秒以内に完了しませんでした。
 
 **対処法：**
-- よりシンプルな分子を試してみてください
+- もう一度試してみてください
 - 分子が複雑すぎる可能性があります
-- ページを再読み込みして再度お試しください
 
 ご不便をおかけして申し訳ありません 🙏
 """
@@ -1073,7 +1068,7 @@ if user_input and not st.session_state.smiles_error_occurred:
         st.write(user_input)
 
     # Get AI response with loading spinner
-    with st.spinner("AI (Gemini) に問い合わせ中..."):
+    with st.spinner(f"AI (`{GEMINI_MODEL_NAME}`) に問い合わせ中..."):
         try:
             response_text = get_gemini_response(user_input)
             if response_text:
