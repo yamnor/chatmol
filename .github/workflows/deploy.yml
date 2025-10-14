@@ -12,7 +12,7 @@ jobs:
       USER_NAME: yamnor
       APP_PATH: ~/apps/chatmol
       SERVICE_NAME: chatmol.service
-      PIP_INSTALL: source ~/opt/miniconda3/etc/profile.d/conda.sh && conda activate chatmol && pip install -r requirements.txt && conda deactivate
+      PIP_INSTALL: source ~/opt/miniconda3/etc/profile.d/conda.sh && conda activate chatmol && pip install -r requirements.txt
     steps:
       - name: Setup SSH Key
         uses: webfactory/ssh-agent@v0.8.0
@@ -27,8 +27,7 @@ jobs:
           script: |
             cd ${{ env.APP_PATH }}
             git pull
-            # ${{ env.PIP_INSTALL }}
-            # unset CONDA_PREFIX
-            # unset CONDA_DEFAULT_ENV
-            # export PATH="/usr/local/bin:/usr/bin:/bin"
-            sudo systemctl restart ${{ env.SERVICE_NAME }}
+            ${{ env.PIP_INSTALL }}
+            sudo systemctl restart ${{ env.SERVICE_NAME }} || echo "Service restart failed, trying alternative method"
+            # Alternative: restart using service command if systemctl fails
+            sudo service ${{ env.SERVICE_NAME }} restart || echo "Service restart failed"
