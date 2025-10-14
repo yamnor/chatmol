@@ -28,6 +28,3 @@ jobs:
             cd ${{ env.APP_PATH }}
             git pull
             ${{ env.PIP_INSTALL }}
-            sudo systemctl restart ${{ env.SERVICE_NAME }} || echo "Service restart failed, trying alternative method"
-            # Alternative: restart using service command if systemctl fails
-            sudo service ${{ env.SERVICE_NAME }} restart || echo "Service restart failed"
