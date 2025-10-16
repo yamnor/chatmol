@@ -1,7 +1,8 @@
 streamlit
 rdkit
-google-generativeai
+google-genai
 py3Dmol
 streamlit-screen-stats
 streamlit-local-storage
 streamlit-browser-session-storage
+pubchempy

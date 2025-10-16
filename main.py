@@ -10,13 +10,19 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 import streamlit as st
 import streamlit.components.v1 as components
 
-import google.generativeai as genai
+# import google.generativeai as genai
+# from google.genai import types
+
+from google import genai
+from google.genai import types
+
 import py3Dmol
+import pubchempy as pcp
 
 from st_screen_stats import WindowQueryHelper
 
 from rdkit import Chem
-from rdkit.Chem import AllChem, Descriptors
+from rdkit.Chem import AllChem
 
 # =============================================================================
 # CONSTANTS AND CONFIGURATION
@@ -25,14 +31,10 @@ from rdkit.Chem import AllChem, Descriptors
 # Timeout settings for preventing freezes
 API_TIMEOUT_SECONDS = 30  # Gemini API timeout
 STRUCTURE_GENERATION_TIMEOUT_SECONDS = 15  # 3D structure generation timeout
-SMILES_VALIDATION_TIMEOUT_SECONDS = 5  # SMILES validation timeout
-MOLECULAR_OBJECT_CREATION_TIMEOUT_SECONDS = 15  # Molecular object creation timeout
 
 # Molecular Size Limits
-MAX_ATOMS_FOR_SIMPLE_MOLECULE = 75
 MAX_ATOMS_FOR_3D_DISPLAY = 100
 MAX_ATOMS_FOR_3D_GENERATION = 100
-MAX_MOLECULAR_WEIGHT = 1000
 MAX_SMILES_LENGTH = 200
 
 # 3D Molecular Viewer Configuration
@@ -80,95 +82,23 @@ GitHub: [yamnor/chatmol](https://github.com/yamnor/chatmol)
 
 SYSTEM_PROMPT: str = """
 # SYSTEM
-あなたは「分子コンシェルジュ」です。
-ユーザーが求める効能・イメージ・用途・ニーズなどを 1 文でもらったら、  
-❶ それに最も関連すると考えられる既知の分子を 1 つ選び、
-❷ 分子名、SMILES 文字列、ひとこと理由 をJSON形式で返してください。
+ あなたは「分子コンシェルジュ」です。
+ ユーザーが求める効能・イメージ・用途・ニーズなどを 1 文でもらったら、
+ ❶ それに最も関連すると考える複数の候補分子を優先度の高い順に PubChem で検索して、
+ ❷ 最初に見つかった分子のみについて、その分子の日本語での名称（name）、一言の説明（description）、PubChem CID (id) を、以下のルールに厳密に従い、JSON 形式でのみ出力してください。
 
-## 重要なルール
-- **必ず実在する化学物質**のみを提案してください
-- SMILESは**標準的な形式（canonical SMILES）**で正確に記述してください
-- **立体化学情報を含む場合は、正確な立体化学記述子（@, @@, /, \）を使用してください**
-- **SMILESは必ず短く、シンプルな構造の分子のみ**を提案してください（原子数50以下を推奨）
-- **複雑な高分子や長い鎖状構造は避けてください**
-- 不確実な場合や適切な分子が見当たらない場合は、正直にその旨を伝えてください
+- 分子の検索は、必ず、「 Google Search 」を用いて「 PubChem 」で行ってください。
+- PubChem で分子が見つからなかった、または PubChem CID データを取得できなかった場合は、次の優先度の分子を検索します
+- 該当する分子を思いつかなかった、または優先度順のすべての分子が PubChem で見つからなかった場合は、「該当なし」とのみ出力します
 - ひとこと理由は、小学生にもわかるように、1 行でフレンドリーに表現してください
-- 薬理作用・香り・色など科学的根拠が薄い場合は「伝統的に～とされる」等と表現し、医学的助言は行わないでください
-- SMILESは必ず化学的に正しい構造を表すものにしてください（不確実なら提案しない）
-- **立体異性体が存在する場合は、最も一般的な立体異性体を提案してください**
-- **必ず有効なJSON形式で出力してください**
 
-出力フォーマット（JSON）：
 ```json
 {
-  "molecule_name": "<分子名>",
-  "smiles": "<SMILES 文字列>",
-  "memo": "<選んだ理由を 1 行で>"
+  "name": "<分子名>（見つかった分子の日本語での名称）",
+  "id": "<PubChem CID>（整数値）",
+  "description": "<一言の説明> （その分子を選んだ理由や性質の特徴を１行で説明）"
 }
 ```
-
-# EXAMPLES
-ユーザー: 気分をすっきりさせたい  
-アシスタント:  
-```json
-{
-  "molecule_name": "カフェイン",
-  "smiles": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
-  "memo": "中枢神経を刺激して覚醒感を高める代表的なアルカロイドだよ。"
-}
-```
-
-ユーザー: リラックスして眠りやすくなるものは？  
-アシスタント:  
-```json
-{
-  "molecule_name": "リナロール",
-  "smiles": "CC(O)(C=C)CCC=C(C)C",
-  "memo": "ラベンダーの香気成分で、アロマテラピーで鎮静が期待されるよ。"
-}
-```
-
-ユーザー: バラの香りってどんな分子？
-アシスタント:  
-```json
-{
-  "molecule_name": "ゲラニオール",
-  "smiles": "CC(C)=CCC/C(C)=C/CO",
-  "memo": "バラの香りの主成分で、甘くフローラルな香りが特徴だよ。"
-}
-```
-
-ユーザー: レモンの香り成分は？
-アシスタント:  
-```json
-{
-  "molecule_name": "リモネン",
-  "smiles": "CC1=CCC(CC1)C(=C)C",
-  "memo": "柑橘類の皮に豊富に含まれる爽やかな香りの成分だよ。"
-}
-```
-
-ユーザー: 甘い味の分子は？
-アシスタント:  
-```json
-{
-  "molecule_name": "スクロース",
-  "smiles": "O1[C@H](CO)[C@@H](O)[C@H](O)[C@@H](O)[C@H]1O[C@@]2(O[C@@H]([C@@H](O)[C@@H]2O)CO)CO",
-  "memo": "私たちが毎日使っているお砂糖の主成分で、強い甘味があるよ。"
-}
-```
-
-ユーザー：疲労回復に良い分子は？
-アシスタント:  
-```json
-{
-  "molecule_name": "クエン酸",
-  "smiles": "OC(=O)CC(O)(C(=O)O)CC(=O)O",
-  "memo": "レモンなどの柑橘類に多く含まれていて、疲労回復に効果的だよ。"
-}
-```
-
-# END OF SYSTEM
 """
 
 SAMPLE_QUERIES: Dict[str, List[str]] = {
@@ -290,18 +220,31 @@ def stream_text(text: str) -> Generator[str, None, None]:
         yield char
         time.sleep(delay)
 
-
 # =============================================================================
 # AI AND MOLECULAR PROCESSING FUNCTIONS
 # =============================================================================
 
 def get_gemini_response(user_input_text: str) -> Optional[str]:
     """Send user input to Gemini AI and retrieve molecular recommendation response."""
-    prompt = f"{SYSTEM_PROMPT}\nユーザー: {user_input_text}\nアシスタント:"
+    prompt = f"{SYSTEM_PROMPT}\n\n# USER\n{user_input_text}"
     
     def api_call():
         """Execute API call in separate thread for timeout control."""
-        return model.generate_content(prompt)
+        # Google Searchツールを設定
+        search_tool = types.Tool(
+            google_search=types.GoogleSearch()
+        )
+        
+        config = types.GenerateContentConfig(
+            tools=[search_tool]
+        )
+
+        # モデルにツールを渡してコンテンツを生成
+        return client.models.generate_content(
+            model='gemini-2.5-flash-lite',
+            contents=prompt,
+            config=config
+        )
     
     try:
         # Use ThreadPoolExecutor for timeout control
@@ -324,84 +267,54 @@ def get_gemini_response(user_input_text: str) -> Optional[str]:
             st.error(f"Gemini API へのリクエスト中にエラーが発生しました: {e}")
         return None
 
-def validate_and_normalize_smiles(smiles: str) -> Tuple[bool, Optional[str], Optional[str]]:
-    """Validate and normalize SMILES string using RDKit with timeout protection."""
-    if not smiles:
-        return False, None, "SMILESが空です"
-    
-    # Pre-validation: Check SMILES length to prevent extremely long strings
-    if len(smiles) > MAX_SMILES_LENGTH:
-        return False, None, f"SMILES文字列が長すぎます（{len(smiles)}文字）。シンプルな分子を提案してください。"
-    
-    def validate_smiles():
-        """Execute SMILES validation in separate thread for timeout control."""
+def get_smiles_from_pubchem(cid: int) -> Tuple[bool, Optional[str], Optional[str]]:
+    """Get SMILES string from PubChem using CID with timeout protection."""
+    def fetch_from_pubchem():
+        """Execute PubChem API call in separate thread for timeout control."""
         try:
-            # Try to parse SMILES with timeout protection
-            mol = Chem.MolFromSmiles(smiles)
-            if mol is None:
-                return False, None, "無効なSMILES形式です"
-            
-            # Basic sanity checks
-            num_atoms = mol.GetNumAtoms()
-            if num_atoms == 0:
-                return False, None, "原子が含まれていません"
-            if num_atoms > MAX_ATOMS_FOR_SIMPLE_MOLECULE:
-                return False, None, f"分子が大きすぎます（原子数: {num_atoms}）。シンプルな分子を提案してください。"
-            
-            # Check molecular weight
-            mol_weight = Chem.Descriptors.MolWt(mol)
-            if mol_weight > MAX_MOLECULAR_WEIGHT:
-                return False, None, f"分子量が大きすぎます（{mol_weight:.1f}）。シンプルな分子を提案してください。"
-            
-            # Stereochemistry validation and analysis
-            try:
-                # Check for stereochemistry information
-                stereo_centers = Descriptors.NumStereocenters(mol) if hasattr(Descriptors, 'NumStereocenters') else 0
-                stereo_bonds = sum(1 for bond in mol.GetBonds() if bond.GetStereo() != Chem.BondStereo.STEREONONE)
-                
-                # Validate stereochemistry if present
-                if stereo_centers > 0 or stereo_bonds > 0:
-                    # Try to assign stereochemistry to validate it
-                    Chem.AssignStereochemistry(mol, force=True, cleanIt=True)
-                    
-                    # Check if stereochemistry assignment was successful
-                    assigned_stereo = sum(1 for atom in mol.GetAtoms() 
-                                        if atom.HasProp('_CIPCode') and atom.GetProp('_CIPCode') != '')
-                    
-                    if stereo_centers > 0 and assigned_stereo == 0:
-                        return False, None, f"立体中心の立体化学情報が不完全です（{stereo_centers}個の立体中心が検出されましたが、立体化学が指定されていません）"
-            except Exception as stereo_error:
-                return False, None, f"立体化学検証エラー: {str(stereo_error)}"
-            
-            # Canonicalize SMILES with stereochemistry preservation
-            try:
-                # Use MolToSmiles with stereochemistry flags for better preservation
-                canonical_smiles = Chem.MolToSmiles(mol, canonical=True, isomericSmiles=True)
-                if not canonical_smiles:
-                    return False, None, "SMILESの正規化に失敗しました"
-            except Exception as canon_error:
-                return False, None, f"SMILES正規化エラー: {str(canon_error)}"
-            
-            return True, canonical_smiles, None
-            
+            compound = pcp.get_compounds(cid, 'cid')[0]
+            return compound.canonical_smiles
+        except IndexError:
+            return None
         except Exception as e:
-            # Catch all RDKit parsing errors
-            error_msg = str(e)
-            if "extra open parentheses" in error_msg:
-                return False, None, "SMILESの括弧の対応が取れていません。複雑すぎる分子です。"
-            elif "parsing" in error_msg.lower():
-                return False, None, f"SMILES解析エラー: {error_msg}"
-            else:
-                return False, None, f"SMILES検証中にエラー: {error_msg}"
+            return None
     
     try:
         # Use ThreadPoolExecutor for timeout control
         with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(validate_smiles)
-            return future.result(timeout=SMILES_VALIDATION_TIMEOUT_SECONDS)
+            future = executor.submit(fetch_from_pubchem)
+            smiles = future.result(timeout=10)  # 10秒タイムアウト
             
+            if smiles:
+                return True, smiles, None
+            else:
+                return False, None, "PubChemで分子が見つかりませんでした"
+                
     except FutureTimeoutError:
-        return False, None, f"SMILES検証が{SMILES_VALIDATION_TIMEOUT_SECONDS}秒以内に完了しませんでした。複雑すぎる分子の可能性があります。"
+        return False, None, "PubChem API タイムアウト（10秒）"
+    except Exception as e:
+        return False, None, f"PubChem API エラー: {str(e)}"
+
+def validate_and_normalize_smiles(smiles: str) -> Tuple[bool, Optional[str], Optional[str]]:
+    """簡素化されたSMILES検証（PubChemから取得したSMILESは基本的に有効）"""
+    if not smiles:
+        return False, None, "SMILESが空です"
+    
+    # 基本的な長さチェックのみ
+    if len(smiles) > MAX_SMILES_LENGTH:
+        return False, None, f"SMILES文字列が長すぎます（{len(smiles)}文字）"
+    
+    # PubChemから取得したSMILESは信頼性が高いため、基本的なRDKit検証のみ
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            return False, None, "無効なSMILES形式です"
+        
+        # PubChemから取得したSMILESは既に正規化されているため、そのまま使用
+        return True, smiles, None
+        
+    except Exception as e:
+        return False, None, f"SMILES検証エラー: {str(e)}"
 
 # =============================================================================
 # APPLICATION INITIALIZATION
@@ -433,7 +346,7 @@ else:
 # This ensures the app fails gracefully if API configuration is missing
 try:
     # Configure API key from Streamlit secrets
-    genai.configure(api_key=st.secrets["api_key"])
+    client = genai.Client(api_key=st.secrets["api_key"])
     
     # Get model name from Streamlit secrets with fallback
     try:
@@ -441,10 +354,7 @@ try:
     except KeyError:
         # Fallback to default model if not specified in secrets
         model_name = DEFAULT_MODEL_NAME
-    
-    # Initialize the Gemini model
-    model = genai.GenerativeModel(model_name)
-    
+
 except KeyError as e:
     if str(e) == "'api_key'":
         st.error("api_key が設定されていません。Streamlit の Secrets で設定してください。")
@@ -460,7 +370,7 @@ except Exception as e:
 # =============================================================================
 
 def parse_gemini_response(response_text: str) -> Dict[str, Union[str, None]]:
-    """Parse Gemini's JSON response to extract molecular information."""
+    """Parse Gemini's JSON response and fetch SMILES from PubChem."""
     data = {
         "name": "分子が見つかりませんでした",
         "smiles": None,
@@ -478,23 +388,43 @@ def parse_gemini_response(response_text: str) -> Dict[str, Union[str, None]]:
         json_data = _extract_json_from_response(response_text)
         
         if json_data:
-            # Parse JSON data
-            molecule_name = json_data.get("molecule_name", "").strip()
+            # Handle both new format (name, id, description) and old format (molecule_name, smiles, memo)
+            molecule_name = json_data.get("name") or json_data.get("molecule_name", "").strip()
+            cid_value = json_data.get("id")
+            description = json_data.get("description") or json_data.get("memo", "").strip()
             smiles = json_data.get("smiles", "").strip()
-            memo = json_data.get("memo", "").strip()
             
-            if molecule_name and smiles:
+            if molecule_name:
                 data["name"] = molecule_name
-                data["memo"] = memo if memo else "分子の詳細情報を取得中..."
+                data["memo"] = description if description else "分子の詳細情報を取得中..."
                 
-                # Validate and process SMILES
-                _process_smiles_data(smiles, data)
+                # If we have a CID, fetch SMILES from PubChem
+                if cid_value is not None:
+                    try:
+                        # Convert to integer if it's a string
+                        if isinstance(cid_value, str):
+                            cid = int(cid_value.strip())
+                        else:
+                            cid = int(cid_value)
+                        
+                        success, pubchem_smiles, error_msg = get_smiles_from_pubchem(cid)
+                        
+                        if success and pubchem_smiles:
+                            data["smiles"] = pubchem_smiles
+                            _create_molecular_objects(pubchem_smiles, data)
+                        else:
+                            data["memo"] = f"申し訳ありません。PubChemから分子データを取得できませんでした（{error_msg}）。"
+                            
+                    except (ValueError, TypeError):
+                        data["memo"] = "申し訳ありません。無効なPubChem CIDが返されました。"
+                
+                # Fallback to direct SMILES if available (for backward compatibility)
+                elif smiles:
+                    _process_smiles_data(smiles, data)
+                else:
+                    data["memo"] = "申し訳ありません。PubChem CIDまたはSMILESを取得できませんでした。"
             else:
-                # Handle incomplete JSON response
-                if not molecule_name:
-                    data["memo"] = "申し訳ありません。分子名を取得できませんでした。"
-                elif not smiles:
-                    data["memo"] = "申し訳ありません。SMILES文字列を取得できませんでした。"
+                data["memo"] = "申し訳ありません。分子名を取得できませんでした。"
         else:
             # Fallback to text parsing if JSON extraction fails
             _fallback_text_parsing(response_text, data)
@@ -517,21 +447,23 @@ def _extract_json_from_response(response_text: str) -> Optional[Dict]:
             json_str = match.group(1)
             return json.loads(json_str)
         
-        # Look for JSON without code blocks - more flexible pattern
-        json_pattern = r'(\{[^{}]*"molecule_name"[^{}]*"smiles"[^{}]*"memo"[^{}]*\})'
+        # Look for JSON with new format (name, id, description)
+        json_pattern = r'(\{[^{}]*"name"[^{}]*"id"[^{}]*"description"[^{}]*\})'
         match = re.search(json_pattern, response_text, re.DOTALL)
         
         if match:
             json_str = match.group(1)
             return json.loads(json_str)
         
-        # Try to find any JSON object containing molecule_name
-        json_pattern = r'(\{[^{}]*"molecule_name"[^{}]*\})'
+        # Try to find any JSON object containing name
+        json_pattern = r'(\{[^{}]*"name"[^{}]*\})'
         match = re.search(json_pattern, response_text, re.DOTALL)
         
         if match:
             json_str = match.group(1)
-            return json.loads(json_str)
+            parsed = json.loads(json_str)
+            if isinstance(parsed, dict) and "name" in parsed:
+                return parsed
         
         # Try to find any JSON object in the response
         json_pattern = r'(\{[^{}]*\})'
@@ -540,7 +472,7 @@ def _extract_json_from_response(response_text: str) -> Optional[Dict]:
         for json_str in matches:
             try:
                 parsed = json.loads(json_str)
-                if isinstance(parsed, dict) and "molecule_name" in parsed:
+                if isinstance(parsed, dict) and ("name" in parsed or "molecule_name" in parsed):
                     return parsed
             except json.JSONDecodeError:
                 continue
@@ -586,11 +518,7 @@ def _process_smiles_data(smiles: str, data: Dict[str, Union[str, None]]) -> None
         data["mol"] = None
         data["mol_with_h"] = None
         data["properties"] = None
-        data["memo"] = f"申し訳ありません。提案された分子のSMILESに問題がありました（{error_msg}）。別の分子をお探ししましょうか？"
-        
-        # Show error message and stop processing
-        st.error(f"⚠️ SMILES検証エラー: {error_msg}")
-        st.error(f"無効なSMILES: {smiles[:100]}{'...' if len(smiles) > 100 else ''}")
+        data["memo"] = f"申し訳ありません。分子データの処理に問題がありました（{error_msg}）。別の分子をお探ししましょうか？"
         
         # Set session state to prevent further processing
         if "smiles_error_occurred" not in st.session_state:
@@ -599,11 +527,7 @@ def _process_smiles_data(smiles: str, data: Dict[str, Union[str, None]]) -> None
 def _create_molecular_objects(canonical_smiles: str, data: Dict[str, Union[str, None]]) -> None:
     """Create molecular objects and calculate properties with enhanced error handling."""
     try:
-        # Additional validation before creating molecular objects
-        if not canonical_smiles or len(canonical_smiles) > MAX_SMILES_LENGTH:
-            raise ValueError("SMILES文字列が無効または長すぎます")
-        
-        # Create molecular object with additional error handling
+        # Create molecular object (PubChem SMILESは既に検証済み)
         data["mol"] = Chem.MolFromSmiles(canonical_smiles)
         if data["mol"] is None:
             raise ValueError("SMILESから分子オブジェクトの作成に失敗しました")
