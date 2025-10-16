@@ -31,6 +31,7 @@ from rdkit.Chem import AllChem
 # Timeout settings for preventing freezes
 API_TIMEOUT_SECONDS = 30  # Gemini API timeout
 STRUCTURE_GENERATION_TIMEOUT_SECONDS = 15  # 3D structure generation timeout
+PUBCHEM_3D_TIMEOUT_SECONDS = 10  # PubChem 3D record fetch timeout
 
 # Molecular Size Limits
 MAX_ATOMS_FOR_3D_DISPLAY = 100
@@ -54,14 +55,6 @@ CHAT_INPUT_MAX_CHARS = 25
 # Default AI Model Configuration
 DEFAULT_MODEL_NAME = "gemini-2.5-flash-lite"
 
-ABOUT_MESSAGE: str = """
-「チョコレートの成分は？」「肌を美しく保ちたい」「スパイシーな香りが欲しい」、そんな質問・疑問・要望に応えてくれる AI 分子コンシェルジェだよ。
-
-AI と対話しながら、分子の世界を探索してみよう！
-
-:material/warning: 注意： 出力される分子の情報は、正しくない・間違っていることがあります。
-"""
-
 # Announcement Configuration
 ANNOUNCEMENT_MESSAGE: str = """
 [![サイエンスアゴラ2025](https://i.gyazo.com/208ecdf2f06260f4d90d58ae291f0104.png)](https://yamlab.jp/sciago2025)
@@ -84,10 +77,11 @@ SYSTEM_PROMPT: str = """
 # SYSTEM
  あなたは「分子コンシェルジュ」です。
  ユーザーが求める効能・イメージ・用途・ニーズなどを 1 文でもらったら、
- ❶ それに最も関連すると考える複数の候補分子を優先度の高い順に PubChem で検索して、
- ❷ 最初に見つかった分子のみについて、その分子の日本語での名称（name）、一言の説明（description）、PubChem CID (id) を、以下のルールに厳密に従い、JSON 形式でのみ出力してください。
+ (1) それに最も関連すると考える複数の候補分子を優先度の高い順に PubChem で検索して、
+ (2) 最初に見つかった分子のみについて、その分子の日本語での名称（name）、一言の説明（description）、PubChem CID (id) を、以下のルールに厳密に従い、JSON 形式でのみ出力してください。
 
-- 分子の検索は、必ず、「 Google Search 」を用いて「 PubChem 」で行ってください。
+- 分子の検索は、必ず、「 Google Search 」を用いて、PubChem のページ「 https://pubchem.ncbi.nlm.nih.gov/compound/<分子名（英語名称）> 」で行ってください
+- 分子名は、必ず、英語名称で検索してください。日本語名称では検索できません。
 - PubChem で分子が見つからなかった、または PubChem CID データを取得できなかった場合は、次の優先度の分子を検索します
 - 該当する分子を思いつかなかった、または優先度順のすべての分子が PubChem で見つからなかった場合は、「該当なし」とのみ出力します
 - ひとこと理由は、小学生にもわかるように、1 行でフレンドリーに表現してください
@@ -211,14 +205,6 @@ def generate_random_samples() -> List[str]:
     else:
         return []
 
-def stream_text(text: str) -> Generator[str, None, None]:
-    """Stream text character by character with adaptive delay."""
-    # Adaptive delay based on text length
-    delay = 0.01 if len(text) < 100 else 0.005 if len(text) < 500 else 0.002
-    
-    for char in text:
-        yield char
-        time.sleep(delay)
 
 # =============================================================================
 # AI AND MOLECULAR PROCESSING FUNCTIONS
@@ -241,7 +227,7 @@ def get_gemini_response(user_input_text: str) -> Optional[str]:
 
         # モデルにツールを渡してコンテンツを生成
         return client.models.generate_content(
-            model='gemini-2.5-flash-lite',
+            model=model_name,
             contents=prompt,
             config=config
         )
@@ -377,7 +363,8 @@ def parse_gemini_response(response_text: str) -> Dict[str, Union[str, None]]:
         "memo": "申し訳ありません。ご要望に合う分子を見つけることができませんでした。もう少し具体的な情報を教えていただけますか？",
         "mol": None,
         "mol_with_h": None,
-        "properties": None
+        "properties": None,
+        "cid": None
     }
     
     if not response_text:
@@ -406,6 +393,8 @@ def parse_gemini_response(response_text: str) -> Dict[str, Union[str, None]]:
                             cid = int(cid_value.strip())
                         else:
                             cid = int(cid_value)
+                        # Store CID for downstream 3D fetch
+                        data["cid"] = cid
                         
                         success, pubchem_smiles, error_msg = get_smiles_from_pubchem(cid)
                         
@@ -554,6 +543,37 @@ def _create_molecular_objects(canonical_smiles: str, data: Dict[str, Union[str, 
         # Set error state to prevent further processing
         st.session_state.smiles_error_occurred = True
 
+def get_pubchem_3d_sdf_by_cid(cid: Optional[int]) -> Optional[str]:
+    """Fetch 3D SDF from PubChem by CID with timeout protection.
+
+    Returns SDF string if available; otherwise returns None.
+    """
+    if cid is None:
+        return None
+
+    def fetch_sdf():
+        try:
+            import urllib.request
+            import urllib.error
+            url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/{cid}/record/SDF/?record_type=3d"
+            req = urllib.request.Request(url, headers={"User-Agent": "chatmol/1.0"})
+            with urllib.request.urlopen(req, timeout=PUBCHEM_3D_TIMEOUT_SECONDS) as resp:
+                data_bytes = resp.read()
+                sdf_text = data_bytes.decode("utf-8", errors="ignore")
+                # Basic sanity check for SDF content
+                if sdf_text and "M  END" in sdf_text:
+                    return sdf_text
+                return None
+        except Exception:
+            return None
+
+    try:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(fetch_sdf)
+            return future.result(timeout=PUBCHEM_3D_TIMEOUT_SECONDS + 2)
+    except Exception:
+        return None
+
 def get_molecule_structure_3d_sdf(mol_with_h) -> Optional[str]:
     """Generate 3D molecular structure from molecular object with timeout protection."""
     if not mol_with_h:
@@ -662,20 +682,24 @@ def _generate_3d_structure(mol_with_h) -> str:
 
 # Initialize session state variables for maintaining app state across reruns
 # This ensures the app remembers user interactions and AI responses
-if "user_query" not in st.session_state:
-    st.session_state.user_query = ""
-if "gemini_output" not in st.session_state:
-    st.session_state.gemini_output = None
-if "selected_sample" not in st.session_state:
-    st.session_state.selected_sample = ""
-if "smiles_error_occurred" not in st.session_state:
-    st.session_state.smiles_error_occurred = False
-if "random_samples" not in st.session_state:
-    st.session_state.random_samples = []
-if "current_category" not in st.session_state:
-    st.session_state.current_category = ""
-if "announcement_visible" not in st.session_state:
-    st.session_state.announcement_visible = True
+def initialize_session_state():
+    """Initialize all session state variables in one place for better maintainability."""
+    defaults = {
+        "user_query": "",
+        "gemini_output": None,
+        "selected_sample": "",
+        "smiles_error_occurred": False,
+        "random_samples": [],
+        "current_category": "",
+        "announcement_visible": True
+    }
+    
+    for key, default_value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = default_value
+
+# Initialize session state
+initialize_session_state()
 
 # Create sidebar with sample input examples
 # This provides users with inspiration and common use cases
@@ -736,19 +760,10 @@ with st.sidebar:
         st.session_state.announcement_visible = False
 
 
+
 # Display chat input field for user queries
 # This is the primary interface for user interaction
 user_input = st.chat_input(CHAT_INPUT_PLACEHOLDER, max_chars=CHAT_INPUT_MAX_CHARS)
-
-# Display promotional toast notifications (first time only)
-# This ensures users see important announcements without being intrusive
-if "first_time_shown" not in st.session_state:
-    # Show welcome message with streaming effect for better UX
-    st.chat_message("user").write("ChatMOLとは？")
-    st.chat_message("assistant").write_stream(stream_text(ABOUT_MESSAGE))
-
-    # Mark as shown to prevent repeated display
-    st.session_state.first_time_shown = True
 
 # Handle user input: either from sample selection or direct input
 # This logic determines which input source to use and processes accordingly
@@ -800,7 +815,13 @@ if st.session_state.gemini_output and not st.session_state.smiles_error_occurred
             # Generate and display 3D molecular structure
             with st.spinner("3D構造を生成中..."):
                 try:
-                    sdf_string = get_molecule_structure_3d_sdf(output_data["mol_with_h"])
+                    # Prefer PubChem-provided 3D SDF when available
+                    sdf_string = None
+                    if output_data.get("cid") is not None:
+                        sdf_string = get_pubchem_3d_sdf_by_cid(output_data.get("cid"))
+                    # Fallback to RDKit 3D embedding
+                    if not sdf_string:
+                        sdf_string = get_molecule_structure_3d_sdf(output_data["mol_with_h"])
                 except Exception as e:
                     st.error(f"3D構造生成中にエラーが発生しました: {e}")
                     sdf_string = None
