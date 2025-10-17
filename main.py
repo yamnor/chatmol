@@ -81,7 +81,7 @@ class Config:
     # Responsive viewer size based on window size
     VIEWER = {
         'width_pc': 700,
-        'height_pc': 400,
+        'height_pc': 600,
         'width_mobile': 340,
         'height_mobile': 200,
         'zoom_min': 0.1,
