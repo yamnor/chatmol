@@ -143,15 +143,15 @@ class AIPrompts:
     MOLECULAR_SEARCH: str = """
 # SYSTEM
  あなたは「分子コンシェルジュ」です。
- ユーザーが求める効能・イメージ・用途・ニーズなどを 1 文でもらったら、
- (1) それに最も関連すると考える複数の候補分子を優先度の高い順に PubChem で検索して、
- (2) 最初に見つかった分子のみについて、その分子の日本語での名称（name）、一言の説明（description）、PubChem CID (id) を、以下のルールに厳密に従い、JSON 形式でのみ出力してください。
+ ユーザーが求める効能・イメージ・用途・ニーズなどを一言で説明してもらったら、
+ (1) それに最も関連する・よく似ている・関係がありそうだと考える複数の候補分子を **優先度の高い順に** PubChem で検索して、
+ (2) 最初に見つかった分子のみについて、その分子の日本語での名称（name）、説明（description）、PubChem CID (id) を、以下のルールに厳密に従い、JSON 形式でのみ出力してください。
 
 - 分子の検索は、必ず、「 Google Search 」を用いて、PubChem のページ「 https://pubchem.ncbi.nlm.nih.gov/compound/<分子名（英語名称）> 」で行ってください
 - 分子名は、必ず、英語名称で検索してください。日本語名称では検索できません。
 - PubChem で分子が見つからなかった、または PubChem CID データを取得できなかった場合は、次の優先度の分子を検索します
 - 該当する分子を思いつかなかった、または優先度順のすべての分子が PubChem で見つからなかった場合は、「該当なし」とのみ出力します
-- ひとこと理由は、小学生にもわかるように、1 行でフレンドリーに表現してください
+- 説明は、小学生にもわかるように、「その分子を選んだ理由」と「その分子の性質や特徴」を２行で、絵文字も用いてフレンドリーに表現してください
 
 # USER
 {user_input}
@@ -160,7 +160,7 @@ class AIPrompts:
 {{
   "name": "<分子名>（見つかった分子の日本語での名称）",
   "id": "<PubChem CID>（整数値）",
-  "description": "<一言の説明> （その分子を選んだ理由や性質の特徴を１行で説明）"
+  "description": "<説明> （その分子を選んだ理由とその分子の性質や特徴を２行で説明）"
 }}
 ```
 """
@@ -170,7 +170,7 @@ class AIPrompts:
 # SYSTEM
 あなたは「分子コンシェルジュ」です。
 ユーザーが指定した分子「{molecule_name}」に関連する分子を探してください。
-以下の多様な観点から関連する分子を検討し、必ず指定された分子とは異なる分子を提案してください：
+以下の多様な観点から関連する分子を検討し、必ず、ユーザーが指定した分子とは異なる複数の分子を **優先度の高い順に** 提案してください：
 
 ## 関連性の観点
 1. **構造的類似性**: 同じ官能基、骨格構造、分子サイズ
@@ -192,14 +192,14 @@ class AIPrompts:
 - 分子名は、必ず、英語名称で検索してください。日本語名称では検索できません。
 - PubChem で分子が見つからなかった、または PubChem CID データを取得できなかった場合は、次の優先度の分子を検索します
 - 該当する分子を思いつかなかった、または優先度順のすべての分子が PubChem で見つからなかった場合は、「該当なし」とのみ出力します
-- 説明は、小学生にもわかるように、「どの観点で関連しているか」と「その分子を選んだ理由や性質の特徴」を２行でフレンドリーに表現してください
+- 説明は、小学生にもわかるように、「どの観点で関連しているか」と「その分子を選んだ理由や性質の特徴」を２行で、絵文字も用いてフレンドリーに表現してください
 - どの観点で関連しているかを説明に含めてください
 
 ```json
 {{
   "name": "<分子名>（見つかった分子の日本語での名称）",
   "id": "<PubChem CID>（整数値）",
-  "description": "<一言の説明> （どの観点で関連しているかと、その分子を選んだ理由や性質の特徴を２行で説明）"
+  "description": "<説明> （どの観点で関連しているかと、その分子を選んだ理由や性質の特徴を２行で説明）"
 }}
 ```
 """
@@ -226,13 +226,17 @@ class AIPrompts:
 - 「〜があるよ」「〜だよ」「〜だよね」など、親しみやすい口調で説明してください
 - 溶解性、膜透過性、薬物動態などの分子メカニズムを、分かりやすい比喩や表現で説明してください
 - 推測であることを明記してください（「〜と考えられるよ」「〜の可能性があるよ」など）
+- 分子量、LogP、TPSA、分子複雑度、回転可能結合数などの文字は **太字** で表示してください
+- 数値は、必ず、`数値` の形式で表示してください
+- 絵文字も使って、親しみやすい口調で説明してください
+- heading は使わないでください
 
 # 出力例
 以下は出力例です。このような形式で分析結果を出力してください：
 
-**カフェイン**は分子量194.19の小さな分子で、LogPが-0.07と水に溶けやすい性質があるよ。
-TPSAが58.4と比較的高いから、体内での吸収が良くて、脳に届きやすいんだよね。
-分子複雑度が62.3と中程度で、回転可能結合が0個だから構造がしっかりしていて、特定の受容体にピンポイントで結合できるんだよね。
+**カフェイン** は **分子量** `194.19` の小さな分子で、**LogP** が `-0.07` と水に溶けやすい性質があるよ。
+**TPSA** が `58.4` と比較的高いから、体内での吸収が良くて、脳に届きやすいんだよね。
+**分子複雑度** が `62.3` と中程度で、**回転可能結合** が `0` 個だから構造がしっかりしていて、特定の受容体にピンポイントで結合できるんだよね。
 
 分析結果のみを出力してください。他の説明や補足は不要です。
 """
@@ -546,11 +550,23 @@ def get_smiles_from_pubchem(cid: int) -> Tuple[bool, Optional[str], Optional[str
     def fetch_from_pubchem():
         """Execute PubChem API call."""
         try:
-            compound = pcp.get_compounds(cid, 'cid')[0]
-            logger.info(f"Successfully fetched compound from PubChem: {compound.canonical_smiles[:50]}...")
-            return compound.canonical_smiles
-        except (IndexError, Exception) as e:
-            logger.warning(f"Error fetching compound from PubChem for CID {cid}: {str(e)}")
+            compounds = pcp.get_compounds(cid, 'cid')
+            if not compounds:
+                logger.warning(f"No compounds found in PubChem for CID {cid}")
+                return None
+            
+            compound = compounds[0]
+            if not compound.connectivity_smiles:
+                logger.warning(f"No SMILES data available for CID {cid}")
+                return None
+                
+            logger.info(f"Successfully fetched compound from PubChem: {compound.connectivity_smiles[:50]}...")
+            return compound.connectivity_smiles
+        except IndexError as e:
+            logger.warning(f"PubChem API returned empty result for CID {cid}: {str(e)}")
+            return None
+        except Exception as e:
+            logger.warning(f"PubChem API error for CID {cid}: {type(e).__name__}: {str(e)}")
             return None
     
     smiles = execute_with_timeout(
@@ -673,7 +689,7 @@ def get_detailed_molecule_info(cid: int) -> DetailedMoleculeInfo:
                 iupac_name=safe_get_attr(compound, 'iupac_name'),
                 synonyms=safe_get_attr(compound, 'synonyms', [])[:5] if safe_get_attr(compound, 'synonyms') else [],
                 description=safe_get_attr(compound, 'description'),
-                canonical_smiles=safe_get_attr(compound, 'canonical_smiles'),
+                canonical_smiles=safe_get_attr(compound, 'connectivity_smiles'),
                 isomeric_smiles=safe_get_attr(compound, 'isomeric_smiles'),
                 inchi=safe_get_attr(compound, 'inchi'),
                 inchi_key=safe_get_attr(compound, 'inchi_key'),
@@ -690,7 +706,7 @@ def get_detailed_molecule_info(cid: int) -> DetailedMoleculeInfo:
             
             return detailed_info
         except Exception as e:
-            logger.error(f"Error fetching detailed info for CID {cid}: {e}")
+            logger.error(f"PubChem detailed info error for CID {cid}: {type(e).__name__}: {str(e)}")
             return None
     
     detailed_info = execute_with_timeout(
