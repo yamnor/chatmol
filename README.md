@@ -16,10 +16,6 @@ AI と対話しながら、分子の世界を探索してみよう！
 
 出力される情報は、**正しくない・間違っている** ことがあります。
 
-- `gemini-2.5-flash` モデルでは、不正確な情報が出力されることが多いです
-- `gemini-2.5-pro` モデルにすると改善されますが、応答が遅く・コストも高くなります
-- デフォルトでは、応答が早い・コストの安い `gemini-2.5-flash-lite` を使っています
-
 ## 🚀 デモ
 
 URL: [chatmol.yamlab.app](https://chatmol.yamlab.app)
@@ -67,18 +63,7 @@ pip install -r requirements.txt
 ```toml
 # Gemini API Key
 api_key = "ここに取得した API キーを貼り付け"
-
-# Gemini Model Name (optional)
-model_name = "gemini-2.5-flash-lite"
 ```
-
-- `model_name` の設定は**オプション**です
-- 設定しない場合は、デフォルトで `gemini-2.5-flash-lite` が使用されます
-- `secrets.toml` に `model_name` を記述すれば、そちらが優先されます
-- 利用可能なモデル：
-  - `gemini-2.5-flash-lite`（デフォルト）：応答が早く、コストが安い
-  - `gemini-2.5-flash`：バランス型だが、不正確な情報が出ることがある
-  - `gemini-2.5-pro`：最も正確だが、応答が遅く、コストが高い
 
 #### 4. アプリを起動
 
@@ -96,7 +81,6 @@ streamlit run main.py
 
 - [Google Gemini](https://ai.google.dev/) - Google が開発している生成 AI モデル
 - [Streamlit](https://streamlit.io/) - Python ベースの Web フレームワーク
-- [RDKit](https://www.rdkit.org/) - 分子構造の操作と物性計算のためのツールキット
 - [py3Dmol](https://3dmol.csb.pitt.edu/) - インタラクティブな分子構造ビューア
 
 ## 👨‍💻 開発者

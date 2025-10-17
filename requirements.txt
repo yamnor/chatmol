@@ -1,5 +1,4 @@
 streamlit
-rdkit
 google-genai
 py3Dmol
 streamlit-screen-stats
