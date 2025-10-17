@@ -82,7 +82,7 @@ class Config:
     VIEWER = {
         'width_pc': 700,
         'height_pc': 400,
-        'width_mobile': 280,
+        'width_mobile': 340,
         'height_mobile': 200,
         'zoom_min': 0.1,
         'zoom_max': 50,
