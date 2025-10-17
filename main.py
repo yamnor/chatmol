@@ -67,7 +67,7 @@ class Config:
     
     # Random sample configuration
     RANDOM_QUERY = {
-        'count': 20,  # Number of random samples to display
+        'count': 30,  # Number of random samples to display
         'columns': 2,  # Number of columns for random samples
     }
     
