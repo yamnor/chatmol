@@ -42,13 +42,6 @@ class DetailedMoleculeInfo:
     hbond_donor_count: Optional[int]  # Number of H-bond donors
     hbond_acceptor_count: Optional[int]  # Number of H-bond acceptors
     charge: Optional[int]  # Total charge
-    covalent_unit_count: Optional[int]  # Covalent unit count
-    volume_3d: Optional[float]  # 3D volume
-    conformer_count_3d: Optional[int]  # 3D conformer count
-    feature_donor_count_3d: Optional[int]  # 3D H-bond donor count
-    feature_acceptor_count_3d: Optional[int]  # 3D H-bond acceptor count
-    feature_hydrophobe_count_3d: Optional[int]  # 3D hydrophobic feature count
-    feature_ring_count_3d: Optional[int]  # 3D ring count
     xyz_data: Optional[str]  # XYZ coordinate data for 3D visualization
 
 # =============================================================================
@@ -68,6 +61,26 @@ class Config:
     RANDOM_QUERY = {
         'count': 30,  # Number of random samples to display
         'columns': 2,  # Number of columns for random samples
+    }
+    
+    # Cache configuration
+    CACHE = {
+        'enabled': True,  # Enable/disable cache functionality (can be overridden by secrets.toml)
+        'base_directory': 'cache',  # Base cache directory name
+        'max_size_mb': 100,  # Maximum cache size in MB
+        'max_age_days': 360,  # Maximum age of cache entries in days
+        'data_sources': {
+            'pubchem': {
+                'enabled': True,
+                'directory': 'pubchem',
+                'max_age_days': 360,
+            },
+            'psi4': {
+                'enabled': True,
+                'directory': 'psi4',
+                'max_age_days': 360,  # Shorter for AI responses
+            },
+        }
     }
         
     # 3D Molecular Viewer Configuration
@@ -96,9 +109,7 @@ class Config:
         'invalid_data': "無効なデータが返されました。",
         
         # Molecular processing errors
-        'processing_error': "分子の処理中にエラーが発生しました。",
-        'structure_error': "3D構造の生成に失敗しました。",
-        'molecule_too_large': "分子が大きすぎます（原子数: {num_atoms}）。",
+        'processing_error': "分子データの処理中にエラーが発生しました。",
         
         # General errors
         'parse_error': "データの解析に失敗しました。",
@@ -204,7 +215,8 @@ class AIPrompts:
 
 1. **物理化学的性質**: LogP、TPSA、分子量などから推測される溶解性、膜透過性、薬物動態
 2. **構造的特徴**: 分子複雑度、回転可能結合数から推測される立体構造の柔軟性、受容体選択性
-3. **分子メカニズム**: 上記の性質から推測される生体内での作用メカニズムや分子標的への結合様式
+3. **水素結合特性**: 水素結合供与体数と水素結合受容体数から推測される分子間相互作用、溶解性、膜透過性、分子標的への結合への影響
+4. **分子メカニズム**: 上記の性質から推測される生体内での作用メカニズムや分子標的への結合様式
 
 # 出力形式
 - ケモインフォマティクスの観点から科学的に分析してください
@@ -212,21 +224,19 @@ class AIPrompts:
 - 「〜があるよ」「〜だよ」「〜だよね」など、親しみやすい口調で説明してください
 - 溶解性、膜透過性、薬物動態などの分子メカニズムを、分かりやすい比喩や表現で説明してください
 - 推測であることを明記してください（「〜と考えられるよ」「〜の可能性があるよ」など）
-- 分子量、LogP、TPSA、分子複雑度、回転可能結合数などの文字は **太字** で表示してください
+- 分子量、重原子数、LogP、TPSA、分子複雑度、水素結合供与体数、水素結合受容体数、回転可能結合数などの文字は **太字** で表示してください
 - 数値は、必ず、`数値` の形式で表示してください
 - 絵文字も使って、親しみやすい口調で説明してください
 - heading は使わないでください
+- 分析結果のみを出力してください。他の説明や補足は不要です
 
 # 出力例
-以下は出力例です。このような形式で分析結果を出力してください：
-
 **カフェイン** は **分子量** `194.19` の小さな分子で、**LogP** が `-0.07` と水に溶けやすい性質があるよ。
 **TPSA** が `58.4` と比較的高いから、体内での吸収が良くて、脳に届きやすいんだよね。
 **分子複雑度** が `62.3` と中程度で、**回転可能結合** が `0` 個だから構造がしっかりしていて、特定の受容体にピンポイントで結合できるんだよね。
-
-分析結果のみを出力してください。他の説明や補足は不要です。
+**水素結合供与体数** が `0` 個で、**水素結合受容体数** が `3` 個だから、水素結合による分子間相互作用が弱く、水に溶けやすい性質があるんだよね。
+この分子は、体内での吸収が良くて、脳に届きやすいんだよね。
 """
-
 
 # Sample queries organized by category for readability
 SAMPLE_QUERIES: List[str] = [
@@ -284,7 +294,6 @@ SAMPLE_QUERIES: List[str] = [
     "🧴 シャンプーの成分は？",
     "🧼 石鹸の成分は？",
     "👕 柔軟剤の成分は？",
-    "🌬️ 消臭剤の成分は？",
     
     # 💪 スポーツ・運動
     "💪 筋肉を鍛えたい",
@@ -318,7 +327,9 @@ SAMPLE_QUERIES: List[str] = [
     "🌟 若々しさを維持したい",
     "💇 髪の毛を健康にしたい",
     "🛡️ シミを防ぎたい",
-    "💧 肌の潤いを保ちたい"
+    "💧 肌の潤いを保ちたい",
+
+    "🪲 ホタルが光るのはなぜ？",
 ]
 
 # =============================================================================
@@ -368,7 +379,6 @@ class ErrorHandler:
             'molecule_not_found': Config.ERROR_MESSAGES['molecule_not_found'],
             'invalid_data': Config.ERROR_MESSAGES['invalid_data'],
             'processing_error': Config.ERROR_MESSAGES['processing_error'],
-            'structure_error': Config.ERROR_MESSAGES['structure_error'],
             'parse_error': Config.ERROR_MESSAGES['parse_error'],
             'display_error': Config.ERROR_MESSAGES['display_error'],
             'no_data': Config.ERROR_MESSAGES['no_data'],
@@ -453,6 +463,247 @@ def generate_random_queries() -> List[str]:
     else:
         return []
 
+
+# =============================================================================
+# CACHE MANAGEMENT
+# =============================================================================
+
+import os
+import hashlib
+from datetime import datetime, timedelta
+
+class CacheManager:
+    """Manages local cache for multiple data sources."""
+    
+    def __init__(self):
+        """Initialize cache manager."""
+        self.base_cache_dir = Config.CACHE['base_directory']
+        self.max_size_mb = Config.CACHE['max_size_mb']
+        self.max_age_days = Config.CACHE['max_age_days']
+        self.data_sources = Config.CACHE['data_sources']
+        self._ensure_cache_directories()
+    
+    def _ensure_cache_directories(self):
+        """Ensure cache directories exist for all data sources."""
+        if not os.path.exists(self.base_cache_dir):
+            os.makedirs(self.base_cache_dir)
+            logger.info(f"Created base cache directory: {self.base_cache_dir}")
+        
+        # Create subdirectories for each data source
+        for source_name, source_config in self.data_sources.items():
+            if source_config['enabled']:
+                source_dir = os.path.join(self.base_cache_dir, source_config['directory'])
+                if not os.path.exists(source_dir):
+                    os.makedirs(source_dir)
+                    logger.info(f"Created cache directory for {source_name}: {source_dir}")
+    
+    def _get_data_source_config(self, data_source: str) -> Optional[Dict]:
+        """Get configuration for specific data source."""
+        return self.data_sources.get(data_source)
+    
+    def _get_cache_directory(self, data_source: str) -> Optional[str]:
+        """Get cache directory for specific data source."""
+        config = self._get_data_source_config(data_source)
+        if not config or not config['enabled']:
+            return None
+        return os.path.join(self.base_cache_dir, config['directory'])
+    
+    def _normalize_cache_key(self, compound_name: str) -> str:
+        """Normalize compound name for cache key."""
+        # Convert to lowercase, strip whitespace, remove common suffixes
+        normalized = compound_name.lower().strip()
+        normalized = normalized.replace(" acid", "").replace(" salt", "")
+        # Create a safe filename by replacing special characters
+        safe_key = re.sub(r'[^\w\-_]', '_', normalized)
+        return safe_key
+    
+    def _get_cache_file_path(self, data_source: str, cache_key: str) -> Optional[str]:
+        """Get cache file path for given data source and key."""
+        cache_dir = self._get_cache_directory(data_source)
+        if not cache_dir:
+            return None
+        return os.path.join(cache_dir, f"{cache_key}.json")
+    
+    def _is_cache_valid(self, cache_file_path: str, data_source: str) -> bool:
+        """Check if cache file is valid (exists and not expired)."""
+        if not os.path.exists(cache_file_path):
+            return False
+        
+        # Get data source specific max age
+        config = self._get_data_source_config(data_source)
+        max_age_days = config.get('max_age_days', self.max_age_days) if config else self.max_age_days
+        
+        # Check age
+        file_time = datetime.fromtimestamp(os.path.getmtime(cache_file_path))
+        age = datetime.now() - file_time
+        if age > timedelta(days=max_age_days):
+            logger.info(f"Cache expired for {cache_file_path}")
+            return False
+        
+        return True
+    
+    def get_cached_data(self, compound_name: str, data_source: str = 'pubchem') -> Optional[Tuple[Optional[DetailedMoleculeInfo], Optional[int]]]:
+        """Get cached data for compound from specific data source."""
+        if not Config.CACHE['enabled']:
+            return None
+        
+        cache_key = self._normalize_cache_key(compound_name)
+        cache_file_path = self._get_cache_file_path(data_source, cache_key)
+        
+        if not cache_file_path or not self._is_cache_valid(cache_file_path, data_source):
+            return None
+        
+        try:
+            with open(cache_file_path, 'r', encoding='utf-8') as f:
+                cache_data = json.load(f)
+            
+            # Reconstruct DetailedMoleculeInfo object
+            detailed_info = DetailedMoleculeInfo(**cache_data['detailed_info'])
+            cid = cache_data.get('cid')
+            
+            logger.info(f"Cache hit for compound: {compound_name} (source: {data_source})")
+            return detailed_info, cid
+            
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            logger.warning(f"Invalid cache data for {compound_name}: {e}")
+            # Remove invalid cache file
+            try:
+                os.remove(cache_file_path)
+            except OSError:
+                pass
+            return None
+        except Exception as e:
+            logger.error(f"Error reading cache for {compound_name}: {e}")
+            return None
+    
+    def save_cached_data(self, compound_name: str, detailed_info: DetailedMoleculeInfo, cid: int, data_source: str = 'pubchem'):
+        """Save data to cache for specific data source."""
+        if not Config.CACHE['enabled']:
+            return
+        
+        cache_key = self._normalize_cache_key(compound_name)
+        cache_file_path = self._get_cache_file_path(data_source, cache_key)
+        
+        if not cache_file_path:
+            logger.warning(f"Cannot save cache for {data_source}: data source disabled")
+            return
+        
+        try:
+            # Convert DetailedMoleculeInfo to dictionary
+            cache_data = {
+                'compound_name': compound_name,
+                'cache_key': cache_key,
+                'data_source': data_source,
+                'timestamp': datetime.now().isoformat(),
+                'cid': cid,
+                'detailed_info': {
+                    'molecular_formula': detailed_info.molecular_formula,
+                    'molecular_weight': detailed_info.molecular_weight,
+                    'iupac_name': detailed_info.iupac_name,
+                    'synonyms': detailed_info.synonyms,
+                    'description': detailed_info.description,
+                    'inchi': detailed_info.inchi,
+                    'inchi_key': detailed_info.inchi_key,
+                    'xlogp': detailed_info.xlogp,
+                    'tpsa': detailed_info.tpsa,
+                    'complexity': detailed_info.complexity,
+                    'rotatable_bond_count': detailed_info.rotatable_bond_count,
+                    'heavy_atom_count': detailed_info.heavy_atom_count,
+                    'hbond_donor_count': detailed_info.hbond_donor_count,
+                    'hbond_acceptor_count': detailed_info.hbond_acceptor_count,
+                    'charge': detailed_info.charge,
+                    'xyz_data': detailed_info.xyz_data,
+                }
+            }
+            
+            with open(cache_file_path, 'w', encoding='utf-8') as f:
+                json.dump(cache_data, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"Cached data for compound: {compound_name} (source: {data_source})")
+            
+        except Exception as e:
+            logger.error(f"Error saving cache for {compound_name}: {e}")
+    
+    def clear_cache(self, data_source: str = None):
+        """Clear cache files for specific data source or all sources."""
+        try:
+            if data_source:
+                # Clear specific data source
+                cache_dir = self._get_cache_directory(data_source)
+                if cache_dir and os.path.exists(cache_dir):
+                    for filename in os.listdir(cache_dir):
+                        if filename.endswith('.json'):
+                            file_path = os.path.join(cache_dir, filename)
+                            os.remove(file_path)
+                    logger.info(f"Cache cleared for data source: {data_source}")
+            else:
+                # Clear all cache directories
+                if os.path.exists(self.base_cache_dir):
+                    for root, dirs, files in os.walk(self.base_cache_dir):
+                        for filename in files:
+                            if filename.endswith('.json'):
+                                file_path = os.path.join(root, filename)
+                                os.remove(file_path)
+                    logger.info("All cache cleared successfully")
+        except Exception as e:
+            logger.error(f"Error clearing cache: {e}")
+    
+    def get_cache_stats(self, data_source: str = None) -> Dict[str, Any]:
+        """Get cache statistics for specific data source or all sources."""
+        try:
+            if data_source:
+                # Stats for specific data source
+                cache_dir = self._get_cache_directory(data_source)
+                if not cache_dir or not os.path.exists(cache_dir):
+                    return {'count': 0, 'size_mb': 0, 'files': []}
+                
+                files = []
+                total_size = 0
+                
+                for filename in os.listdir(cache_dir):
+                    if filename.endswith('.json'):
+                        file_path = os.path.join(cache_dir, filename)
+                        file_size = os.path.getsize(file_path)
+                        file_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+                        
+                        files.append({
+                            'name': filename,
+                            'size_bytes': file_size,
+                            'modified': file_time.isoformat()
+                        })
+                        total_size += file_size
+                
+                return {
+                    'data_source': data_source,
+                    'count': len(files),
+                    'size_mb': round(total_size / (1024 * 1024), 2),
+                    'files': files
+                }
+            else:
+                # Stats for all data sources
+                all_stats = {}
+                total_count = 0
+                total_size = 0
+                
+                for source_name, source_config in self.data_sources.items():
+                    if source_config['enabled']:
+                        source_stats = self.get_cache_stats(source_name)
+                        all_stats[source_name] = source_stats
+                        total_count += source_stats['count']
+                        total_size += source_stats['size_mb']
+                
+                all_stats['total'] = {
+                    'count': total_count,
+                    'size_mb': round(total_size, 2)
+                }
+                
+                return all_stats
+        except Exception as e:
+            logger.error(f"Error getting cache stats: {e}")
+            return {'count': 0, 'size_mb': 0, 'files': []}
+
+# Initialize cache manager
+cache_manager = CacheManager()
 
 # =============================================================================
 # AI AND MOLECULAR PROCESSING FUNCTIONS
@@ -611,17 +862,24 @@ def convert_pubchem_to_xyz(compound_3d) -> Optional[str]:
         return None
 
 def get_comprehensive_molecule_data(english_name: str) -> Tuple[bool, Optional[DetailedMoleculeInfo], Optional[int], Optional[str]]:
-    """Get comprehensive molecule data from PubChem using English name."""
+    """Get comprehensive molecule data from PubChem using English name with cache support."""
     logger.info(f"Getting comprehensive data for: {english_name}")
     
-    with st.spinner("分子データを`PubChem`から取得中..."):
+    # Check cache first
+    cached_data = cache_manager.get_cached_data(english_name)
+    if cached_data:
+        detailed_info, cid = cached_data
+        logger.info(f"Using cached data for: {english_name}")
+        return True, detailed_info, cid, None
+    
+    with st.spinner("分子データを取得中...", show_time=True):
 
         # Try multiple search strategies
         compound = None
         
         # Strategy 1: Direct name search
         compound = get_compounds_by_name(english_name)
-        
+
         # Strategy 2: If direct search fails, try common variations
         if not compound:
             logger.info(f"Direct search failed for '{english_name}', trying variations...")
@@ -673,7 +931,7 @@ def get_comprehensive_molecule_data(english_name: str) -> Tuple[bool, Optional[D
                     return default
                 except (AttributeError, TypeError, ValueError):
                     return default
-            
+
             # Extract basic information
             molecular_formula = safe_get_attr(compound, 'molecular_formula')
             molecular_weight = safe_get_attr(compound, 'molecular_weight')
@@ -711,19 +969,15 @@ def get_comprehensive_molecule_data(english_name: str) -> Tuple[bool, Optional[D
                 hbond_donor_count=safe_get_int_attr(compound, 'h_bond_donor_count'),
                 hbond_acceptor_count=safe_get_int_attr(compound, 'h_bond_acceptor_count'),
                 charge=safe_get_int_attr(compound, 'charge'),
-                # Additional properties from Test.py
-                covalent_unit_count=safe_get_int_attr(compound, 'covalent_unit_count'),
-                volume_3d=safe_get_numeric_attr(compound, 'volume_3d'),
-                conformer_count_3d=safe_get_int_attr(compound, 'conformer_count_3d'),
-                feature_donor_count_3d=safe_get_int_attr(compound, 'feature_donor_count_3d'),
-                feature_acceptor_count_3d=safe_get_int_attr(compound, 'feature_acceptor_count_3d'),
-                feature_hydrophobe_count_3d=safe_get_int_attr(compound, 'feature_hydrophobe_count_3d'),
-                feature_ring_count_3d=safe_get_int_attr(compound, 'feature_ring_count_3d'),
                 # XYZ coordinate data
                 xyz_data=xyz_data,
             )
             
             logger.info(f"Successfully created detailed info for {english_name}")
+            
+            # Save to cache
+            cache_manager.save_cached_data(english_name, detailed_info, compound.cid)
+            
             return True, detailed_info, compound.cid, None
             
         except Exception as e:
@@ -740,6 +994,8 @@ def analyze_molecule_properties(detailed_info: DetailedMoleculeInfo, molecule_na
         properties_text.append(f"分子式: {detailed_info.molecular_formula}")
     if detailed_info.molecular_weight:
         properties_text.append(f"分子量: {detailed_info.molecular_weight:.2f}")
+    if detailed_info.heavy_atom_count is not None:
+        properties_text.append(f"重原子数: {detailed_info.heavy_atom_count}")
     if detailed_info.xlogp is not None:
         properties_text.append(f"LogP: {detailed_info.xlogp:.2f}")
     if detailed_info.tpsa is not None:
@@ -747,13 +1003,11 @@ def analyze_molecule_properties(detailed_info: DetailedMoleculeInfo, molecule_na
     if detailed_info.complexity is not None:
         properties_text.append(f"分子複雑度: {detailed_info.complexity:.1f}")
     if detailed_info.hbond_donor_count is not None:
-        properties_text.append(f"H結合供与体数: {detailed_info.hbond_donor_count}")
+        properties_text.append(f"水素結合供与体数: {detailed_info.hbond_donor_count}")
     if detailed_info.hbond_acceptor_count is not None:
-        properties_text.append(f"H結合受容体数: {detailed_info.hbond_acceptor_count}")
+        properties_text.append(f"水素結合受容体数: {detailed_info.hbond_acceptor_count}")
     if detailed_info.rotatable_bond_count is not None:
         properties_text.append(f"回転可能結合数: {detailed_info.rotatable_bond_count}")
-    if detailed_info.heavy_atom_count is not None:
-        properties_text.append(f"重原子数: {detailed_info.heavy_atom_count}")
     
     properties_str = "\n".join(properties_text)
     
@@ -772,7 +1026,6 @@ def analyze_molecule_properties(detailed_info: DetailedMoleculeInfo, molecule_na
     else:
         logger.warning("No response received from Gemini API for molecular analysis")
         return None
-
 
 # =============================================================================
 # APPLICATION INITIALIZATION
@@ -808,6 +1061,11 @@ try:
     
     # Use fixed model name
     model_name = Config.DEFAULT_MODEL_NAME
+    
+    # Configure cache settings from secrets.toml (optional)
+    if "cache_enabled" in st.secrets:
+        Config.CACHE['enabled'] = st.secrets["cache_enabled"]
+        logger.info(f"Cache enabled from secrets.toml: {Config.CACHE['enabled']}")
 
 except KeyError as e:
     if str(e) == "'api_key'":
@@ -948,7 +1206,8 @@ def create_error_molecule_data(error_message: str) -> Dict[str, Union[str, None,
 
 def handle_error_and_show_buttons(error_message: str, button_key: str):
     """Handle error case and show appropriate buttons."""
-    add_chat_message("assistant", error_message)
+    with st.chat_message("assistant"):
+        st.write(error_message)
     show_action_buttons(button_key)
 
 def process_molecule_query():
@@ -1005,17 +1264,6 @@ def find_and_process_similar_molecule() -> Optional[Dict]:
 
 
 
-def display_molecule_message(molecule_data: Dict[str, Union[str, None, Any]]) -> None:
-    """Display standardized molecule recommendation message."""
-    message = f"あなたにオススメする分子は「 **[{molecule_data['name']}](https://pubchem.ncbi.nlm.nih.gov/compound/{molecule_data['cid']})** 」だよ。{molecule_data['memo']}"
-    
-    with st.chat_message("assistant"):
-        st.write(message)
-
-def add_chat_message(role: str, content: str):
-    """Display a chat message without adding to history."""
-    with st.chat_message(role):
-        st.write(content)
 
 def show_initial_screen():
     """Display initial screen with greeting and random samples."""
@@ -1058,7 +1306,9 @@ def show_query_response_screen():
         else:
             st.session_state.current_molecule_data = output_data
 
-            display_molecule_message(output_data)
+            message = f"あなたにオススメする分子は「 **[{output_data['name']}](https://pubchem.ncbi.nlm.nih.gov/compound/{output_data['cid']})** 」だよ。{output_data['memo']}"
+            with st.chat_message("assistant"):
+                st.write(message)
                             
             display_molecule_3d(output_data)
             show_action_buttons("main_action")
@@ -1076,10 +1326,7 @@ def show_detail_response_screen():
         return
 
     with st.chat_message("user"):
-        st.write(f"「{get_molecule_name()}」についてもっと詳しく")
-
-    current_data = st.session_state.get("current_molecule_data", None)
-    display_molecule_3d(current_data)
+        st.write(f"「 **{get_molecule_name()}** 」について、詳しく教えて")
 
     # Execute analysis only once per screen transition
     if not st.session_state.get("detail_analysis_executed", False):
@@ -1091,7 +1338,43 @@ def show_detail_response_screen():
     cached_result = st.session_state.get("cached_analysis_result", "")
     if cached_result:
         with st.chat_message("assistant"):
+
+            # Display molecular properties metrics before analysis
+            current_data = st.session_state.get("current_molecule_data", None)
+            if current_data and current_data.get("detailed_info"):
+                detailed_info = current_data["detailed_info"]
+                
+                # Display metrics in 3 columns
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    if detailed_info.molecular_formula:
+                        st.metric("分子式", detailed_info.molecular_formula)
+                    if detailed_info.xlogp is not None:
+                        st.metric("LogP", f"{detailed_info.xlogp:.2f}")
+                    if detailed_info.hbond_donor_count is not None:
+                        st.metric("水素結合供与体数", f"{detailed_info.hbond_donor_count}")
+                
+                with col2:
+                    if detailed_info.molecular_weight:
+                        st.metric("分子量（g/mol）", f"{detailed_info.molecular_weight:.2f}")
+                    if detailed_info.tpsa:
+                        st.metric("TPSA（Å²）", f"{detailed_info.tpsa:.1f}")
+                    if detailed_info.hbond_acceptor_count is not None:
+                        st.metric("水素結合受容体数", f"{detailed_info.hbond_acceptor_count}")
+                
+                with col3:
+                    if detailed_info.heavy_atom_count is not None:
+                        st.metric("重原子数", f"{detailed_info.heavy_atom_count}")
+                    if detailed_info.complexity:
+                        st.metric("分子複雑度", f"{detailed_info.complexity:.1f}")
+                    if detailed_info.rotatable_bond_count is not None:
+                        st.metric("回転可能結合数", f"{detailed_info.rotatable_bond_count}")
+            
             st.write(cached_result)
+
+    current_data = st.session_state.get("current_molecule_data", None)
+    display_molecule_3d(current_data)
 
     show_action_buttons("detail_action")
 
@@ -1103,7 +1386,7 @@ def show_similar_response_screen():
         return
     
     with st.chat_message("user"):
-        st.write(f"「{get_molecule_name()}」に関連する分子は？")
+        st.write(f"「 {get_molecule_name()} 」に関連する分子は？")
     
     # Execute search only once per screen transition
     if not st.session_state.get("similar_search_executed", False):
@@ -1121,7 +1404,9 @@ def show_similar_response_screen():
     # Display current molecule data
     current_data = st.session_state.get("current_molecule_data", None)
     if current_data and current_data.get("xyz_data"):
-        display_molecule_message(current_data)
+        message = f"あなたにオススメする分子は「 **[{current_data['name']}](https://pubchem.ncbi.nlm.nih.gov/compound/{current_data['cid']})** 」だよ。{current_data['memo']}"
+        with st.chat_message("assistant"):
+            st.write(message)
         display_molecule_3d(current_data)
     
     show_action_buttons("similar_main_action")
