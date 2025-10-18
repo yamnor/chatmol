@@ -2065,7 +2065,7 @@ def parse_gemini_response(response_text: str, save_to_query_cache: bool = True) 
                         data["name"] = fallback_compound_name
                         data["name_jp"] = fallback_compound_name
                         data["name_en"] = fallback_compound_name
-                        data["memo"] = f"過去の検索結果から選んだ分子「{fallback_compound_name}」だよ！✨ {fallback_description}"
+                        data["memo"] = fallback_description
                         data["xyz_data"] = fallback_xyz_data
                         
                         # Get cached detailed info for the fallback compound
@@ -2117,7 +2117,7 @@ def parse_gemini_response(response_text: str, save_to_query_cache: bool = True) 
                             data["name"] = fallback_compound_name
                             data["name_jp"] = fallback_compound_name
                             data["name_en"] = fallback_compound_name
-                            data["memo"] = f"過去の検索結果から選んだ分子「{fallback_compound_name}」だよ！✨ {fallback_description}"
+                            data["memo"] = fallback_description
                             data["xyz_data"] = fallback_xyz_data
                             
                             # Get cached detailed info for the fallback compound
