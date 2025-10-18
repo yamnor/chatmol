@@ -3,6 +3,7 @@ import random
 import json
 import re
 import logging
+import uuid
 from typing import Dict, List, Optional, Tuple, Union, Any
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from dataclasses import dataclass
@@ -429,6 +430,8 @@ def show_action_buttons(key_prefix: str = "action") -> None:
     with col1:
         if st.button("詳しく知りたい", key=f"{key_prefix}_detail", use_container_width=True, icon="🧪", disabled=not has_cid):
             if has_cid:
+                # Log user action
+                log_user_action("detail_view")
                 # Reset analysis execution flag and clear cache to allow new analysis
                 st.session_state.detail_analysis_executed = False
                 st.session_state.cached_analysis_result = ""
@@ -438,6 +441,8 @@ def show_action_buttons(key_prefix: str = "action") -> None:
     with col2:
         if st.button("関連する分子は？", key=f"{key_prefix}_similar", use_container_width=True, icon="🔍", disabled=not has_name):
             if has_name:
+                # Log user action
+                log_user_action("similar_search")
                 # Reset search execution flag to allow new search
                 st.session_state.similar_search_executed = False
                 st.session_state.screen = "similar_response"
@@ -453,6 +458,9 @@ def show_action_buttons(key_prefix: str = "action") -> None:
 
 def reset_to_initial_state():
     """Reset the application to initial state."""
+    # End current session before resetting
+    end_current_session()
+    
     st.session_state.screen = "initial"
     st.session_state.user_query = ""
     st.session_state.selected_sample = ""
@@ -1480,8 +1488,29 @@ cache_manager = CacheManager()
 # QUERY ANALYTICS FUNCTIONS
 # =============================================================================
 
-def save_query_selection(query_text: str):
-    """Save query selection to analytics log."""
+def get_or_create_session_id():
+    """Get existing session ID or create new one."""
+    if 'analytics_session_id' not in st.session_state:
+        st.session_state.analytics_session_id = str(uuid.uuid4())
+    return st.session_state.analytics_session_id
+
+def end_current_session():
+    """End current session and prepare for new session."""
+    try:
+        # Log session end action before clearing session ID
+        if 'analytics_session_id' in st.session_state:
+            log_user_action("session_end")
+            logger.info(f"Session ended: {st.session_state.analytics_session_id}")
+        
+        # Clear current session ID
+        if 'analytics_session_id' in st.session_state:
+            del st.session_state.analytics_session_id
+            
+    except Exception as e:
+        logger.error(f"Error ending session: {e}")
+
+def log_user_action(action_type: str):
+    """Log user action to analytics."""
     try:
         analytics_file = os.path.join(Config.CACHE['base_directory'], 'analytics', 'query_log.json')
         
@@ -1493,23 +1522,91 @@ def save_query_selection(query_text: str):
             with open(analytics_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
         else:
-            data = {"selections": {}}
+            data = {"sessions": []}
         
-        # Add timestamp to query
+        # Migrate old data structure if needed
+        if "selections" in data and "sessions" not in data:
+            data = migrate_old_analytics_data(data)
+        
+        # Get current session ID
+        session_id = get_or_create_session_id()
         current_time = datetime.now().isoformat()
-        if query_text not in data["selections"]:
-            data["selections"][query_text] = []
         
-        data["selections"][query_text].append(current_time)
+        # Find existing session or create new one
+        session_found = False
+        for session in data["sessions"]:
+            if session["session_id"] == session_id:
+                session["actions"].append({
+                    "action_type": action_type,
+                    "timestamp": current_time
+                })
+                session_found = True
+                break
+        
+        # If no existing session found, create new one
+        if not session_found:
+            # Get initial query from session state
+            initial_query = st.session_state.get("user_query", "")
+            data["sessions"].append({
+                "session_id": session_id,
+                "initial_query": initial_query,
+                "initial_timestamp": current_time,
+                "actions": [{
+                    "action_type": action_type,
+                    "timestamp": current_time
+                }]
+            })
         
         # Save updated data
         with open(analytics_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         
-        logger.info(f"Saved query selection: {query_text} at {current_time}")
+        logger.info(f"Logged action: {action_type} for session {session_id} at {current_time}")
         
     except Exception as e:
-        logger.error(f"Error saving query selection: {e}")
+        logger.error(f"Error logging user action: {e}")
+
+def migrate_old_analytics_data(data: Dict) -> Dict:
+    """Migrate old analytics data structure to new session-based structure."""
+    try:
+        sessions = []
+        
+        # Convert old selections to sessions
+        if "selections" in data:
+            for query_text, timestamps in data["selections"].items():
+                for i, timestamp in enumerate(timestamps):
+                    session_id = str(uuid.uuid4())
+                    sessions.append({
+                        "session_id": session_id,
+                        "initial_query": query_text,
+                        "initial_timestamp": timestamp,
+                        "actions": [
+                            {
+                                "action_type": "initial_query",
+                                "timestamp": timestamp
+                            }
+                        ]
+                    })
+        
+        # Create new data structure
+        new_data = {"sessions": sessions}
+        
+        # Backup old data
+        backup_file = os.path.join(Config.CACHE['base_directory'], 'analytics', 'query_log_backup.json')
+        with open(backup_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"Migrated old analytics data. Backup saved to {backup_file}")
+        return new_data
+        
+    except Exception as e:
+        logger.error(f"Error migrating analytics data: {e}")
+        return {"sessions": []}
+
+def save_query_selection(query_text: str):
+    """Save query selection to analytics log using new session-based structure."""
+    # Log the initial query as an action
+    log_user_action("initial_query")
 
 # =============================================================================
 # AI AND MOLECULAR PROCESSING FUNCTIONS
@@ -2188,6 +2285,9 @@ def process_molecule_query():
         
         # Save query selection to analytics
         save_query_selection(user_query)
+        
+        # Log query response action
+        log_user_action("query_response")
             
         response_text = search_molecule_by_query(user_query)
         if response_text:
