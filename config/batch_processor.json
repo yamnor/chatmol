@@ -1,0 +1,74 @@
+{
+  "api": {
+    "key": "AIzaSyC62-6BB4VBPuTcuQfPiRYGgw_RE_imeK4",
+    "model": "gemini-2.5-flash-lite",
+    "use_google_search": true,
+    "timeout": 10,
+    "rate_limit_per_minute": 100
+  },
+  "execution": {
+    "max_iterations": 1000,
+    "max_duration_minutes": 120,
+    "stop_on_error": false,
+    "continue_on_xyz_failure": true
+  },
+  "retry": {
+    "max_retries": 3,
+    "retry_delay_seconds": 5,
+    "exponential_backoff": true
+  },
+  "logging": {
+    "log_level": "INFO",
+    "log_file": "data/output/logs/batch_execution.log",
+    "detailed_log_file": "data/output/logs/batch_detailed.json",
+    "console_output": true
+  },
+  "cache": {
+    "enabled": true,
+    "base_directory": "cache",
+    "data_sources": {
+      "pubchem": {
+        "enabled": true,
+        "directory": "pubchem",
+        "max_age_days": 36500,
+        "max_items_per_file": 1
+      },
+      "queries": {
+        "enabled": true,
+        "directory": "queries",
+        "max_age_days": 36500,
+        "max_items_per_file": 10
+      },
+      "descriptions": {
+        "enabled": true,
+        "directory": "descriptions",
+        "max_age_days": 36500,
+        "max_items_per_file": 5
+      },
+      "analysis": {
+        "enabled": true,
+        "directory": "analysis",
+        "max_age_days": 180,
+        "max_items_per_file": 5
+      },
+      "similar": {
+        "enabled": true,
+        "directory": "similar",
+        "max_age_days": 180,
+        "max_items_per_file": 10,
+        "max_items_per_data": 5
+      },
+      "failed_molecules": {
+        "enabled": true,
+        "directory": "failed_molecules",
+        "max_age_days": 365,
+        "max_items_per_file": 1000
+      }
+    }
+  },
+  "output": {
+    "results_directory": "data/output/results",
+    "include_statistics": true,
+    "export_format": "json"
+  }
+}

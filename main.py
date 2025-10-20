@@ -64,7 +64,7 @@ class Config:
     
     # Cache configuration
     CACHE = {
-        'enabled': True,  # Enable/disable cache functionality (can be overridden by secrets.toml)
+        'enabled': False,  # Enable/disable cache functionality (can be overridden by secrets.toml)
         'base_directory': 'cache',  # Base cache directory name
         'max_size_mb': 100,  # Maximum cache size in MB
         'max_age_days': 360,  # Maximum age of cache entries in days
@@ -77,33 +77,33 @@ class Config:
             'queries': {
                 'enabled': True,
                 'directory': 'queries',
-                'max_age_days': 36500,  # Longer retention for query statistics
-                'max_items_per_file': 25,  # Maximum number of query compounds to keep per query file
+                'max_age_days': 36500,
+                'max_items_per_file': 25,
             },
             'descriptions': {
                 'enabled': True,
                 'directory': 'descriptions',
-                'max_age_days': 36500,  # Medium retention for descriptions
-                'max_items_per_file': 25,  # Maximum number of items to keep per cache file
+                'max_age_days': 36500,
+                'max_items_per_file': 25,
             },
             'analysis': {
                 'enabled': True,
                 'directory': 'analysis',
-                'max_age_days': 180,  # Medium retention for AI-generated analysis
-                'max_items_per_file': 25,  # Maximum number of analysis results to keep per cache file
+                'max_age_days': 180,
+                'max_items_per_file': 25,
             },
             'similar': {
                 'enabled': True,
                 'directory': 'similar',
-                'max_age_days': 180,  # Medium retention for AI-generated similar molecules
-                'max_items_per_file': 50,  # Maximum number of similar molecules to keep per cache file
-                'max_items_per_data': 25,  # Maximum number of descriptions per molecule
+                'max_age_days': 180,  #
+                'max_items_per_file': 50,
+                'max_items_per_data': 25,
             },
             'failed_molecules': {
                 'enabled': True,
                 'directory': 'failed_molecules',
-                'max_age_days': 365,  # Long retention for failed molecules
-                'max_items_per_file': 1000,  # Maximum number of failed molecules to keep
+                'max_age_days': 365,
+                'max_items_per_file': 1000,
             },
         }
     }
@@ -167,100 +167,275 @@ class AIPrompts:
     
     # Molecular search prompt
     MOLECULAR_SEARCH: str = """
-# SYSTEM
-あなたは「分子コンシェルジュ」です。
-ユーザーが求める効能・イメージ・用途・ニーズなどを説明してもらったら、
-(1) それに最も関連する・関係がありそうだ・適していると考えられる候補の分子を「1 個」のみ、
-(2) その分子の日本語での名称（name_jp）、英語での名称（name_en）、説明（description）を、
-(3) 以下のルールに厳密に従い、JSON形式でのみ出力してください：
+あなたは化学分野の専門家として、学術的正確性と学習効果を維持しつつ、分子についての説明を提供する専門家です。
 
-- **重要**: 英語名（name_en）は、PubChemで検索できる具体的な分子名を選んでください。一般的な分類名（例：「脂肪酸塩」「アルカロイド」）ではなく、具体的な化合物名（例：「ステアリン酸ナトリウム」「カフェイン」）を選んでください
-- もし全く思いつかないときには、科学的な根拠のない「こじつけ」「無理矢理」「適当」でもオーケーですが、その場合は必ず、その旨を「こじつけ」「無理矢理」「適当」と明記してください
-- 該当する分子を思いつかなかった場合は、name_jpに「該当なし」とのみ出力します
-- 説明は、小学生にもわかるように、「その分子を選んだ理由」と「その分子の性質や特徴」を「２文」で、絵文字も用いてフレンドリーに表現してください
-- できれば、その分子に関連して、小学生が笑ってしまうような、ギャグ・面白い一言も追加してください
+ユーザーが求める効能・イメージ・用途・ニーズ「{user_input}」に対して、
+最も関連する・関係がありそうだ・適していると考えられる分子「1 個」のみ、下記の手順に従って、最終案を出力してください。
 
-# USER
-{user_input}
+# 手順（１）: 候補とする分子の提案
+ 
+ユーザーが求める効能・イメージ・用途・ニーズ「{user_input}」と「分子 / 化合物 / 化学物質 / 化学」の関連を、
+「Google Search」を使用して、検索してください。
+
+検索結果から、それに最も関連する・関係がありそうだ・適していると考えられる候補の分子を「1 個」のみ、提案してください。
+
+提案する分子の名称は、一般的な分類名（例：「脂肪酸塩」「アルカロイド」）ではなく、
+具体的な化合物名（例：「ステアリン酸ナトリウム」「カフェイン」）を選んでください。
+
+# 手順（２）: 情報収集
+
+手順（１）で提案した分子、および、ユーザーが求める効能・イメージ・用途・ニーズ「{user_input}」について、
+以下の優先順位で「 Google Search 」を使用して、情報を収集してください:
+
+1. **Google Scholar (https://scholar.google.com/)** - 学術論文・研究の検索
+2. **PubMed (https://pubmed.ncbi.nlm.nih.gov/)** - 医学・生命科学分野の論文データベース  
+3. **J-STAGE (https://www.jstage.jst.go.jp/)** - 日本の学術論文の検索
+4. **Wikidata (https://www.wikidata.org/)** - 英語での Wikipedia の検索
+5. **Wikipedia (https://ja.wikipedia.org/)** - 日本語での Wikipedia の検索
+
+# 手順（３）: 情報の分析 / 分子の説明
+
+ユーザーが求める効能・イメージ・用途・ニーズ「{user_input}」に対して、手順（２）で収集した情報を分析し、
+最終案とする分子について、「その分子を選んだ理由」（１文）、「その分子の性質・特徴・用途・効果」（１文）、
+「その分子についての面白い一面・豆知識・逸話・ギャグ」（１文）を、あわせて「３文」で、
+「説明（description）」を生成してください。
+
+## 説明文のルール
+
+- 小学生にも分かる内容
+- 絵文字も用いる
+—「〜だよ」「〜だね」「〜だぜ」「〜だ」「〜だって」「〜だよね」など、親しみやすい・フレンドリーな口調
+- １文は６０文字程度
+
+## 説明文の例
+
+### 例文（１）
+
+ベリーの青い色の正体はアントシアニンだよ！✨
+このキラキラした成分は、お肌を守ったり、目にも良いと言われているんだ。😋
+青や紫の食べ物に含まれていて、自然の恵みがたっぷり詰まっているんだぜ！🍇
+
+### 例文（２）
+
+GABAは、神経の興奮を抑えることで、心と体をリラックスさせる働きがあるんだ！✨ 。
+緊張やストレスを感じた時に、穏やかな気持ちへと導いてくれる、まさに「安心の分子」なんだ。
+普段のお茶や発酵食品にも含まれていて、意外と身近な存在なんだぜ。
+
+### 例文（３）
+
+カフェインは、眠気を引き起こすアデノシンという物質の働きをブロックして、私たちをシャキッと目覚めさせてくれるよ！✨。
+コーヒーやお茶に含まれていて、頭がスッキリして集中力もアップする、まさに「元気の源」。
+昔から、お茶の葉っぱやコーヒーの豆から発見されて、世界中で愛されてきた、とってもパワフルな分子なんだぜ！💪
+
+# 手順（４）: 最終案の出力
+
+最終案とする分子の「日本語での名称（name_jp）」、「英語での名称（name_en）」、「説明（description）」を、
+以下のルールに厳密に従い、「JSON 形式」で出力してください。
+
+- **重要**: 必ず指定された「JSON 形式」で出力してください。
+- **重要**: Markdown 形式やその他の形式は使用せず、JSON 構造に厳密に従って出力してください。
+- **重要**: 該当する分子がない場合は、「name_jp」に「該当なし」とのみ出力します。
+
+JSON 形式で以下の構造で出力してください
 
 ```json
 {{
-  "name_jp": "<分子名>（見つかった分子の日本語での名称）",
-  "name_en": "<分子名>（見つかった分子の英語での名称）",
-  "description": "<説明> （その分子を選んだ理由とその分子の性質や特徴を２文で説明）"
+  "name_jp": "<分子名>（分子の日本語での名称）",
+  "name_en": "<分子名>（分子の英語での名称）",
+  "description": "<説明> （分子の説明）"
 }}
 ```
 """
 
     # Similar molecule search prompt
     SIMILAR_MOLECULE_SEARCH: str = """
-# SYSTEM
-あなたは「分子コンシェルジュ」です。
-ユーザーが指定した分子「{molecule_name}」について、
-(1) それに最も関連する・関係がありそうだ・適していると考えられる候補の分子を「1 個」のみ、
-(2) その分子の日本語での名称（name_jp）、英語での名称（name_en）、説明（description）を、
-(3) 以下のルールに厳密に従い、JSON形式でのみ出力してください：
+あなたは化学分野の専門家として、学術的正確性と学習効果を維持しつつ、分子についての説明を提供する専門家です。
 
-- **重要**: 英語名（name_en）は、PubChemで検索できる具体的な分子名を選んでください。一般的な分類名（例：「脂肪酸塩」「アルカロイド」）ではなく、具体的な化合物名（例：「ステアリン酸ナトリウム」「カフェイン」）を選んでください
-- **重要**: 必ず指定された分子とは異なる分子を提案してください
-- 関連性については、下記の関連性の観点から、関連性の高い分子を選んでください
-    1. **構造的類似性**: 同じ官能基、骨格構造、分子サイズ
-    2. **機能的類似性**: 同じ作用機序、生体活性、薬理効果
-    3. **用途的類似性**: 同じ分野での利用、同じ目的での使用
-    4. **化学的類似性**: 同じ化学反応性、物理化学的性質
-    5. **生物学的類似性**: 同じ代謝経路、同じ受容体への結合
-    6. **歴史的関連性**: 同じ発見者、同じ研究グループ、同じ時代
-    7. **対照的関連性**: 相反する作用、拮抗作用、補完的効果
-    8. **進化的関連性**: 同じ生物種由来、同じ進化系統
-- もし全く思いつかないときには、科学的な根拠のない「こじつけ」「無理矢理」「適当」でもオーケーですが、その場合は必ず、その旨を「こじつけ」「無理矢理」「適当」と明記してください
-- 該当する分子を思いつかなかった場合は、name_jpに「該当なし」とのみ出力します
-- 説明は、小学生にもわかるように、「どの観点で関連しているか」と「その分子を選んだ理由や性質の特徴」を２行で、絵文字も用いてフレンドリーに表現してください
-- できれば、その分子に関連して、小学生が笑ってしまうような、ギャグ・面白い一言も追加してください
+ユーザーが指定した分子「{molecule_name}」に対して、
+最も関連する・関係がありそうだ・適していると考えられる分子「1 個」のみ、下記の手順に従って、最終案を出力してください。
+
+# 手順（１）: 候補とする分子の提案
+ 
+ユーザーが指定した分子「{molecule_name}」に対して、「Google Search」を使用して、検索してください。
+
+検索結果から、それに最も関連する・関係がありそうだ・適していると考えられる候補の分子を「1 個」のみ、提案してください。
+
+**重要**: 提案する分子は、ユーザーが指定した分子「{molecule_name}」とは異なる分子である必要があります。
+
+提案する分子の名称は、一般的な分類名（例：「脂肪酸塩」「アルカロイド」）ではなく、
+具体的な化合物名（例：「ステアリン酸ナトリウム」「カフェイン」）を選んでください。
+
+# 手順（２）: 情報収集
+
+ユーザーが指定した分子「{molecule_name}」について、
+以下の優先順位で「 Google Search 」を使用して、情報を収集してください:
+
+1. **Google Scholar (https://scholar.google.com/)** - 学術論文・研究の検索
+2. **PubMed (https://pubmed.ncbi.nlm.nih.gov/)** - 医学・生命科学分野の論文データベース  
+3. **J-STAGE (https://www.jstage.jst.go.jp/)** - 日本の学術論文の検索
+4. **Wikidata (https://www.wikidata.org/)** - 英語での Wikipedia の検索
+5. **Wikipedia (https://ja.wikipedia.org/)** - 日本語での Wikipedia の検索
+
+# 手順（３）: 情報の分析 / 分子の説明
+
+手順（２）で収集した情報を分析し、最終案とする分子について、「{molecule_name}との関係性・関係性・類似聖」（１文）、
+「その分子の性質・特徴・用途・効果」（１文）、「その分子についての面白い一面・豆知識・逸話・ギャグ」（１文）を、
+あわせて「３文」で、「説明（description）」を生成してください。
+
+## 説明文のルール
+
+- 小学生にも分かる内容
+- 絵文字も用いる
+—「〜だよ」「〜だね」「〜だぜ」「〜だ」「〜だって」「〜だよね」など、親しみやすい・フレンドリーな口調
+- １文は６０文字程度
+
+## 説明文の例
+
+### 例文（１）
+
+ネロリドールはゲラニオールと同じく植物から抽出されるテルペンで、リラックス効果があると言われているんだ🌿。
+フローラルでウッディな香りは香水や化粧品、食品にも使われ、心地よい香りを届けてくれるよ✨。
+実は、ネロリドールは植物が虫から身を守るために作る、とっても賢い成分なんだぜ🛡️！
+
+### 例文（２）
+
+ゲラニオールはファルネソールと同じテルペノイド仲間で、バラのような良い香りがするよ🌹。
+お肌に優しい化粧品や、虫よけスプレーにも使われているんだ🐝✨。
+ゲラニオールは、ミツバチが花の蜜の場所を教えるのに使う、秘密のメッセージでもあるんだぜ🐝💌。
+
+### 例文（３）
+
+イソオイゲノールは、オイゲノールと構造が似ていて、香りが少し違う仲間だよ✨。
+バニリンの原料になったり、お花の香りの香料に使われたりするんだ🌹🌿。
+実は、お肉やチーズのカビを防ぐ力もある、ちょっとすごい分子なんだぜ🛡️！。
+
+# 手順（４）: 最終案の出力
+
+最終案とする分子の「日本語での名称（name_jp）」、「英語での名称（name_en）」、「説明（description）」を、
+以下のルールに厳密に従い、「JSON 形式」で出力してください。
+
+- **重要**: 必ず指定された「JSON 形式」で出力してください。
+- **重要**: Markdown 形式やその他の形式は使用せず、JSON 構造に厳密に従って出力してください。
+- **重要**: 該当する分子がない場合は、「name_jp」に「該当なし」とのみ出力します。
+
+JSON 形式で以下の構造で出力してください
 
 ```json
 {{
-  "name_jp": "<分子名>（見つかった分子の日本語での名称）",
-  "name_en": "<分子名>（見つかった分子の英語での名称）",
-  "description": "<説明> （どの観点で関連しているかと、その分子を選んだ理由や性質の特徴を２文で説明）"
+  "name_jp": "<分子名>（分子の日本語での名称）",
+  "name_en": "<分子名>（分子の英語での名称）",
+  "description": "<説明> （分子の説明）"
 }}
 ```
 """
 
     # Molecular analysis prompt
     MOLECULAR_ANALYSIS: str = """
-# SYSTEM
-あなたは「分子コンシェルジュ」です。
-以下の分子「{molecule_name}」の化学的性質データを基に、この分子の特徴・性質・用途・効果などを分析してください。
+あなたは化学分野の専門家として、学術的正確性と学習効果を維持しつつ、分子についての説明を提供する専門家です。
+
+ユーザーが指定した分子「{molecule_name}」に対して、この分子の「化学的性質データ」を基に、
+下記の手順に従って分析し、解説文を出力してください。
 
 # 化学的性質データ
+
 {properties_str}
 
-# 分析指示
-上記の化学的性質データから、ケモインフォマティクスの観点で以下のように分析してください：
+# 手順（１）: 分析
 
-1. **物理化学的性質**: LogP、TPSA、分子量などから推測される溶解性、膜透過性、薬物動態
-2. **構造的特徴**: 分子複雑度、回転可能結合数から推測される立体構造の柔軟性、受容体選択性
-3. **水素結合特性**: 水素結合供与体数と水素結合受容体数から推測される分子間相互作用、溶解性、膜透過性、分子標的への結合への影響
-4. **分子メカニズム**: 上記の性質から推測される生体内での作用メカニズムや分子標的への結合様式
+「化学的性質データ」から、ケモインフォマティクスの観点に基づいて、以下のように分析してください：
 
-# 出力形式
-- ケモインフォマティクスの観点から科学的に分析してください
-- 分子データの具体的な数値を示しながら、3-5文程度の簡潔な説明にまとめてください
-- 「〜があるよ」「〜だよ」「〜だよね」など、親しみやすい口調で説明してください
-- 溶解性、膜透過性、薬物動態などの分子メカニズムを、分かりやすい比喩や表現で説明してください
+## 物理化学的性質
+
+- **LogP**（脂溶性指標）: 値が高いほど脂溶性が高く、細胞膜を通過しやすい。低いほど水溶性が高く、血液中で運ばれやすい
+- **TPSA**（極性表面積）: 値が小さいほど膜透過性が良く、脳関門を通過しやすい。大きいほど水溶性が高く、腎臓から排泄されやすい
+- **分子量**: 小さいほど（<500）薬物として理想的な「リピンスキーの5則」に適合し、体内での吸収・分布・代謝・排泄が良好
+- **重原子数**: 分子のサイズを示し、薬物動態や毒性に影響する
+
+## 水素結合特性
+
+- **水素結合供与体数**: 値が少ないほど膜透過性が良く、脳関門を通過しやすい
+- **水素結合受容体数**: 値が少ないほど脂溶性が高く、細胞膜を通過しやすい。多いほど水溶性が高く、血液中での安定性が高い
+
+## 構造的特徴
+
+- **分子複雑度**: 値が高いほど構造が複雑で、特定の受容体への選択性が高くなる可能性がある
+- **回転可能結合数**: 値が少ないほど構造が剛直で、受容体への結合が安定。多いほど柔軟で、複数の結合様式を取れる可能性がある
+
+
+# 手順（２）: 情報収集
+
+ユーザーが指定した分子「{molecule_name}」について、
+以下の優先順位で「 Google Search 」を使用して、情報を収集してください:
+
+1. **Google Scholar (https://scholar.google.com/)** - 学術論文・研究の検索
+2. **PubMed (https://pubmed.ncbi.nlm.nih.gov/)** - 医学・生命科学分野の論文データベース  
+3. **J-STAGE (https://www.jstage.jst.go.jp/)** - 日本の学術論文の検索
+4. **Wikidata (https://www.wikidata.org/)** - 英語での Wikipedia の検索
+5. **Wikipedia (https://ja.wikipedia.org/)** - 日本語での Wikipedia の検索
+
+# 手順（３）: 情報の分析 / 分子の説明
+
+手順（１）で分析した内容、および、手順（２）で収集した情報を分析し、ユーザーが指定した分子「{molecule_name}」について、
+データの具体的な数値を示しながら、「化学的性質データ」の化学的な解釈、
+「化学的性質データ」から推測される分子のふるまい（溶解性・膜透過性・薬物動態・分子標的への結合様式・生体内での作用メカニズムなど）、
+「その分子の性質・特徴・用途・効果・面白い一面・豆知識・逸話」を「化学的性質データ」からどのように推測できるかを、
+３〜５文程度の簡潔な説明にまとめてください。
+
+## 説明文のルール
+
+- 小学生にも分かる内容
+- 絵文字も用いる
+—「〜だよ」「〜だね」「〜だぜ」「〜だ」「〜だって」「〜だよね」など、親しみやすい・フレンドリーな口調
 - 推測であることを明記してください（「〜と考えられるよ」「〜の可能性があるよ」など）
 - 分子量、重原子数、LogP、TPSA、分子複雑度、水素結合供与体数、水素結合受容体数、回転可能結合数などの文字は **太字** で表示してください
 - 数値は、必ず、`数値` の形式で表示してください
-- 絵文字も使って、親しみやすい口調で説明してください
-- heading は使わないでください
-- 分析結果のみを出力してください。他の説明や補足は不要です
+- 「分子量と重原子数」「LogPとTPSA」「分子複雑度と回転可能結合数」「水素結合供与体数と水素結合受容体数」を組み合わせて、説明してください
 
-# 出力例
-**カフェイン** は **分子量** `194.19` の小さな分子で、**LogP** が `-0.07` と水に溶けやすい性質があるよ。
-**TPSA** が `58.4` と比較的高いから、体内での吸収が良くて、脳に届きやすいんだよね。
-**分子複雑度** が `62.3` と中程度で、**回転可能結合** が `0` 個だから構造がしっかりしていて、特定の受容体にピンポイントで結合できるんだよね。
-**水素結合供与体数** が `0` 個で、**水素結合受容体数** が `3` 個だから、水素結合による分子間相互作用が弱く、水に溶けやすい性質があるんだよね。
-この分子は、体内での吸収が良くて、脳に届きやすいんだよね。
+## 説明文の例
+
+### 例文（１）
+
+カフェインは、**分子量**が`194.19`で、**重原子数**が`14`だから、比較的小さくて扱いやすい分子だね！🤓
+
+**LogP**が`-0.10`とマイナスだから、水に溶けやすい性質を持っていると考えられるよ。
+これは、血液に乗って運ばれたり、体の中でうまく働いたりするのに有利な点だね。💧
+**TPSA**は`58.4` Å²で、これは比較的小さい値だよ。つまり、細胞の膜を通り抜けやすい性質を持っている可能性があるんだ。🧠✨
+
+**水素結合供与体数**が`0`なのは、膜を通り抜けるのを助けるポイントだよ。👍
+さらに、水素結合受容体数が`3`あるおかげで、水にも溶けやすいんだ。💧
+
+**分子複雑度**が`293.0`と、それなりに複雑な構造をしているから、体の中の特定の場所（例えば、脳の中の「アデノシン受容体」というところ！）にピタッとくっつきやすいのかもしれないね。🔬
+**回転可能結合数**が`0`だから、分子の形がカチッとしているのも、特定の場所にくっつくのに役立っている可能性があるよ。💪
+
+### 例文（２）
+
+リナロールは、**分子量**が`154.25`で、**重原子数**が`11`だから、体の中で吸収されたり、色々な場所に運ばれたりするのが得意な分子だね！👃✨
+
+**LogP**が`2.70`と、適度に油に溶けやすい性質を持っているから、細胞の膜を通り抜けやすい可能性があるんだ。🪴
+**TPSA**は`20.2` Å²と小さいから、脳のバリアを越えるのにも有利かもしれないね。🧠
+
+**水素給与体数**が`1`、**水素結合受容体数**が`1`だから、水と油、どちらにもある程度馴染める性質を持っていると考えられるよ。💧🤝
+
+**分子複雑度**が`154.0`と、そこそこ複雑な構造をしているから、特定の匂いの受容体にうまくフィットして、あの心地よい香りを届けてくれるんだ。🌸
+**回転可能結合数**が`4`あるから、分子の形を少し変えながら、色々な受容体にアプローチできる柔軟性を持っているのかもしれないね。🤸
+
+### 例文（３）
+
+リモネンは、**分子量**が`136.23`で、**重原子数**が`10`だから、体の中で吸収されて色々な場所に運ばれるのに都合の良いサイズだね！🚗💨
+
+**LogP**が`3.40`と、油に溶けやすい性質を持っているんだ。
+これは、細胞の膜を通り抜けやすいということなんだぜ！🪞✨
+**TPSA**が`0.0` Å²と非常に小さいのは、さらに膜透過性が高いことを示唆しているよ。
+脳のバリアを越えるのも得意かもしれないね！🧠🚀
+
+**水素結合供与体数**が`0`、**水素結合受容体数**も`0`だから、水に溶けにくい代わりに、油っぽい細胞膜にはスルスル入っていけるんだ。💧🙅‍♀️
+
+**分子複雑度**が`163.0`で、**回転可能結合数**が`1`だから、構造はそこそこ複雑だけど、ある程度決まった形をしているんだ。
+この形が、特定の生体分子（例えば、嗅覚受容体とか！）にうまくフィットして、あの爽やかな柑橘系の香りを届けたり、体に良い影響を与えたりするのに役立っていると考えられぜ！🍊🌿
+
+# 手順（４）: 出力
+
+分析結果のみを出力してください。他の説明や補足は不要です。
 """
 
 # Sample queries organized by category for readability
@@ -314,12 +489,6 @@ SAMPLE_QUERIES: List[Dict[str, str]] = [
     {"icon": "🌳", "text": "木の香り成分は？"},
     {"icon": "🌿", "text": "草の香り成分は？"},
     
-    # 🧴 日用品
-    {"icon": "🧽", "text": "洗剤の成分は？"},
-    {"icon": "🧴", "text": "シャンプーの成分は？"},
-    {"icon": "🧼", "text": "石鹸の成分は？"},
-    {"icon": "👕", "text": "柔軟剤の成分は？"},
-    
     # 💪 スポーツ・運動
     {"icon": "💪", "text": "筋肉を鍛えたい"},
     {"icon": "🔄", "text": "疲労を回復させたい"},
@@ -338,7 +507,6 @@ SAMPLE_QUERIES: List[Dict[str, str]] = [
     {"icon": "🧘", "text": "リラックスしたい"},
     {"icon": "🕊️", "text": "心を落ち着かせたい"},
     {"icon": "😌", "text": "ゆっくり休みたい"},
-    {"icon": "🌙", "text": "ストレスを和らげたい"},
     {"icon": "😊", "text": "幸福感を感じたい"},
     
     # 🧠 集中・学習
@@ -504,790 +672,55 @@ import os
 import hashlib
 from datetime import datetime, timedelta
 
-class BaseCacheManager:
-    """Base cache manager with common functionality."""
-    
-    def __init__(self, data_source: str, config: Dict):
-        """Initialize base cache manager."""
-        self.data_source_name = data_source
-        self.data_source_config = config
-        self.cache_base_directory = Config.CACHE['base_directory']
-        self.cache_expiration_days = config.get('max_age_days', Config.CACHE['max_age_days'])
-        self._ensure_cache_directory()
-    
-    def _ensure_cache_directory(self):
-        """Ensure cache directory exists for this data source."""
-        if not self.data_source_config.get('enabled', True):
-            return
-        
-        cache_dir = self._get_source_cache_directory()
-        if cache_dir and not os.path.exists(cache_dir):
-            os.makedirs(cache_dir)
-            logger.info(f"Created cache directory for {self.data_source_name}: {cache_dir}")
-    
-    def _get_source_cache_directory(self) -> Optional[str]:
-        """Get cache directory for this data source."""
-        if not self.data_source_config.get('enabled', True):
-            return None
-        return os.path.join(self.cache_base_directory, self.data_source_config['directory'])
-    
-    def _normalize_cache_key(self, key: str) -> str:
-        """Normalize key for cache filename."""
-        # Convert to lowercase, strip whitespace, remove common suffixes
-        normalized = key.lower().strip()
-        normalized = normalized.replace(" acid", "").replace(" salt", "")
-        # Create a safe filename by replacing special characters
-        safe_key = re.sub(r'[^\w\-_]', '_', normalized)
-        return safe_key
-    
-    def _get_source_cache_file_path(self, cache_key: str) -> Optional[str]:
-        """Get cache file path for given key."""
-        cache_dir = self._get_source_cache_directory()
-        if not cache_dir:
-            return None
-        return os.path.join(cache_dir, f"{cache_key}.json")
-    
-    def _validate_cache_file(self, cache_file_path: str) -> bool:
-        """Check if cache file is valid (exists and not expired)."""
-        if not os.path.exists(cache_file_path):
-            return False
-        
-        # Check age
-        file_time = datetime.fromtimestamp(os.path.getmtime(cache_file_path))
-        age = datetime.now() - file_time
-        if age > timedelta(days=self.cache_expiration_days):
-            logger.info(f"Cache expired for {cache_file_path}")
-            return False
-        
-        return True
-    
-    def _create_cache_file(self, cache_file_path: str, data: Dict) -> bool:
-        """Create cache file with data."""
-        try:
-            with open(cache_file_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-            return True
-        except Exception as e:
-            logger.error(f"Error creating cache file {cache_file_path}: {e}")
-            return False
-    
-    def _read_cache_file(self, cache_file_path: str) -> Optional[Dict]:
-        """Read cache file and return data."""
-        try:
-            with open(cache_file_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, KeyError, TypeError) as e:
-            logger.warning(f"Invalid cache data in {cache_file_path}: {e}")
-            # Remove invalid cache file
-            try:
-                os.remove(cache_file_path)
-            except OSError:
-                pass
-            return None
-        except Exception as e:
-            logger.error(f"Error reading cache file {cache_file_path}: {e}")
-            return None
-    
-    def _apply_item_limit(self, items: List[Dict], item_key: str = 'items') -> List[Dict]:
-        """
-        Apply item limit to a list of items, keeping only the latest entries.
-        
-        This is a general-purpose method that can be used by any cache manager
-        to limit the number of items stored in cache files. The limit is
-        configured via 'max_items_per_file' in the data source configuration.
-        
-        Args:
-            items: List of items to limit
-            item_key: Key name for logging purposes (optional)
-            
-        Returns:
-            Limited list of items (latest entries only)
-        """
-        max_items = self.data_source_config.get('max_items_per_file')
-        if max_items is None or len(items) <= max_items:
-            return items
-        
-        # Keep only the latest max_items entries
-        limited_items = items[-max_items:]
-        logger.info(f"Trimmed {self.data_source_name} cache to latest {max_items} entries (was {len(items)})")
-        return limited_items
-    
-    def _get_item_timestamp(self, item: Dict) -> str:
-        """Extract timestamp from an item for sorting purposes."""
-        # Try different common timestamp field names
-        for timestamp_field in ['timestamp', 'created_at', 'updated_at', 'date']:
-            if timestamp_field in item:
-                return item[timestamp_field]
-        
-        # If no timestamp found, return current time
-        return datetime.now().isoformat()
-
-
-class PubChemCacheManager(BaseCacheManager):
-    """Manages PubChem-specific cache operations."""
-    
-    def __init__(self):
-        """Initialize PubChem cache manager."""
-        super().__init__('pubchem', Config.CACHE['data_sources']['pubchem'])
-    
-    def get_cached_molecule_data(self, compound_name: str) -> Optional[Tuple[Optional[DetailedMoleculeInfo], Optional[int]]]:
-        """Get cached molecule data for compound."""
-        if not Config.CACHE['enabled']:
-            return None
-        
-        cache_key = self._normalize_cache_key(compound_name)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path or not self._validate_cache_file(cache_file_path):
-            return None
-        
-        cache_data = self._read_cache_file(cache_file_path)
-        if not cache_data:
-            return None
-        
-        try:
-            # Reconstruct DetailedMoleculeInfo object
-            detailed_info = DetailedMoleculeInfo(**cache_data['detailed_info'])
-            cid = cache_data.get('cid')
-            
-            logger.info(f"Cache hit for compound: {compound_name}")
-            return detailed_info, cid
-            
-        except Exception as e:
-            logger.error(f"Error reconstructing molecule data for {compound_name}: {e}")
-            return None
-    
-    def save_cached_molecule_data(self, compound_name: str, detailed_info: DetailedMoleculeInfo, cid: int):
-        """Save molecule data to cache (only if xyz_data is available)."""
-        if not Config.CACHE['enabled']:
-            return
-        
-        # Only save if xyz_data is available
-        if not detailed_info.xyz_data:
-            logger.warning(f"Skipping cache save for {compound_name}: No xyz_data available")
-            return
-        
-        cache_key = self._normalize_cache_key(compound_name)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path:
-            logger.warning(f"Cannot save cache for {compound_name}: data source disabled")
-            return
-        
-        try:
-            # Convert DetailedMoleculeInfo to dictionary
-            cache_data = {
-                'compound_name': compound_name,
-                'cache_key': cache_key,
-                'data_source': self.data_source_name,
-                'timestamp': datetime.now().isoformat(),
-                'cid': cid,
-                'detailed_info': {
-                    'molecular_formula': detailed_info.molecular_formula,
-                    'molecular_weight': detailed_info.molecular_weight,
-                    'iupac_name': detailed_info.iupac_name,
-                    'synonyms': detailed_info.synonyms,
-                    'inchi': detailed_info.inchi,
-                    'xlogp': detailed_info.xlogp,
-                    'tpsa': detailed_info.tpsa,
-                    'complexity': detailed_info.complexity,
-                    'rotatable_bond_count': detailed_info.rotatable_bond_count,
-                    'heavy_atom_count': detailed_info.heavy_atom_count,
-                    'hbond_donor_count': detailed_info.hbond_donor_count,
-                    'hbond_acceptor_count': detailed_info.hbond_acceptor_count,
-                    'charge': detailed_info.charge,
-                    'xyz_data': detailed_info.xyz_data,
-                }
-            }
-
-            self._create_cache_file(cache_file_path, cache_data)
-            logger.info(f"Cached molecule data for compound: {compound_name}")
-            
-        except Exception as e:
-            logger.error(f"Error saving molecule cache for {compound_name}: {e}")
-
-
-class QueryCacheManager(BaseCacheManager):
-    """Manages query-compound mapping cache operations."""
-    
-    def __init__(self):
-        """Initialize query cache manager."""
-        super().__init__('queries', Config.CACHE['data_sources']['queries'])
-    
-    def save_query_compound_mapping(self, query_text: str, compounds: List[Dict], increment_count: bool = False):
-        """Save query-compound mapping to cache."""
-        if not Config.CACHE['enabled']:
-            return
-        
-        cache_key = self._normalize_cache_key(query_text)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path:
-            logger.warning(f"Cannot save query cache for {query_text}: data source disabled")
-            return
-        
-        # Read existing data if available
-        existing_data = self._read_cache_file(cache_file_path) if os.path.exists(cache_file_path) else None
-        
-        if existing_data:
-            # Update existing data
-            existing_compounds = existing_data.get('compounds', [])
-            existing_compounds_names = [c.get('compound_name', '') for c in existing_compounds]
-            
-            # Add new compounds (avoid duplicates)
-            for compound in compounds:
-                if compound.get('compound_name', '') not in existing_compounds_names:
-                    existing_compounds.append(compound)
-            
-            # Apply general item limit using the base class method
-            existing_compounds = self._apply_item_limit(existing_compounds)
-            
-            cache_data = {
-                'query_text': query_text,
-                'compounds': existing_compounds,
-                'timestamp': datetime.now().isoformat()
-            }
-        else:
-            # Create new data
-            cache_data = {
-                'query_text': query_text,
-                'compounds': compounds,
-                'timestamp': datetime.now().isoformat()
-            }
-        
-        self._create_cache_file(cache_file_path, cache_data)
-        logger.info(f"Cached query-compound mapping for: {query_text}")
-    
-    def get_query_compound_mapping(self, query_text: str) -> Optional[Dict]:
-        """Get query-compound mapping from cache."""
-        if not Config.CACHE['enabled']:
-            return None
-        
-        cache_key = self._normalize_cache_key(query_text)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path or not self._validate_cache_file(cache_file_path):
-            return None
-        
-        return self._read_cache_file(cache_file_path)
-    
-    def get_random_compound_from_query(self, query_text: str) -> Optional[str]:
-        """Get a random compound name from cached query results."""
-        if not Config.CACHE['enabled']:
-            return None
-        
-        cache_key = self._normalize_cache_key(query_text)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path or not self._validate_cache_file(cache_file_path):
-            return None
-        
-        cache_data = self._read_cache_file(cache_file_path)
-        if not cache_data:
-            return None
-        
-        compounds = cache_data.get('compounds', [])
-        if not compounds:
-            return None
-        
-        # Select a random compound
-        random_compound = random.choice(compounds)
-        return random_compound.get('compound_name')
-    
-    def get_any_random_compound_from_queries(self) -> Optional[str]:
-        """Get a random compound name from any cached query file."""
-        if not Config.CACHE['enabled']:
-            return None
-        
-        cache_dir = self._get_source_cache_directory()
-        if not cache_dir or not os.path.exists(cache_dir):
-            return None
-        
-        # Get all cache files
-        cache_files = [f for f in os.listdir(cache_dir) if f.endswith('.json')]
-        if not cache_files:
-            return None
-        
-        # Try each cache file until we find one with compounds
-        for cache_file in cache_files:
-            cache_file_path = os.path.join(cache_dir, cache_file)
-            if not self._validate_cache_file(cache_file_path):
-                continue
-            
-            cache_data = self._read_cache_file(cache_file_path)
-            if not cache_data:
-                continue
-            
-            compounds = cache_data.get('compounds', [])
-            if compounds:
-                # Select a random compound
-                random_compound = random.choice(compounds)
-                return random_compound.get('compound_name')
-        
-        return None
-
-
-class DescriptionCacheManager(BaseCacheManager):
-    """Manages compound-description mapping cache operations."""
-    
-    def __init__(self):
-        """Initialize description cache manager."""
-        super().__init__('descriptions', Config.CACHE['data_sources']['descriptions'])
-    
-    def save_compound_description(self, compound_name: str, description: str):
-        """Save compound description to cache with automatic item limit."""
-        if not Config.CACHE['enabled']:
-            return
-        
-        cache_key = self._normalize_cache_key(compound_name)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path:
-            logger.warning(f"Cannot save description cache for {compound_name}: data source disabled")
-            return
-        
-        # Read existing data if available
-        existing_data = self._read_cache_file(cache_file_path) if os.path.exists(cache_file_path) else None
-        
-        if existing_data:
-            # Add new description to existing list
-            descriptions = existing_data.get('descriptions', [])
-            descriptions.append({
-                'description': description,
-                'timestamp': datetime.now().isoformat()
-            })
-            
-            # Apply general item limit using the base class method
-            descriptions = self._apply_item_limit(descriptions)
-            
-            cache_data = {
-                'compound_name': compound_name,
-                'descriptions': descriptions,
-                'timestamp': datetime.now().isoformat()
-            }
-        else:
-            # Create new data
-            cache_data = {
-                'compound_name': compound_name,
-                'descriptions': [{
-                    'description': description,
-                    'timestamp': datetime.now().isoformat()
-                }],
-                'timestamp': datetime.now().isoformat()
-            }
-        
-        self._create_cache_file(cache_file_path, cache_data)
-        logger.info(f"Cached description for compound: {compound_name} (total descriptions: {len(cache_data['descriptions'])})")
-    
-    def get_compound_descriptions(self, compound_name: str) -> List[Dict]:
-        """Get compound descriptions from cache."""
-        if not Config.CACHE['enabled']:
-            return []
-        
-        cache_key = self._normalize_cache_key(compound_name)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path or not self._validate_cache_file(cache_file_path):
-            return []
-        
-        cache_data = self._read_cache_file(cache_file_path)
-        if cache_data:
-            return cache_data.get('descriptions', [])
-        
-        return []
-    
-    def get_random_description(self, compound_name: str) -> Optional[str]:
-        """Get a random description from cached descriptions."""
-        if not Config.CACHE['enabled']:
-            return None
-        
-        cache_key = self._normalize_cache_key(compound_name)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path or not self._validate_cache_file(cache_file_path):
-            return None
-        
-        cache_data = self._read_cache_file(cache_file_path)
-        if not cache_data:
-            return None
-        
-        descriptions = cache_data.get('descriptions', [])
-        if not descriptions:
-            return None
-        
-        # Select a random description
-        random_description = random.choice(descriptions)
-        return random_description.get('description')
-
-
-class AnalysisCacheManager(BaseCacheManager):
-    """Manages detailed analysis cache operations."""
-    
-    def __init__(self):
-        """Initialize analysis cache manager."""
-        super().__init__('analysis', Config.CACHE['data_sources']['analysis'])
-    
-    def save_analysis_result(self, compound_name: str, analysis_text: str):
-        """Save detailed analysis result to cache."""
-        if not Config.CACHE['enabled']:
-            return
-        
-        cache_key = self._normalize_cache_key(compound_name)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path:
-            logger.warning(f"Cannot save analysis cache for {compound_name}: data source disabled")
-            return
-        
-        # Read existing data if available
-        existing_data = self._read_cache_file(cache_file_path) if os.path.exists(cache_file_path) else None
-        
-        if existing_data:
-            # Add new analysis to existing list
-            descriptions = existing_data.get('descriptions', [])
-            descriptions.append({
-                'description': analysis_text,
-                'timestamp': datetime.now().isoformat()
-            })
-            
-            # Apply item limit
-            descriptions = self._apply_item_limit(descriptions)
-            
-            cache_data = {
-                'compound_name': compound_name,
-                'descriptions': descriptions,
-                'timestamp': datetime.now().isoformat()
-            }
-        else:
-            # Create new data
-            cache_data = {
-                'compound_name': compound_name,
-                'descriptions': [{
-                    'description': analysis_text,
-                    'timestamp': datetime.now().isoformat()
-                }],
-                'timestamp': datetime.now().isoformat()
-            }
-        
-        self._create_cache_file(cache_file_path, cache_data)
-        logger.info(f"Cached analysis result for compound: {compound_name}")
-    
-    def get_analysis_results(self, compound_name: str) -> List[Dict]:
-        """Get analysis results from cache."""
-        if not Config.CACHE['enabled']:
-            return []
-        
-        cache_key = self._normalize_cache_key(compound_name)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path or not self._validate_cache_file(cache_file_path):
-            return []
-        
-        cache_data = self._read_cache_file(cache_file_path)
-        if cache_data:
-            return cache_data.get('descriptions', [])
-        
-        return []
-
-
-class SimilarMoleculesCacheManager(BaseCacheManager):
-    """Manages similar molecules cache operations."""
-    
-    def __init__(self):
-        """Initialize similar molecules cache manager."""
-        super().__init__('similar', Config.CACHE['data_sources']['similar'])
-    
-    def save_similar_molecules(self, compound_name: str, similar_molecules: List[Dict]):
-        """Save similar molecules to cache with multiple descriptions per molecule."""
-        if not Config.CACHE['enabled']:
-            return
-        
-        cache_key = self._normalize_cache_key(compound_name)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path:
-            logger.warning(f"Cannot save similar molecules cache for {compound_name}: data source disabled")
-            return
-        
-        # Read existing data if available
-        existing_data = self._read_cache_file(cache_file_path) if os.path.exists(cache_file_path) else None
-        
-        if existing_data:
-            # Add new similar compounds to existing list
-            existing_compounds = existing_data.get('similar_compounds', [])
-            existing_compound_names = [m.get('compound_name', '') for m in existing_compounds]
-            
-            # Get max descriptions per compound from config
-            max_descriptions = self.data_source_config.get('max_items_per_data', 20)
-            
-            for compound_data in similar_molecules:
-                compound_name_inner = compound_data.get('compound_name', '')
-                descriptions = compound_data.get('descriptions', [])
-                compound_timestamp = compound_data.get('timestamp', datetime.now().isoformat())
-                
-                if compound_name_inner in existing_compound_names:
-                    # Existing compound: add descriptions
-                    for existing_compound in existing_compounds:
-                        if existing_compound.get('compound_name') == compound_name_inner:
-                            existing_compound['descriptions'].extend(descriptions)
-                            # Apply description limit (keep latest max_descriptions)
-                            existing_compound['descriptions'] = existing_compound['descriptions'][-max_descriptions:]
-                            # Update compound timestamp if newer
-                            if compound_timestamp > existing_compound.get('timestamp', ''):
-                                existing_compound['timestamp'] = compound_timestamp
-                            break
-                else:
-                    # New compound: add to list with timestamp
-                    compound_data['timestamp'] = compound_timestamp
-                    existing_compounds.append(compound_data)
-            
-            # Apply compound limit
-            existing_compounds = self._apply_item_limit(existing_compounds)
-            
-            cache_data = {
-                'compound_name': compound_name,
-                'similar_compounds': existing_compounds,
-                'timestamp': datetime.now().isoformat()
-            }
-        else:
-            # Create new data
-            cache_data = {
-                'compound_name': compound_name,
-                'similar_compounds': similar_molecules,
-                'timestamp': datetime.now().isoformat()
-            }
-        
-        self._create_cache_file(cache_file_path, cache_data)
-        logger.info(f"Cached similar molecules for compound: {compound_name}")
-    
-    def get_similar_molecules(self, compound_name: str) -> List[Dict]:
-        """Get similar molecules from cache."""
-        if not Config.CACHE['enabled']:
-            return []
-        
-        cache_key = self._normalize_cache_key(compound_name)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path or not self._validate_cache_file(cache_file_path):
-            return []
-        
-        cache_data = self._read_cache_file(cache_file_path)
-        if cache_data:
-            return cache_data.get('similar_compounds', [])
-        
-        return []
-    
-    def get_random_similar_compound(self, compound_name: str) -> Optional[Tuple[str, str]]:
-        """Get a random similar compound name and description from cache."""
-        if not Config.CACHE['enabled']:
-            return None
-        
-        cache_key = self._normalize_cache_key(compound_name)
-        cache_file_path = self._get_source_cache_file_path(cache_key)
-        
-        if not cache_file_path or not self._validate_cache_file(cache_file_path):
-            return None
-        
-        cache_data = self._read_cache_file(cache_file_path)
-        if not cache_data:
-            return None
-        
-        similar_compounds = cache_data.get('similar_compounds', [])
-        if not similar_compounds:
-            return None
-        
-        # Select a random similar compound
-        random_compound = random.choice(similar_compounds)
-        compound_name_result = random_compound.get('compound_name')
-        
-        # Get a random description from the compound's descriptions
-        descriptions = random_compound.get('descriptions', [])
-        if descriptions:
-            random_description = random.choice(descriptions)
-            description_text = random_description.get('description', '')
-            return compound_name_result, description_text
-        
-        return None
-    
-    def get_any_random_similar_compound(self) -> Optional[Tuple[str, str]]:
-        """Get a random similar compound from any cached similar compound file."""
-        if not Config.CACHE['enabled']:
-            return None
-        
-        cache_dir = self._get_source_cache_directory()
-        if not cache_dir or not os.path.exists(cache_dir):
-            return None
-        
-        # Get all cache files
-        cache_files = [f for f in os.listdir(cache_dir) if f.endswith('.json')]
-        if not cache_files:
-            return None
-        
-        # Try each cache file until we find one with similar compounds
-        for cache_file in cache_files:
-            cache_file_path = os.path.join(cache_dir, cache_file)
-            if not self._validate_cache_file(cache_file_path):
-                continue
-            
-            cache_data = self._read_cache_file(cache_file_path)
-            if not cache_data:
-                continue
-            
-            similar_compounds = cache_data.get('similar_compounds', [])
-            if similar_compounds:
-                # Select a random similar compound
-                random_compound = random.choice(similar_compounds)
-                compound_name_result = random_compound.get('compound_name')
-                
-                # Get a random description from the compound's descriptions
-                descriptions = random_compound.get('descriptions', [])
-                if descriptions:
-                    random_description = random.choice(descriptions)
-                    description_text = random_description.get('description', '')
-                    return compound_name_result, description_text
-        
-        return None
-
-
-class FailedMoleculesCacheManager(BaseCacheManager):
-    """Manages failed molecule names cache (molecules without XYZ data)."""
-    
-    def __init__(self):
-        """Initialize failed molecules cache manager."""
-        super().__init__('failed_molecules', Config.CACHE['data_sources']['failed_molecules'])
-    
-    def add_failed_molecule(self, compound_name: str):
-        """Add a compound name to the failed list."""
-        if not Config.CACHE['enabled']:
-            return
-        
-        cache_file_path = self._get_source_cache_file_path('failed_list')
-        
-        if not cache_file_path:
-            logger.warning(f"Cannot save failed molecule cache: data source disabled")
-            return
-        
-        # Read existing data if available
-        existing_data = self._read_cache_file(cache_file_path) if os.path.exists(cache_file_path) else None
-        
-        if existing_data:
-            # Add new failed molecule to existing list
-            failed_molecules = existing_data.get('failed_molecules', [])
-            if compound_name not in failed_molecules:
-                failed_molecules.append(compound_name)
-                logger.info(f"Added {compound_name} to failed molecules list")
-            else:
-                logger.info(f"{compound_name} already in failed molecules list")
-            
-            cache_data = {
-                'failed_molecules': failed_molecules,
-                'timestamp': datetime.now().isoformat()
-            }
-        else:
-            # Create new data
-            cache_data = {
-                'failed_molecules': [compound_name],
-                'timestamp': datetime.now().isoformat()
-            }
-            logger.info(f"Created new failed molecules list with {compound_name}")
-        
-        self._create_cache_file(cache_file_path, cache_data)
-        logger.info(f"Cached failed molecule: {compound_name}")
-    
-    def is_molecule_failed(self, compound_name: str) -> bool:
-        """Check if a compound is in the failed list."""
-        if not Config.CACHE['enabled']:
-            return False
-        
-        cache_file_path = self._get_source_cache_file_path('failed_list')
-        
-        if not cache_file_path or not self._validate_cache_file(cache_file_path):
-            return False
-        
-        cache_data = self._read_cache_file(cache_file_path)
-        if not cache_data:
-            return False
-        
-        failed_molecules = cache_data.get('failed_molecules', [])
-        return compound_name in failed_molecules
-    
-    def get_failed_molecules(self) -> List[str]:
-        """Get list of all failed molecule names."""
-        if not Config.CACHE['enabled']:
-            return []
-        
-        cache_file_path = self._get_source_cache_file_path('failed_list')
-        
-        if not cache_file_path or not self._validate_cache_file(cache_file_path):
-            return []
-        
-        cache_data = self._read_cache_file(cache_file_path)
-        if cache_data:
-            return cache_data.get('failed_molecules', [])
-        
-        return []
-    
-    def remove_failed_molecule(self, compound_name: str):
-        """Remove a compound name from the failed list (if XYZ data becomes available)."""
-        if not Config.CACHE['enabled']:
-            return
-        
-        cache_file_path = self._get_source_cache_file_path('failed_list')
-        
-        if not cache_file_path or not os.path.exists(cache_file_path):
-            return
-        
-        cache_data = self._read_cache_file(cache_file_path)
-        if not cache_data:
-            return
-        
-        failed_molecules = cache_data.get('failed_molecules', [])
-        if compound_name in failed_molecules:
-            failed_molecules.remove(compound_name)
-            logger.info(f"Removed {compound_name} from failed molecules list")
-            
-            cache_data = {
-                'failed_molecules': failed_molecules,
-                'timestamp': datetime.now().isoformat()
-            }
-            
-            self._create_cache_file(cache_file_path, cache_data)
-
+# Import unified cache utilities
+from tools.utils.cache_utils import normalize_compound_name, NameMappingCacheManager, BaseCacheManager
+from tools.utils.updated_cache_managers import (
+    PubChemCacheManager, QueryCacheManager, DescriptionCacheManager,
+    SimilarMoleculesCacheManager, AnalysisCacheManager, FailedMoleculesCacheManager
+)
 
 class CacheManager:
-    """Unified cache manager coordinating all cache operations."""
+    """Unified cache manager coordinating all cache operations with name mapping support."""
     
     def __init__(self):
         """Initialize unified cache manager."""
-        self.pubchem = PubChemCacheManager()
-        self.queries = QueryCacheManager()
-        self.descriptions = DescriptionCacheManager()
-        self.analysis = AnalysisCacheManager()
-        self.similar = SimilarMoleculesCacheManager()
-        self.failed_molecules = FailedMoleculesCacheManager()
+        self.name_mappings = NameMappingCacheManager()
+        self.pubchem = PubChemCacheManager(Config.CACHE['data_sources']['pubchem'])
+        self.queries = QueryCacheManager(Config.CACHE['data_sources']['queries'])
+        self.descriptions = DescriptionCacheManager(Config.CACHE['data_sources']['descriptions'])
+        self.analysis = AnalysisCacheManager(Config.CACHE['data_sources']['analysis'])
+        self.similar = SimilarMoleculesCacheManager(Config.CACHE['data_sources']['similar'])
+        self.failed_molecules = FailedMoleculesCacheManager(Config.CACHE['data_sources']['failed_molecules'])
     
-    def save_all_caches(self, english_name: str, detailed_info: DetailedMoleculeInfo, cid: int, user_query: str, description: str):
+    def save_all_caches(self, name_jp: str, name_en: str, detailed_info: DetailedMoleculeInfo, cid: int, user_query: str, description: str):
         """Save all cache types when xyz_data is successfully obtained."""
         try:
-            # 1. PubChemキャッシュ保存
-            self.pubchem.save_cached_molecule_data(english_name, detailed_info, cid)
+            # 1. Save name mapping
+            self.name_mappings.save_mapping(normalize_compound_name(name_en), name_jp, name_en)
             
-            # 2. 質問-化合物マッピング保存
+            # 2. PubChemキャッシュ保存
+            self.pubchem.save_cached_molecule_data(name_en, detailed_info, cid)
+            
+            # 3. 質問-化合物マッピング保存
             if user_query:
-                compounds = [{"compound_name": english_name, "timestamp": datetime.now().isoformat()}]  # 英語名とタイムスタンプを保存
+                compounds = [{"compound_name": name_en, "timestamp": datetime.now().isoformat()}]
                 self.queries.save_query_compound_mapping(
                     user_query,
                     compounds,
-                    increment_count=False  # 回数カウントは別途実行
+                    increment_count=False
                 )
             
-            # 3. 化合物-説明マッピング保存
+            # 4. 化合物-説明マッピング保存
             if description:
-                self.descriptions.save_compound_description(english_name, description)
+                self.descriptions.save_compound_description(name_en, description)
             
-            logger.info(f"All caches saved successfully for {english_name}")
+            logger.info(f"All caches saved successfully for {name_en}")
         except Exception as e:
-            logger.error(f"Error saving caches for {english_name}: {e}")
+            logger.error(f"Error saving caches for {name_en}: {e}")
+    
+    def get_compound_names_for_display(self, compound_name: str) -> Tuple[str, str]:
+        """Get Japanese and English names for display purposes."""
+        return self.name_mappings.get_names_for_display(normalize_compound_name(compound_name))
     
     def get_fallback_molecule_data(self, user_query: str = "") -> Optional[Tuple[str, str, str]]:
         """
@@ -1348,13 +781,9 @@ class CacheManager:
     def clear_all_cache(self):
         """Clear all cache directories."""
         try:
-            for manager in [self.pubchem, self.queries, self.descriptions]:
-                cache_dir = manager._get_source_cache_directory()
-                if cache_dir and os.path.exists(cache_dir):
-                    for filename in os.listdir(cache_dir):
-                        if filename.endswith('.json'):
-                            file_path = os.path.join(cache_dir, filename)
-                            os.remove(file_path)
+            for manager in [self.name_mappings, self.pubchem, self.queries, self.descriptions, self.analysis, self.similar, self.failed_molecules]:
+                if hasattr(manager, 'clear_cache'):
+                    manager.clear_cache()
             logger.info("All cache cleared successfully")
         except Exception as e:
             logger.error(f"Error clearing all cache: {e}")
@@ -1366,8 +795,16 @@ class CacheManager:
             total_count = 0
             total_size = 0
             
-            for manager_name, manager in [('pubchem', self.pubchem), ('queries', self.queries), ('descriptions', self.descriptions)]:
-                cache_dir = manager._get_source_cache_directory()
+            for manager_name, manager in [
+                ('name_mappings', self.name_mappings), 
+                ('pubchem', self.pubchem), 
+                ('queries', self.queries), 
+                ('descriptions', self.descriptions),
+                ('analysis', self.analysis),
+                ('similar', self.similar),
+                ('failed_molecules', self.failed_molecules)
+            ]:
+                cache_dir = manager.cache_dir if hasattr(manager, 'cache_dir') else manager._get_source_cache_directory()
                 if cache_dir and os.path.exists(cache_dir):
                     files = []
                     source_size = 0
@@ -1396,87 +833,9 @@ class CacheManager:
             all_stats['total'] = {
                 'count': total_count,
                 'size_mb': round(total_size / (1024 * 1024), 2)
-            }
-            
+                }
+                
             return all_stats
-        except Exception as e:
-            logger.error(f"Error getting cache stats: {e}")
-            return {'count': 0, 'size_mb': 0, 'files': []}
-    
-    def clear_cache(self, data_source: str = None):
-        """Clear cache files for specific data source or all sources."""
-        try:
-            if data_source:
-                # Clear specific data source
-                cache_dir = self._get_cache_directory(data_source)
-                if cache_dir and os.path.exists(cache_dir):
-                    for filename in os.listdir(cache_dir):
-                        if filename.endswith('.json'):
-                            file_path = os.path.join(cache_dir, filename)
-                            os.remove(file_path)
-                    logger.info(f"Cache cleared for data source: {data_source}")
-            else:
-                # Clear all cache directories
-                if os.path.exists(self.base_cache_dir):
-                    for root, dirs, files in os.walk(self.base_cache_dir):
-                        for filename in files:
-                            if filename.endswith('.json'):
-                                file_path = os.path.join(root, filename)
-                                os.remove(file_path)
-                    logger.info("All cache cleared successfully")
-        except Exception as e:
-            logger.error(f"Error clearing cache: {e}")
-    
-    def get_cache_stats(self, data_source: str = None) -> Dict[str, Any]:
-        """Get cache statistics for specific data source or all sources."""
-        try:
-            if data_source:
-                # Stats for specific data source
-                cache_dir = self._get_cache_directory(data_source)
-                if not cache_dir or not os.path.exists(cache_dir):
-                    return {'count': 0, 'size_mb': 0, 'files': []}
-                
-                files = []
-                total_size = 0
-                
-                for filename in os.listdir(cache_dir):
-                    if filename.endswith('.json'):
-                        file_path = os.path.join(cache_dir, filename)
-                        file_size = os.path.getsize(file_path)
-                        file_time = datetime.fromtimestamp(os.path.getmtime(file_path))
-                        
-                        files.append({
-                            'name': filename,
-                            'size_bytes': file_size,
-                            'modified': file_time.isoformat()
-                        })
-                        total_size += file_size
-                
-                return {
-                    'data_source': data_source,
-                    'count': len(files),
-                    'size_mb': round(total_size / (1024 * 1024), 2),
-                    'files': files
-                }
-            else:
-                # Stats for all data sources
-                all_stats = {}
-                total_count = 0
-                total_size = 0
-                
-                for source_name, source_config in self.data_sources.items():
-                    if source_config['enabled']:
-                        source_stats = self.get_cache_stats(source_name)
-                        all_stats[source_name] = source_stats
-                        total_count += source_stats['count']
-                        total_size += source_stats['size_mb']
-                
-                all_stats['total'] = {
-                    'count': total_count,
-                    'size_mb': round(total_size, 2)
-                }
-                
-                return all_stats
         except Exception as e:
             logger.error(f"Error getting cache stats: {e}")
             return {'count': 0, 'size_mb': 0, 'files': []}
@@ -2194,9 +1553,10 @@ def parse_gemini_response(response_text: str, save_to_query_cache: bool = True) 
                         if detailed_info.xyz_data and description:
                             if save_to_query_cache:
                                 user_query = st.session_state.get("user_query", "")
-                                cache_manager.save_all_caches(molecule_name_en, detailed_info, cid, user_query, description)
+                                cache_manager.save_all_caches(molecule_name_jp, molecule_name_en, detailed_info, cid, user_query, description)
                             else:
                                 # 関連分子処理時はqueriesキャッシュをスキップし、他のキャッシュのみ保存
+                                cache_manager.name_mappings.save_mapping(normalize_compound_name(molecule_name_en), molecule_name_jp, molecule_name_en)
                                 cache_manager.pubchem.save_cached_molecule_data(molecule_name_en, detailed_info, cid)
                                 cache_manager.descriptions.save_compound_description(molecule_name_en, description)
                     else:
