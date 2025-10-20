@@ -1,6 +1,6 @@
 {
   "api": {
-    "key": "AIzaSyC62-6BB4VBPuTcuQfPiRYGgw_RE_imeK4",
+    "key": "",
     "model": "gemini-2.5-flash-lite",
     "use_google_search": true,
     "timeout": 10,
