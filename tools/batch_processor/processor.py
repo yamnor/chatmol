@@ -14,10 +14,12 @@ from tools.utils.updated_cache_managers import (
     PubChemCacheManager, QueryCacheManager, DescriptionCacheManager,
     SimilarMoleculesCacheManager, AnalysisCacheManager, FailedMoleculesCacheManager
 )
+from tools.utils.unified_cache_manager import UnifiedCacheManager
 from ..utils.shared_models import DetailedMoleculeInfo
 from ..utils.shared_prompts import AIPrompts
 from ..utils.pubchem_client import get_comprehensive_molecule_data
 from ..utils.error_handler import ErrorHandler, is_no_result_response, parse_json_response
+from ..utils.molecular_analysis import analyze_molecule_properties, find_similar_molecules
 
 logger = logging.getLogger(__name__)
 
@@ -116,118 +118,6 @@ class GeminiClient:
             logger.error(f"Gemini API error: {e}")
             return None
 
-class CacheManager:
-    """Cache manager for batch processing using unified cache utilities."""
-    
-    def __init__(self, cache_base_dir: str = "cache", config: Optional[Dict] = None):
-        """Initialize cache manager with configuration support."""
-        self.cache_base_dir = cache_base_dir
-        
-        # Load cache configuration from config or use defaults
-        cache_config = self._load_cache_config(config)
-        
-        self.name_mappings = NameMappingCacheManager(cache_base_dir)
-        self.pubchem = PubChemCacheManager(cache_config['data_sources']['pubchem'], cache_base_dir)
-        self.queries = QueryCacheManager(cache_config['data_sources']['queries'], cache_base_dir)
-        self.descriptions = DescriptionCacheManager(cache_config['data_sources']['descriptions'], cache_base_dir)
-        self.analysis = AnalysisCacheManager(cache_config['data_sources']['analysis'], cache_base_dir)
-        self.similar = SimilarMoleculesCacheManager(cache_config['data_sources']['similar'], cache_base_dir)
-        self.failed_molecules = FailedMoleculesCacheManager(cache_config['data_sources']['failed_molecules'], cache_base_dir)
-    
-    def _load_cache_config(self, config: Optional[Dict]) -> Dict:
-        """Load cache configuration from config or use defaults."""
-        # Default configuration matching main.py structure
-        default_config = {
-            'data_sources': {
-                'pubchem': {
-                    'enabled': True,
-                    'directory': 'pubchem',
-                    'max_age_days': 36500,
-                    'max_items_per_file': 25
-                },
-                'queries': {
-                    'enabled': True,
-                    'directory': 'queries',
-                    'max_age_days': 36500,
-                    'max_items_per_file': 25
-                },
-                'descriptions': {
-                    'enabled': True,
-                    'directory': 'descriptions',
-                    'max_age_days': 36500,
-                    'max_items_per_file': 25
-                },
-                'analysis': {
-                    'enabled': True,
-                    'directory': 'analysis',
-                    'max_age_days': 180,
-                    'max_items_per_file': 25
-                },
-                'similar': {
-                    'enabled': True,
-                    'directory': 'similar',
-                    'max_age_days': 180,
-                    'max_items_per_file': 50,
-                    'max_items_per_data': 20
-                },
-                'failed_molecules': {
-                    'enabled': True,
-                    'directory': 'failed_molecules',
-                    'max_age_days': 365,
-                    'max_items_per_file': 1000
-                }
-            }
-        }
-        
-        # Merge config if provided
-        if config and 'cache' in config:
-            cache_config = config['cache'].copy()
-            
-            # Ensure data_sources exists
-            if 'data_sources' not in cache_config:
-                cache_config['data_sources'] = default_config['data_sources']
-            else:
-                # Merge each data source config with defaults
-                for source_name, default_source_config in default_config['data_sources'].items():
-                    if source_name in cache_config['data_sources']:
-                        # Merge provided config with defaults
-                        merged_config = default_source_config.copy()
-                        merged_config.update(cache_config['data_sources'][source_name])
-                        cache_config['data_sources'][source_name] = merged_config
-                    else:
-                        # Use default if not provided
-                        cache_config['data_sources'][source_name] = default_source_config
-            
-            logger.info("Loaded cache configuration from config file")
-            return cache_config
-        
-        logger.info("Using default cache configuration")
-        return default_config
-    
-    def save_query_compound_mapping(self, query_text: str, compounds: List[Dict]):
-        """Save query-compound mapping to cache."""
-        self.queries.save_query_compound_mapping(query_text, compounds)
-    
-    def save_compound_description(self, compound_name: str, description: str):
-        """Save compound description to cache."""
-        self.descriptions.save_compound_description(compound_name, description)
-    
-    def save_pubchem_data(self, compound_name: str, detailed_info: DetailedMoleculeInfo, cid: int):
-        """Save PubChem data to cache."""
-        self.pubchem.save_cached_molecule_data(compound_name, detailed_info, cid)
-    
-    def save_analysis_result(self, compound_name: str, analysis_text: str):
-        """Save analysis result to cache."""
-        self.analysis.save_analysis_result(compound_name, analysis_text)
-    
-    def save_similar_molecules(self, compound_name: str, similar_molecules: List[Dict]):
-        """Save similar molecules to cache."""
-        self.similar.save_similar_molecules(compound_name, similar_molecules)
-    
-    def save_name_mapping(self, name_jp: str, name_en: str):
-        """Save name mapping to cache."""
-        self.name_mappings.save_mapping(normalize_compound_name(name_en), name_jp, name_en)
-
 class BatchProcessor:
     """Main batch processor class."""
     
@@ -241,7 +131,7 @@ class BatchProcessor:
             timeout=config.get('api.timeout'),
             rate_limit_per_minute=config.get('api.rate_limit_per_minute', 15)
         )
-        self.cache_manager = CacheManager(config.get('cache.base_directory', 'cache'), config.config)
+        self.cache_manager = UnifiedCacheManager(config.get('cache.base_directory', 'cache'), config.config)
         self.execution_log = {
             'session_id': f"batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             'start_time': datetime.now().isoformat(),
@@ -346,13 +236,13 @@ class BatchProcessor:
             
             # Step 5: Molecular analysis
             logger.info(f"Iteration {iteration}: Performing molecular analysis for: {english_name}")
-            analysis_result = self.perform_molecular_analysis(detailed_info, english_name)
+            analysis_result = analyze_molecule_properties(detailed_info, english_name, self.gemini_client, self.cache_manager)
             if analysis_result:
                 iteration_data['analysis_performed'] = True
             
             # Step 6: Similar molecule search
             logger.info(f"Iteration {iteration}: Finding similar molecules for: {english_name}")
-            similar_result = self.find_similar_molecules(english_name)
+            similar_result = find_similar_molecules(english_name, self.gemini_client, self.cache_manager)
             if similar_result:
                 iteration_data['similar_search_performed'] = True
             
@@ -376,82 +266,6 @@ class BatchProcessor:
             })
             logger.error(f"Iteration {iteration}: Error processing query '{query}': {e}")
             return iteration_data
-    
-    def perform_molecular_analysis(self, detailed_info: DetailedMoleculeInfo, molecule_name: str) -> Optional[str]:
-        """Perform molecular analysis using Gemini."""
-        try:
-            # Prepare properties text
-            properties_text = []
-            if detailed_info.molecular_formula:
-                properties_text.append(f"分子式: {detailed_info.molecular_formula}")
-            if detailed_info.molecular_weight:
-                properties_text.append(f"分子量: {detailed_info.molecular_weight:.2f}")
-            if detailed_info.heavy_atom_count is not None:
-                properties_text.append(f"重原子数: {detailed_info.heavy_atom_count}")
-            if detailed_info.xlogp is not None:
-                properties_text.append(f"LogP: {detailed_info.xlogp:.2f}")
-            if detailed_info.tpsa is not None:
-                properties_text.append(f"TPSA: {detailed_info.tpsa:.1f} Å²")
-            if detailed_info.complexity is not None:
-                properties_text.append(f"分子複雑度: {detailed_info.complexity:.1f}")
-            if detailed_info.hbond_donor_count is not None:
-                properties_text.append(f"水素結合供与体数: {detailed_info.hbond_donor_count}")
-            if detailed_info.hbond_acceptor_count is not None:
-                properties_text.append(f"水素結合受容体数: {detailed_info.hbond_acceptor_count}")
-            if detailed_info.rotatable_bond_count is not None:
-                properties_text.append(f"回転可能結合数: {detailed_info.rotatable_bond_count}")
-            
-            properties_str = "\n".join(properties_text)
-            
-            prompt = AIPrompts.MOLECULAR_ANALYSIS.format(
-                molecule_name=molecule_name,
-                properties_str=properties_str
-            )
-            
-            response_text = self.gemini_client.call_api(prompt)
-            
-            if response_text:
-                analysis_result = response_text.strip()
-                self.cache_manager.save_analysis_result(molecule_name, analysis_result)
-                logger.info(f"Analysis completed for: {molecule_name}")
-                return analysis_result
-            else:
-                logger.warning(f"No analysis response for: {molecule_name}")
-                return None
-                
-        except Exception as e:
-            logger.error(f"Error in molecular analysis for {molecule_name}: {e}")
-            return None
-    
-    def find_similar_molecules(self, molecule_name: str) -> Optional[str]:
-        """Find similar molecules using Gemini."""
-        try:
-            similar_prompt = AIPrompts.SIMILAR_MOLECULE_SEARCH.format(molecule_name=molecule_name)
-            response_text = self.gemini_client.call_api(similar_prompt)
-            
-            if response_text and not is_no_result_response(response_text):
-                parsed_data = parse_json_response(response_text)
-                if parsed_data:
-                    # Save similar molecules
-                    current_timestamp = datetime.now().isoformat()
-                    similar_compounds = [{
-                        "compound_name": parsed_data.get("name_en", ""),
-                        "timestamp": current_timestamp,
-                        "descriptions": [{
-                            "description": parsed_data.get("description", ""),
-                            "timestamp": current_timestamp
-                        }]
-                    }]
-                    self.cache_manager.save_similar_molecules(molecule_name, similar_compounds)
-                    logger.info(f"Similar molecules found for: {molecule_name}")
-                    return response_text
-            
-            logger.info(f"No similar molecules found for: {molecule_name}")
-            return None
-            
-        except Exception as e:
-            logger.error(f"Error finding similar molecules for {molecule_name}: {e}")
-            return None
     
     def run_batch_processing(self, queries: List[str]) -> Dict[str, Any]:
         """Run batch processing on the given queries."""

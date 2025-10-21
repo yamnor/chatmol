@@ -1,12 +1,10 @@
 # Standard library imports
 import random
 import json
-import re
 import logging
 import uuid
 from typing import Dict, List, Optional, Tuple, Union, Any
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
-from dataclasses import dataclass
 
 # Third-party imports
 import streamlit as st
@@ -24,24 +22,8 @@ from st_screen_stats import WindowQueryHelper
 # TYPE DEFINITIONS
 # =============================================================================
 
-@dataclass
-class DetailedMoleculeInfo:
-    """Detailed molecule information from PubChem."""
-    molecular_formula: Optional[str]
-    molecular_weight: Optional[float]
-    iupac_name: Optional[str]
-    synonyms: List[str]
-    inchi: Optional[str]
-    # Chemical properties
-    xlogp: Optional[float]  # LogP (calculated)
-    tpsa: Optional[float]  # Topological polar surface area
-    complexity: Optional[float]  # Molecular complexity
-    rotatable_bond_count: Optional[int]  # Number of rotatable bonds
-    heavy_atom_count: Optional[int]  # Number of heavy atoms
-    hbond_donor_count: Optional[int]  # Number of H-bond donors
-    hbond_acceptor_count: Optional[int]  # Number of H-bond acceptors
-    charge: Optional[int]  # Total charge
-    xyz_data: Optional[str]  # XYZ coordinate data for 3D visualization
+# Import shared models from tools
+from tools.utils.shared_models import DetailedMoleculeInfo
 
 # =============================================================================
 # CONSTANTS AND CONFIGURATION
@@ -161,369 +143,11 @@ or find me on [X (Twitter)](https://x.com/yamnor) 🐦.
 GitHub: [yamnor/chatmol](https://github.com/yamnor/chatmol)
 '''
 
-# AI Prompts Configuration
-class AIPrompts:
-    """AI prompts for different molecular operations."""
-    
-    # Molecular search prompt
-    MOLECULAR_SEARCH: str = """
-あなたは化学分野の専門家として、学術的正確性と学習効果を維持しつつ、分子についての説明を提供する専門家です。
-
-ユーザーが求める効能・イメージ・用途・ニーズ「{user_input}」に対して、
-最も関連する・関係がありそうだ・適していると考えられる分子「1 個」のみ、下記の手順に従って、最終案を出力してください。
-
-# 手順（１）: 候補とする分子の提案
- 
-ユーザーが求める効能・イメージ・用途・ニーズ「{user_input}」と「分子 / 化合物 / 化学物質 / 化学」の関連を、
-「Google Search」を使用して、検索してください。
-
-検索結果から、それに最も関連する・関係がありそうだ・適していると考えられる候補の分子を「1 個」のみ、提案してください。
-
-提案する分子の名称は、一般的な分類名（例：「脂肪酸塩」「アルカロイド」）ではなく、
-具体的な化合物名（例：「ステアリン酸ナトリウム」「カフェイン」）を選んでください。
-
-# 手順（２）: 情報収集
-
-手順（１）で提案した分子、および、ユーザーが求める効能・イメージ・用途・ニーズ「{user_input}」について、
-以下の優先順位で「 Google Search 」を使用して、情報を収集してください:
-
-1. **Google Scholar (https://scholar.google.com/)** - 学術論文・研究の検索
-2. **PubMed (https://pubmed.ncbi.nlm.nih.gov/)** - 医学・生命科学分野の論文データベース  
-3. **J-STAGE (https://www.jstage.jst.go.jp/)** - 日本の学術論文の検索
-4. **Wikidata (https://www.wikidata.org/)** - 英語での Wikipedia の検索
-5. **Wikipedia (https://ja.wikipedia.org/)** - 日本語での Wikipedia の検索
-
-# 手順（３）: 情報の分析 / 分子の説明
-
-ユーザーが求める効能・イメージ・用途・ニーズ「{user_input}」に対して、手順（２）で収集した情報を分析し、
-最終案とする分子について、「その分子を選んだ理由」（１文）、「その分子の性質・特徴・用途・効果」（１文）、
-「その分子についての面白い一面・豆知識・逸話・ギャグ」（１文）を、あわせて「３文」で、
-「説明（description）」を生成してください。
-
-## 説明文のルール
-
-- 小学生にも分かる内容
-- 絵文字も用いる
-—「〜だよ」「〜だね」「〜だぜ」「〜だ」「〜だって」「〜だよね」など、親しみやすい・フレンドリーな口調
-- １文は６０文字程度
-
-## 説明文の例
-
-### 例文（１）
-
-ベリーの青い色の正体はアントシアニンだよ！✨
-このキラキラした成分は、お肌を守ったり、目にも良いと言われているんだ。😋
-青や紫の食べ物に含まれていて、自然の恵みがたっぷり詰まっているんだぜ！🍇
-
-### 例文（２）
-
-GABAは、神経の興奮を抑えることで、心と体をリラックスさせる働きがあるんだ！✨ 。
-緊張やストレスを感じた時に、穏やかな気持ちへと導いてくれる、まさに「安心の分子」なんだ。
-普段のお茶や発酵食品にも含まれていて、意外と身近な存在なんだぜ。
-
-### 例文（３）
-
-カフェインは、眠気を引き起こすアデノシンという物質の働きをブロックして、私たちをシャキッと目覚めさせてくれるよ！✨。
-コーヒーやお茶に含まれていて、頭がスッキリして集中力もアップする、まさに「元気の源」。
-昔から、お茶の葉っぱやコーヒーの豆から発見されて、世界中で愛されてきた、とってもパワフルな分子なんだぜ！💪
-
-# 手順（４）: 最終案の出力
-
-最終案とする分子の「日本語での名称（name_jp）」、「英語での名称（name_en）」、「説明（description）」を、
-以下のルールに厳密に従い、「JSON 形式」で出力してください。
-
-- **重要**: 必ず指定された「JSON 形式」で出力してください。
-- **重要**: Markdown 形式やその他の形式は使用せず、JSON 構造に厳密に従って出力してください。
-- **重要**: 該当する分子がない場合は、「name_jp」に「該当なし」とのみ出力します。
-
-JSON 形式で以下の構造で出力してください
-
-```json
-{{
-  "name_jp": "<分子名>（分子の日本語での名称）",
-  "name_en": "<分子名>（分子の英語での名称）",
-  "description": "<説明> （分子の説明）"
-}}
-```
-"""
-
-    # Similar molecule search prompt
-    SIMILAR_MOLECULE_SEARCH: str = """
-あなたは化学分野の専門家として、学術的正確性と学習効果を維持しつつ、分子についての説明を提供する専門家です。
-
-ユーザーが指定した分子「{molecule_name}」に対して、
-最も関連する・関係がありそうだ・適していると考えられる分子「1 個」のみ、下記の手順に従って、最終案を出力してください。
-
-# 手順（１）: 候補とする分子の提案
- 
-ユーザーが指定した分子「{molecule_name}」に対して、「Google Search」を使用して、検索してください。
-
-検索結果から、それに最も関連する・関係がありそうだ・適していると考えられる候補の分子を「1 個」のみ、提案してください。
-
-**重要**: 提案する分子は、ユーザーが指定した分子「{molecule_name}」とは異なる分子である必要があります。
-
-提案する分子の名称は、一般的な分類名（例：「脂肪酸塩」「アルカロイド」）ではなく、
-具体的な化合物名（例：「ステアリン酸ナトリウム」「カフェイン」）を選んでください。
-
-# 手順（２）: 情報収集
-
-ユーザーが指定した分子「{molecule_name}」について、
-以下の優先順位で「 Google Search 」を使用して、情報を収集してください:
-
-1. **Google Scholar (https://scholar.google.com/)** - 学術論文・研究の検索
-2. **PubMed (https://pubmed.ncbi.nlm.nih.gov/)** - 医学・生命科学分野の論文データベース  
-3. **J-STAGE (https://www.jstage.jst.go.jp/)** - 日本の学術論文の検索
-4. **Wikidata (https://www.wikidata.org/)** - 英語での Wikipedia の検索
-5. **Wikipedia (https://ja.wikipedia.org/)** - 日本語での Wikipedia の検索
-
-# 手順（３）: 情報の分析 / 分子の説明
-
-手順（２）で収集した情報を分析し、最終案とする分子について、「{molecule_name}との関係性・関係性・類似聖」（１文）、
-「その分子の性質・特徴・用途・効果」（１文）、「その分子についての面白い一面・豆知識・逸話・ギャグ」（１文）を、
-あわせて「３文」で、「説明（description）」を生成してください。
-
-## 説明文のルール
-
-- 小学生にも分かる内容
-- 絵文字も用いる
-—「〜だよ」「〜だね」「〜だぜ」「〜だ」「〜だって」「〜だよね」など、親しみやすい・フレンドリーな口調
-- １文は６０文字程度
-
-## 説明文の例
-
-### 例文（１）
-
-ネロリドールはゲラニオールと同じく植物から抽出されるテルペンで、リラックス効果があると言われているんだ🌿。
-フローラルでウッディな香りは香水や化粧品、食品にも使われ、心地よい香りを届けてくれるよ✨。
-実は、ネロリドールは植物が虫から身を守るために作る、とっても賢い成分なんだぜ🛡️！
-
-### 例文（２）
-
-ゲラニオールはファルネソールと同じテルペノイド仲間で、バラのような良い香りがするよ🌹。
-お肌に優しい化粧品や、虫よけスプレーにも使われているんだ🐝✨。
-ゲラニオールは、ミツバチが花の蜜の場所を教えるのに使う、秘密のメッセージでもあるんだぜ🐝💌。
-
-### 例文（３）
-
-イソオイゲノールは、オイゲノールと構造が似ていて、香りが少し違う仲間だよ✨。
-バニリンの原料になったり、お花の香りの香料に使われたりするんだ🌹🌿。
-実は、お肉やチーズのカビを防ぐ力もある、ちょっとすごい分子なんだぜ🛡️！。
-
-# 手順（４）: 最終案の出力
-
-最終案とする分子の「日本語での名称（name_jp）」、「英語での名称（name_en）」、「説明（description）」を、
-以下のルールに厳密に従い、「JSON 形式」で出力してください。
-
-- **重要**: 必ず指定された「JSON 形式」で出力してください。
-- **重要**: Markdown 形式やその他の形式は使用せず、JSON 構造に厳密に従って出力してください。
-- **重要**: 該当する分子がない場合は、「name_jp」に「該当なし」とのみ出力します。
-
-JSON 形式で以下の構造で出力してください
-
-```json
-{{
-  "name_jp": "<分子名>（分子の日本語での名称）",
-  "name_en": "<分子名>（分子の英語での名称）",
-  "description": "<説明> （分子の説明）"
-}}
-```
-"""
-
-    # Molecular analysis prompt
-    MOLECULAR_ANALYSIS: str = """
-あなたは化学分野の専門家として、学術的正確性と学習効果を維持しつつ、分子についての説明を提供する専門家です。
-
-ユーザーが指定した分子「{molecule_name}」に対して、この分子の「化学的性質データ」を基に、
-下記の手順に従って分析し、解説文を出力してください。
-
-# 化学的性質データ
-
-{properties_str}
-
-# 手順（１）: 分析
-
-「化学的性質データ」から、ケモインフォマティクスの観点に基づいて、以下のように分析してください：
-
-## 物理化学的性質
-
-- **LogP**（脂溶性指標）: 値が高いほど脂溶性が高く、細胞膜を通過しやすい。低いほど水溶性が高く、血液中で運ばれやすい
-- **TPSA**（極性表面積）: 値が小さいほど膜透過性が良く、脳関門を通過しやすい。大きいほど水溶性が高く、腎臓から排泄されやすい
-- **分子量**: 小さいほど（<500）薬物として理想的な「リピンスキーの5則」に適合し、体内での吸収・分布・代謝・排泄が良好
-- **重原子数**: 分子のサイズを示し、薬物動態や毒性に影響する
-
-## 水素結合特性
-
-- **水素結合供与体数**: 値が少ないほど膜透過性が良く、脳関門を通過しやすい
-- **水素結合受容体数**: 値が少ないほど脂溶性が高く、細胞膜を通過しやすい。多いほど水溶性が高く、血液中での安定性が高い
-
-## 構造的特徴
-
-- **分子複雑度**: 値が高いほど構造が複雑で、特定の受容体への選択性が高くなる可能性がある
-- **回転可能結合数**: 値が少ないほど構造が剛直で、受容体への結合が安定。多いほど柔軟で、複数の結合様式を取れる可能性がある
-
-
-# 手順（２）: 情報収集
-
-ユーザーが指定した分子「{molecule_name}」について、
-以下の優先順位で「 Google Search 」を使用して、情報を収集してください:
-
-1. **Google Scholar (https://scholar.google.com/)** - 学術論文・研究の検索
-2. **PubMed (https://pubmed.ncbi.nlm.nih.gov/)** - 医学・生命科学分野の論文データベース  
-3. **J-STAGE (https://www.jstage.jst.go.jp/)** - 日本の学術論文の検索
-4. **Wikidata (https://www.wikidata.org/)** - 英語での Wikipedia の検索
-5. **Wikipedia (https://ja.wikipedia.org/)** - 日本語での Wikipedia の検索
-
-# 手順（３）: 情報の分析 / 分子の説明
-
-手順（１）で分析した内容、および、手順（２）で収集した情報を分析し、ユーザーが指定した分子「{molecule_name}」について、
-データの具体的な数値を示しながら、「化学的性質データ」の化学的な解釈、
-「化学的性質データ」から推測される分子のふるまい（溶解性・膜透過性・薬物動態・分子標的への結合様式・生体内での作用メカニズムなど）、
-「その分子の性質・特徴・用途・効果・面白い一面・豆知識・逸話」を「化学的性質データ」からどのように推測できるかを、
-３〜５文程度の簡潔な説明にまとめてください。
-
-## 説明文のルール
-
-- 小学生にも分かる内容
-- 絵文字も用いる
-—「〜だよ」「〜だね」「〜だぜ」「〜だ」「〜だって」「〜だよね」など、親しみやすい・フレンドリーな口調
-- 推測であることを明記してください（「〜と考えられるよ」「〜の可能性があるよ」など）
-- 分子量、重原子数、LogP、TPSA、分子複雑度、水素結合供与体数、水素結合受容体数、回転可能結合数などの文字は **太字** で表示してください
-- 数値は、必ず、`数値` の形式で表示してください
-- 「分子量と重原子数」「LogPとTPSA」「分子複雑度と回転可能結合数」「水素結合供与体数と水素結合受容体数」を組み合わせて、説明してください
-
-## 説明文の例
-
-### 例文（１）
-
-カフェインは、**分子量**が`194.19`で、**重原子数**が`14`だから、比較的小さくて扱いやすい分子だね！🤓
-
-**LogP**が`-0.10`とマイナスだから、水に溶けやすい性質を持っていると考えられるよ。
-これは、血液に乗って運ばれたり、体の中でうまく働いたりするのに有利な点だね。💧
-**TPSA**は`58.4` Å²で、これは比較的小さい値だよ。つまり、細胞の膜を通り抜けやすい性質を持っている可能性があるんだ。🧠✨
-
-**水素結合供与体数**が`0`なのは、膜を通り抜けるのを助けるポイントだよ。👍
-さらに、水素結合受容体数が`3`あるおかげで、水にも溶けやすいんだ。💧
-
-**分子複雑度**が`293.0`と、それなりに複雑な構造をしているから、体の中の特定の場所（例えば、脳の中の「アデノシン受容体」というところ！）にピタッとくっつきやすいのかもしれないね。🔬
-**回転可能結合数**が`0`だから、分子の形がカチッとしているのも、特定の場所にくっつくのに役立っている可能性があるよ。💪
-
-### 例文（２）
-
-リナロールは、**分子量**が`154.25`で、**重原子数**が`11`だから、体の中で吸収されたり、色々な場所に運ばれたりするのが得意な分子だね！👃✨
-
-**LogP**が`2.70`と、適度に油に溶けやすい性質を持っているから、細胞の膜を通り抜けやすい可能性があるんだ。🪴
-**TPSA**は`20.2` Å²と小さいから、脳のバリアを越えるのにも有利かもしれないね。🧠
-
-**水素給与体数**が`1`、**水素結合受容体数**が`1`だから、水と油、どちらにもある程度馴染める性質を持っていると考えられるよ。💧🤝
-
-**分子複雑度**が`154.0`と、そこそこ複雑な構造をしているから、特定の匂いの受容体にうまくフィットして、あの心地よい香りを届けてくれるんだ。🌸
-**回転可能結合数**が`4`あるから、分子の形を少し変えながら、色々な受容体にアプローチできる柔軟性を持っているのかもしれないね。🤸
-
-### 例文（３）
-
-リモネンは、**分子量**が`136.23`で、**重原子数**が`10`だから、体の中で吸収されて色々な場所に運ばれるのに都合の良いサイズだね！🚗💨
-
-**LogP**が`3.40`と、油に溶けやすい性質を持っているんだ。
-これは、細胞の膜を通り抜けやすいということなんだぜ！🪞✨
-**TPSA**が`0.0` Å²と非常に小さいのは、さらに膜透過性が高いことを示唆しているよ。
-脳のバリアを越えるのも得意かもしれないね！🧠🚀
-
-**水素結合供与体数**が`0`、**水素結合受容体数**も`0`だから、水に溶けにくい代わりに、油っぽい細胞膜にはスルスル入っていけるんだ。💧🙅‍♀️
-
-**分子複雑度**が`163.0`で、**回転可能結合数**が`1`だから、構造はそこそこ複雑だけど、ある程度決まった形をしているんだ。
-この形が、特定の生体分子（例えば、嗅覚受容体とか！）にうまくフィットして、あの爽やかな柑橘系の香りを届けたり、体に良い影響を与えたりするのに役立っていると考えられぜ！🍊🌿
-
-# 手順（４）: 出力
-
-分析結果のみを出力してください。他の説明や補足は不要です。
-"""
-
-# Sample queries organized by category for readability
-SAMPLE_QUERIES: List[Dict[str, str]] = [
-    # 🌸 香り
-    {"icon": "🌸", "text": "良い香りのする成分は？"},
-    {"icon": "🍯", "text": "甘い香りのする成分は？"},
-    {"icon": "🌿", "text": "フレッシュな香りが欲しい"},
-    {"icon": "🕯️", "text": "落ち着く香りを探している"},
-    {"icon": "🌶️", "text": "スパイシーな香りが欲しい"},
-    
-    # 🍋 食べ物・飲み物
-    {"icon": "🍋", "text": "レモンの成分は？"},
-    {"icon": "🍦", "text": "バニラの成分は？"},
-    {"icon": "☕", "text": "コーヒーの成分は？"},
-    {"icon": "🍫", "text": "チョコレートの成分は？"},
-    {"icon": "🌿", "text": "ミントの成分は？"},
-    
-    # 🌸 花・植物
-    {"icon": "🌹", "text": "バラの香り成分は？"},
-    {"icon": "🌸", "text": "桜の香り成分は？"},
-    {"icon": "💜", "text": "ラベンダーの香り成分は？"},
-    {"icon": "🌼", "text": "ジャスミンの香り成分は？"},
-    {"icon": "🌺", "text": "金木犀の香り成分は？"},
-    
-    # 🎨 色・染料
-    {"icon": "🍎", "text": "リンゴの赤色の成分は？"},
-    {"icon": "🫐", "text": "ベリーの青色の成分は？"},
-    {"icon": "🍋", "text": "レモンの黄色の成分は？"},
-    {"icon": "🍇", "text": "ぶどうの紫色の成分は？"},
-    {"icon": "👖", "text": "デニムの青色の成分は？"},
-    
-    # 👅 味覚
-    {"icon": "🍯", "text": "甘い味の成分は？"},
-    {"icon": "🍋", "text": "酸っぱい味の成分は？"},
-    {"icon": "☕", "text": "苦い味の成分は？"},
-    {"icon": "🌶️", "text": "辛い味の成分は？"},
-    {"icon": "🍄", "text": "うま味の成分は？"},
-    
-    # 💊 医薬品
-    {"icon": "🤧", "text": "風邪薬の成分は？"},
-    {"icon": "🤕", "text": "頭痛薬の成分を教えて"},
-    {"icon": "🤢", "text": "胃薬の成分は？"},
-    {"icon": "🦠", "text": "インフル治療薬の成分は？"},
-    {"icon": "💉", "text": "抗生物質の成分は？"},
-    
-    # 🌲 自然・環境
-    {"icon": "🌲", "text": "森の香り成分は？"},
-    {"icon": "🌊", "text": "海の香り成分は？"},
-    {"icon": "🌱", "text": "土の匂い成分は？"},
-    {"icon": "🌳", "text": "木の香り成分は？"},
-    {"icon": "🌿", "text": "草の香り成分は？"},
-    
-    # 💪 スポーツ・運動
-    {"icon": "💪", "text": "筋肉を鍛えたい"},
-    {"icon": "🔄", "text": "疲労を回復させたい"},
-    {"icon": "🏃", "text": "持久力をアップさせたい"},
-    {"icon": "⚡", "text": "瞬発力をアップさせたい"},
-    {"icon": "⚡", "text": "エネルギーを補給したい"},
-    
-    # 💚 健康・体調
-    {"icon": "😊", "text": "気分をすっきりさせたい"},
-    {"icon": "😴", "text": "疲れを取りたい"},
-    {"icon": "🌅", "text": "目覚めを良くしたい"},
-    {"icon": "🛡️", "text": "免疫力を高めたい"},
-    {"icon": "❤️", "text": "血行を良くしたい"},
-    
-    # 😴 リラックス・睡眠
-    {"icon": "🧘", "text": "リラックスしたい"},
-    {"icon": "🕊️", "text": "心を落ち着かせたい"},
-    {"icon": "😌", "text": "ゆっくり休みたい"},
-    {"icon": "😊", "text": "幸福感を感じたい"},
-    
-    # 🧠 集中・学習
-    {"icon": "🎯", "text": "集中力を高めたい"},
-    {"icon": "📚", "text": "勉強に集中したい"},
-    {"icon": "💡", "text": "思考力を高めたい"},
-    {"icon": "🧠", "text": "脳を活性化したい"},
-    
-    # ✨ 美容・スキンケア
-    {"icon": "✨", "text": "肌を美しく保ちたい"},
-    {"icon": "🌟", "text": "若々しさを維持したい"},
-    {"icon": "💇", "text": "髪の毛を健康にしたい"},
-    {"icon": "🛡️", "text": "シミを防ぎたい"},
-    {"icon": "💧", "text": "肌の潤いを保ちたい"},
-
-    {"icon": "🪲", "text": "ホタルが光るのはなぜ？"},
-]
+# Import shared prompts from tools
+from tools.utils.shared_prompts import AIPrompts
+
+# Import sample queries from config
+from config.sample_queries import SAMPLE_QUERIES
 
 # =============================================================================
 # LOGGING CONFIGURATION
@@ -557,33 +181,11 @@ logger = setup_logging()
 # ERROR HANDLING
 # =============================================================================
 
-class ErrorHandler:
-    """Simplified error handling for the application."""
-    
-    @staticmethod
-    def handle_error(e: Exception, error_type: str = "general_error") -> str:
-        """Handle all types of errors with simplified messaging."""
-        logger.error(f"Error ({error_type}): {str(e)}")
-        
-        # Map error types to appropriate messages
-        error_messages = {
-            'api_error': Config.ERROR_MESSAGES['api_error'],
-            'timeout': Config.ERROR_MESSAGES['timeout'],
-            'molecule_not_found': Config.ERROR_MESSAGES['molecule_not_found'],
-            'invalid_data': Config.ERROR_MESSAGES['invalid_data'],
-            'processing_error': Config.ERROR_MESSAGES['processing_error'],
-            'parse_error': Config.ERROR_MESSAGES['parse_error'],
-            'display_error': Config.ERROR_MESSAGES['display_error'],
-            'no_data': Config.ERROR_MESSAGES['no_data'],
-            'general_error': Config.ERROR_MESSAGES['general_error'],
-        }
-        
-        return error_messages.get(error_type, Config.ERROR_MESSAGES['general_error'])
-    
-    @staticmethod
-    def show_error(message: str) -> None:
-        """Show error message."""
-        st.error(f"⚠️ {message}")
+# ErrorHandler is now imported from tools.utils.error_handler
+# Add Streamlit-specific error display method
+def show_error(message: str) -> None:
+    """Show error message using Streamlit."""
+    st.error(f"⚠️ {message}")
 
 
 def show_action_buttons(key_prefix: str = "action") -> None:
@@ -650,10 +252,10 @@ def execute_with_timeout(func, timeout_seconds: int, error_type: str = "timeout"
             future = executor.submit(func)
             return future.result(timeout=timeout_seconds)
     except FutureTimeoutError:
-        ErrorHandler.show_error(ErrorHandler.handle_error(Exception("Timeout"), error_type))
+        show_error(ErrorHandler.handle_error(Exception("Timeout"), error_type))
         return None
     except Exception as e:
-        ErrorHandler.show_error(ErrorHandler.handle_error(e, "general_error"))
+        show_error(ErrorHandler.handle_error(e, "general_error"))
         return None
 
 def generate_random_queries() -> List[Dict[str, str]]:
@@ -678,170 +280,10 @@ from tools.utils.updated_cache_managers import (
     PubChemCacheManager, QueryCacheManager, DescriptionCacheManager,
     SimilarMoleculesCacheManager, AnalysisCacheManager, FailedMoleculesCacheManager
 )
+from tools.utils.unified_cache_manager import UnifiedCacheManager
 
-class CacheManager:
-    """Unified cache manager coordinating all cache operations with name mapping support."""
-    
-    def __init__(self):
-        """Initialize unified cache manager."""
-        self.name_mappings = NameMappingCacheManager()
-        self.pubchem = PubChemCacheManager(Config.CACHE['data_sources']['pubchem'])
-        self.queries = QueryCacheManager(Config.CACHE['data_sources']['queries'])
-        self.descriptions = DescriptionCacheManager(Config.CACHE['data_sources']['descriptions'])
-        self.analysis = AnalysisCacheManager(Config.CACHE['data_sources']['analysis'])
-        self.similar = SimilarMoleculesCacheManager(Config.CACHE['data_sources']['similar'])
-        self.failed_molecules = FailedMoleculesCacheManager(Config.CACHE['data_sources']['failed_molecules'])
-    
-    def save_all_caches(self, name_jp: str, name_en: str, detailed_info: DetailedMoleculeInfo, cid: int, user_query: str, description: str):
-        """Save all cache types when xyz_data is successfully obtained."""
-        try:
-            # 1. Save name mapping
-            self.name_mappings.save_mapping(normalize_compound_name(name_en), name_jp, name_en)
-            
-            # 2. PubChemキャッシュ保存
-            self.pubchem.save_cached_molecule_data(name_en, detailed_info, cid)
-            
-            # 3. 質問-化合物マッピング保存
-            if user_query:
-                compounds = [{"compound_name": name_en, "timestamp": datetime.now().isoformat()}]
-                self.queries.save_query_compound_mapping(
-                    user_query,
-                    compounds,
-                    increment_count=False
-                )
-            
-            # 4. 化合物-説明マッピング保存
-            if description:
-                self.descriptions.save_compound_description(name_en, description)
-            
-            logger.info(f"All caches saved successfully for {name_en}")
-        except Exception as e:
-            logger.error(f"Error saving caches for {name_en}: {e}")
-    
-    def get_compound_names_for_display(self, compound_name: str) -> Tuple[str, str]:
-        """Get Japanese and English names for display purposes."""
-        return self.name_mappings.get_names_for_display(normalize_compound_name(compound_name))
-    
-    def get_fallback_molecule_data(self, user_query: str = "") -> Optional[Tuple[str, str, str]]:
-        """
-        Get fallback molecule data when PubChem XYZ data is not available.
-        Returns: (compound_name, description, xyz_data) or None
-        """
-        try:
-            logger.info("Attempting to get fallback molecule data from cache")
-            
-            # Strategy 1: Try to get from queries cache first
-            if user_query:
-                random_compound = self.queries.get_random_compound_from_query(user_query)
-                if random_compound:
-                    logger.info(f"Found random compound from queries cache: {random_compound}")
-                    # Get description and XYZ data for this compound
-                    description = self.descriptions.get_random_description(random_compound)
-                    cached_data = self.pubchem.get_cached_molecule_data(random_compound)
-                    
-                    if description and cached_data:
-                        detailed_info, cid = cached_data
-                        if detailed_info and detailed_info.xyz_data:
-                            logger.info(f"Successfully got fallback data for {random_compound}")
-                            return random_compound, description, detailed_info.xyz_data
-            
-            # Strategy 2: Try to get from any queries cache
-            random_compound = self.queries.get_any_random_compound_from_queries()
-            if random_compound:
-                logger.info(f"Found random compound from any queries cache: {random_compound}")
-                description = self.descriptions.get_random_description(random_compound)
-                cached_data = self.pubchem.get_cached_molecule_data(random_compound)
-                
-                if description and cached_data:
-                    detailed_info, cid = cached_data
-                    if detailed_info and detailed_info.xyz_data:
-                        logger.info(f"Successfully got fallback data for {random_compound}")
-                        return random_compound, description, detailed_info.xyz_data
-            
-            # Strategy 3: Try to get from similar cache
-            random_result = self.similar.get_any_random_similar_compound()
-            if random_result:
-                random_compound, description = random_result
-                logger.info(f"Found random compound from similar cache: {random_compound}")
-                cached_data = self.pubchem.get_cached_molecule_data(random_compound)
-                
-                if cached_data:
-                    detailed_info, cid = cached_data
-                    if detailed_info and detailed_info.xyz_data:
-                        logger.info(f"Successfully got fallback data for {random_compound}")
-                        return random_compound, description, detailed_info.xyz_data
-            
-            logger.warning("No fallback molecule data available from any cache")
-            return None
-            
-        except Exception as e:
-            logger.error(f"Error getting fallback molecule data: {e}")
-            return None
-    
-    def clear_all_cache(self):
-        """Clear all cache directories."""
-        try:
-            for manager in [self.name_mappings, self.pubchem, self.queries, self.descriptions, self.analysis, self.similar, self.failed_molecules]:
-                if hasattr(manager, 'clear_cache'):
-                    manager.clear_cache()
-            logger.info("All cache cleared successfully")
-        except Exception as e:
-            logger.error(f"Error clearing all cache: {e}")
-    
-    def get_all_cache_stats(self) -> Dict[str, Any]:
-        """Get cache statistics for all data sources."""
-        try:
-            all_stats = {}
-            total_count = 0
-            total_size = 0
-            
-            for manager_name, manager in [
-                ('name_mappings', self.name_mappings), 
-                ('pubchem', self.pubchem), 
-                ('queries', self.queries), 
-                ('descriptions', self.descriptions),
-                ('analysis', self.analysis),
-                ('similar', self.similar),
-                ('failed_molecules', self.failed_molecules)
-            ]:
-                cache_dir = manager.cache_dir if hasattr(manager, 'cache_dir') else manager._get_source_cache_directory()
-                if cache_dir and os.path.exists(cache_dir):
-                    files = []
-                    source_size = 0
-                    
-                    for filename in os.listdir(cache_dir):
-                        if filename.endswith('.json'):
-                            file_path = os.path.join(cache_dir, filename)
-                            file_size = os.path.getsize(file_path)
-                            file_time = datetime.fromtimestamp(os.path.getmtime(file_path))
-                            
-                            files.append({
-                                'name': filename,
-                                'size_bytes': file_size,
-                                'modified': file_time.isoformat()
-                            })
-                            source_size += file_size
-                    
-                    all_stats[manager_name] = {
-                        'count': len(files),
-                        'size_mb': round(source_size / (1024 * 1024), 2),
-                        'files': files
-                    }
-                    total_count += len(files)
-                    total_size += source_size
-            
-            all_stats['total'] = {
-                'count': total_count,
-                'size_mb': round(total_size / (1024 * 1024), 2)
-                }
-                
-            return all_stats
-        except Exception as e:
-            logger.error(f"Error getting cache stats: {e}")
-            return {'count': 0, 'size_mb': 0, 'files': []}
-
-# Initialize cache manager
-cache_manager = CacheManager()
+# Initialize cache manager using UnifiedCacheManager
+cache_manager = UnifiedCacheManager(cache_base_dir=Config.CACHE['base_directory'], config=Config.CACHE)
 
 # =============================================================================
 # QUERY ANALYTICS FUNCTIONS
@@ -1008,7 +450,7 @@ def call_gemini_api(prompt: str, use_google_search: bool = True) -> Optional[str
         logger.info("Successfully received response from Gemini API")
         return response.text
     except Exception as e:
-        ErrorHandler.show_error(ErrorHandler.handle_error(e, "api_error"))
+        show_error(ErrorHandler.handle_error(e, "api_error"))
         return None
 
 def search_molecule_by_query(user_input_text: str) -> Optional[str]:
@@ -1039,151 +481,26 @@ def search_molecule_by_query(user_input_text: str) -> Optional[str]:
     
     return response_text
 
-def find_similar_molecules(molecule_name: str) -> Optional[str]:
-    """Find molecules similar to the specified molecule."""
+def find_similar_molecules_with_cache(molecule_name: str) -> Optional[str]:
+    """Find similar molecules using common function with cache support."""
     logger.info(f"Searching for similar molecules to: {molecule_name}")
     
     # Get English name from current data for cache key
     current_data = st.session_state.get("current_molecule_data", None)
-    english_name = current_data.get("name_en") if current_data else None
     
-    # Always call Gemini API for similar molecules (don't use cache for direct response)
-    similar_prompt = AIPrompts.SIMILAR_MOLECULE_SEARCH.format(molecule_name=molecule_name)
-    
-    response_text = call_gemini_api(
-        prompt=similar_prompt,
-        use_google_search=True
-    )
-    
-    # Check if response indicates no results
-    if is_no_result_response(response_text):
-        logger.info(f"No similar molecules found from Gemini for: {molecule_name}")
-        
-        # Try to get a random similar compound from cache
-        if english_name:
-            random_result = cache_manager.similar.get_random_similar_compound(english_name)
-            if random_result:
-                random_compound_name, random_description = random_result
-                logger.info(f"Using cached similar compound as fallback: {random_compound_name}")
-                # Create a fallback response with the cached compound
-                fallback_response = f'{{"name_jp": "{random_compound_name}", "name_en": "{random_compound_name}", "description": "{random_description}"}}'
-                return fallback_response
-            else:
-                logger.info(f"No cached similar compounds found for: {english_name}")
-                return response_text  # Return original "該当なし" response
-        else:
-            logger.info(f"No English name available for fallback search")
-            return response_text  # Return original "該当なし" response
-    
-    if response_text and english_name:
-        # Parse and save to cache using English name
-        parsed_data = parse_json_response(response_text)
-        if parsed_data:
-            # Save English name and descriptions for similar compounds with timestamp
-            current_timestamp = datetime.now().isoformat()
-            similar_compounds = [{
-                "compound_name": parsed_data.get("name_en", ""), 
-                "timestamp": current_timestamp,
-                "descriptions": [{
-                    "description": parsed_data.get("description", ""),
-                    "timestamp": current_timestamp
-                }]
-            }]
-            cache_manager.similar.save_similar_molecules(english_name, similar_compounds)
-    
-    return response_text
+    # Use common function for similar molecule search
+    return find_similar_molecules(molecule_name, call_gemini_api, cache_manager, current_data)
 
-def get_compounds_by_name(english_name: str) -> Optional[Any]:
-    """Get compound from PubChem using English name with timeout protection."""
-    logger.info(f"Searching PubChem for compound: {english_name}")
-    
-    def search_pubchem():
-        """Execute PubChem search by name."""
-        try:
-            compounds = pcp.get_compounds(english_name, 'name')
-            if compounds:
-                compound = compounds[0]  # Get first result
-                logger.info(f"Found compound: {compound.cid}")
-                return compound
-            else:
-                logger.warning(f"No compounds found for name: {english_name}")
-                return None
-        except Exception as e:
-            logger.warning(f"PubChem search error for {english_name}: {type(e).__name__}: {str(e)}")
-            return None
-    
-    return execute_with_timeout(
-        search_pubchem, 
-        Config.TIMEOUTS['pubchem_3d'], 
-        "timeout"
-    )
+# Import PubChem client functions from tools
+from tools.utils.pubchem_client import (
+    get_compounds_by_name,
+    get_3d_coordinates_by_cid,
+    convert_pubchem_to_xyz,
+    execute_with_timeout,
+    get_comprehensive_molecule_data
+)
 
-def get_3d_coordinates_by_cid(cid: int) -> Optional[str]:
-    """Get 3D coordinates from PubChem using CID with timeout protection."""
-    logger.info(f"Fetching 3D coordinates for CID: {cid}")
-    
-    def fetch_3d_coords():
-        """Execute 3D coordinates fetch."""
-        try:
-            # Get 3D compound data from PubChem
-            compounds_3d = pcp.get_compounds(cid, record_type='3d')
-            if compounds_3d and len(compounds_3d) > 0:
-                compound_3d = compounds_3d[0]
-                
-                # Extract coordinates and convert to XYZ format
-                xyz_data = convert_pubchem_to_xyz(compound_3d)
-                if xyz_data:
-                    logger.info(f"Successfully fetched 3D coordinates for CID {cid}")
-                    return xyz_data
-                else:
-                    logger.warning(f"Failed to convert 3D coordinates for CID {cid}")
-                    return None
-            else:
-                logger.warning(f"No 3D coordinates available for CID {cid}")
-                return None
-        except Exception as e:
-            logger.warning(f"3D coordinates fetch error for CID {cid}: {type(e).__name__}: {str(e)}")
-            return None
-    
-    return execute_with_timeout(
-        fetch_3d_coords, 
-        Config.TIMEOUTS['pubchem_3d'], 
-        "timeout"
-    )
-
-def convert_pubchem_to_xyz(compound_3d) -> Optional[str]:
-    """Convert PubChem 3D compound data to XYZ format."""
-    try:
-        # Get atom coordinates and symbols
-        atoms = compound_3d.atoms
-        if not atoms:
-            return None
-        
-        # Count atoms
-        num_atoms = len(atoms)
-        
-        # Create XYZ header
-        xyz_lines = [str(num_atoms)]
-        xyz_lines.append(f"PubChem 3D coordinates for CID {compound_3d.cid}")
-        
-        # Add atom coordinates
-        for atom in atoms:
-            # Get atom symbol and coordinates
-            symbol = atom.element
-            x = atom.x
-            y = atom.y
-            z = atom.z
-            
-            # Format: symbol x y z
-            xyz_lines.append(f"{symbol:2s} {x:12.6f} {y:12.6f} {z:12.6f}")
-        
-        return "\n".join(xyz_lines)
-        
-    except Exception as e:
-        logger.warning(f"Error converting PubChem data to XYZ: {type(e).__name__}: {str(e)}")
-        return None
-
-def get_comprehensive_molecule_data(english_name: str) -> Tuple[bool, Optional[DetailedMoleculeInfo], Optional[int], Optional[str]]:
+def get_comprehensive_molecule_data_with_cache(english_name: str) -> Tuple[bool, Optional[DetailedMoleculeInfo], Optional[int], Optional[str]]:
     """Get comprehensive molecule data from PubChem using English name with cache support."""
     logger.info(f"Getting comprehensive data for: {english_name}")
     
@@ -1192,178 +509,40 @@ def get_comprehensive_molecule_data(english_name: str) -> Tuple[bool, Optional[D
     if cached_data:
         detailed_info, cid = cached_data
         logger.info(f"Using cached data for: {english_name}")
-        
-        # PubChemキャッシュのみ使用（説明キャッシュは別途保存）
-        
         return True, detailed_info, cid, None
     
     with st.spinner("分子データを取得中...", show_time=True):
-
-        # Try multiple search strategies
-        compound = None
+        # Use the shared function from tools
+        success, detailed_info, cid, error_msg = get_comprehensive_molecule_data(english_name)
         
-        # Strategy 1: Direct name search
-        compound = get_compounds_by_name(english_name)
-
-        # Strategy 2: If direct search fails, try common variations
-        if not compound:
-            logger.info(f"Direct search failed for '{english_name}', trying variations...")
-            variations = [
-                english_name.lower(),
-                english_name.replace(" ", ""),
-                english_name.replace(" acid", ""),
-                english_name.replace(" salt", ""),
-            ]
-            
-            for variation in variations:
-                if variation != english_name:
-                    logger.info(f"Trying variation: '{variation}'")
-                    compound = get_compounds_by_name(variation)
-                    if compound:
-                        logger.info(f"Found compound with variation: '{variation}'")
-                        break
-        
-        if not compound:
-            logger.warning(f"No compound found for '{english_name}' with any search strategy")
-            # Add to failed molecules list
-            cache_manager.failed_molecules.add_failed_molecule(english_name)
-            return False, None, None, Config.ERROR_MESSAGES['molecule_not_found']
-        
-        try:
-            # Safely extract detailed information with proper error handling
-            def safe_get_attr(obj, attr_name, default=None):
-                """Safely get attribute from compound object."""
-                try:
-                    value = getattr(obj, attr_name, default)
-                    return value if value is not None else default
-                except (AttributeError, TypeError):
-                    return default
-            
-            def safe_get_numeric_attr(obj, attr_name, default=None):
-                """Safely get numeric attribute from compound object."""
-                try:
-                    value = getattr(obj, attr_name, default)
-                    if value is not None:
-                        return float(value) if isinstance(value, (int, float, str)) else default
-                    return default
-                except (AttributeError, TypeError, ValueError):
-                    return default
-            
-            def safe_get_int_attr(obj, attr_name, default=None):
-                """Safely get integer attribute from compound object."""
-                try:
-                    value = getattr(obj, attr_name, default)
-                    if value is not None:
-                        return int(value) if isinstance(value, (int, float, str)) else default
-                    return default
-                except (AttributeError, TypeError, ValueError):
-                    return default
-
-            # Extract basic information
-            molecular_formula = safe_get_attr(compound, 'molecular_formula')
-            molecular_weight = safe_get_attr(compound, 'molecular_weight')
-            
-            # Convert molecular_weight to float if it's a string
-            if molecular_weight and isinstance(molecular_weight, str):
-                try:
-                    molecular_weight = float(molecular_weight)
-                except (ValueError, TypeError):
-                    molecular_weight = None
-            elif molecular_weight and not isinstance(molecular_weight, (int, float)):
-                try:
-                    molecular_weight = float(molecular_weight)
-                except (ValueError, TypeError):
-                    molecular_weight = None
-            
-            # Get 3D coordinates data
-            xyz_data = get_3d_coordinates_by_cid(compound.cid)
-            
-            # Create detailed info object
-            detailed_info = DetailedMoleculeInfo(
-                molecular_formula=molecular_formula,
-                molecular_weight=molecular_weight,
-                iupac_name=safe_get_attr(compound, 'iupac_name'),
-                synonyms=safe_get_attr(compound, 'synonyms', [])[:5] if safe_get_attr(compound, 'synonyms') else [],
-                inchi=safe_get_attr(compound, 'inchi'),
-                # Chemical properties
-                xlogp=safe_get_numeric_attr(compound, 'xlogp'),
-                tpsa=safe_get_numeric_attr(compound, 'tpsa'),
-                complexity=safe_get_numeric_attr(compound, 'complexity'),
-                rotatable_bond_count=safe_get_int_attr(compound, 'rotatable_bond_count'),
-                heavy_atom_count=safe_get_int_attr(compound, 'heavy_atom_count'),
-                hbond_donor_count=safe_get_int_attr(compound, 'h_bond_donor_count'),
-                hbond_acceptor_count=safe_get_int_attr(compound, 'h_bond_acceptor_count'),
-                charge=safe_get_int_attr(compound, 'charge'),
-                # XYZ coordinate data
-                xyz_data=xyz_data,
-            )
-            
-            logger.info(f"Successfully created detailed info for {english_name}")
-            
+        if success and detailed_info:
             # Save to cache only if xyz_data is available
             if detailed_info.xyz_data:
-                # PubChemキャッシュのみ保存（説明キャッシュは別途保存）
-                cache_manager.pubchem.save_cached_molecule_data(english_name, detailed_info, compound.cid)
+                cache_manager.pubchem.save_cached_molecule_data(english_name, detailed_info, cid)
             else:
                 logger.warning(f"Skipping cache save for {english_name}: No xyz_data available")
                 # Add to failed molecules list when XYZ data is not available
                 cache_manager.failed_molecules.add_failed_molecule(english_name)
-            
-            return True, detailed_info, compound.cid, None
-            
-        except Exception as e:
-            logger.error(f"Error creating detailed info for {english_name}: {type(e).__name__}: {str(e)}")
-            return False, None, None, Config.ERROR_MESSAGES['processing_error']
+        
+        return success, detailed_info, cid, error_msg
 
-def analyze_molecule_properties(detailed_info: DetailedMoleculeInfo, molecule_name: str) -> Optional[str]:
-    """Analyze molecular properties and generate human-readable explanation."""
+def analyze_molecule_properties_with_cache(detailed_info: DetailedMoleculeInfo, molecule_name: str) -> Optional[str]:
+    """Analyze molecular properties using common function with cache support."""
     logger.info(f"Getting Gemini analysis for molecule: {molecule_name}")
     
-    # PubChemの詳細情報を整理
-    properties_text = []
-    if detailed_info.molecular_formula:
-        properties_text.append(f"分子式: {detailed_info.molecular_formula}")
-    if detailed_info.molecular_weight:
-        properties_text.append(f"分子量: {detailed_info.molecular_weight:.2f}")
-    if detailed_info.heavy_atom_count is not None:
-        properties_text.append(f"重原子数: {detailed_info.heavy_atom_count}")
-    if detailed_info.xlogp is not None:
-        properties_text.append(f"LogP: {detailed_info.xlogp:.2f}")
-    if detailed_info.tpsa is not None:
-        properties_text.append(f"TPSA: {detailed_info.tpsa:.1f} Å²")
-    if detailed_info.complexity is not None:
-        properties_text.append(f"分子複雑度: {detailed_info.complexity:.1f}")
-    if detailed_info.hbond_donor_count is not None:
-        properties_text.append(f"水素結合供与体数: {detailed_info.hbond_donor_count}")
-    if detailed_info.hbond_acceptor_count is not None:
-        properties_text.append(f"水素結合受容体数: {detailed_info.hbond_acceptor_count}")
-    if detailed_info.rotatable_bond_count is not None:
-        properties_text.append(f"回転可能結合数: {detailed_info.rotatable_bond_count}")
+    # Check cache first using English name
+    current_data = st.session_state.get("current_molecule_data", None)
+    english_name = current_data.get("name_en") if current_data else None
     
-    properties_str = "\n".join(properties_text)
+    if english_name:
+        cached_analyses = cache_manager.analysis.get_analysis_results(english_name)
+        if cached_analyses:
+            logger.info(f"Using cached analysis for: {english_name}")
+            # Return the most recent analysis
+            return cached_analyses[-1]['description']
     
-    prompt = AIPrompts.MOLECULAR_ANALYSIS.format(
-        molecule_name=molecule_name,
-        properties_str=properties_str
-    )
-    
-    response_text = call_gemini_api(
-        prompt=prompt,
-        use_google_search=False
-    )
-    
-    if response_text:
-        analysis_result = response_text.strip()
-        
-        # Save analysis result to cache using English name
-        current_data = st.session_state.get("current_molecule_data", None)
-        if current_data and current_data.get("name_en"):
-            cache_manager.analysis.save_analysis_result(current_data["name_en"], analysis_result)
-        
-        return analysis_result
-    else:
-        logger.warning("No response received from Gemini API for molecular analysis")
-        return None
+    # Use common function for analysis
+    return analyze_molecule_properties(detailed_info, molecule_name, call_gemini_api, cache_manager)
 
 # =============================================================================
 # APPLICATION INITIALIZATION
@@ -1419,50 +598,18 @@ except Exception as e:
 # RESPONSE PARSING AND VISUALIZATION FUNCTIONS
 # =============================================================================
 
-def parse_json_response(response_text: str) -> Optional[Dict]:
-    """Parse JSON data from Gemini response text."""
-    if not response_text:
-        return None
-    
-    # Define JSON patterns in order of preference
-    patterns = [
-        r'```json\s*(\{.*?\})\s*```',  # JSON code blocks
-        r'(\{[^{}]*"name_jp"[^{}]*"name_en"[^{}]*"description"[^{}]*\})',  # New format
-        r'(\{[^{}]*"name_jp"[^{}]*\})',  # Any JSON with name_jp
-        r'(\{[^{}]*"name"[^{}]*"id"[^{}]*"description"[^{}]*\})',  # Legacy format
-        r'(\{[^{}]*"name"[^{}]*\})',  # Any JSON with name
-    ]
-    
-    for pattern in patterns:
-        matches = re.findall(pattern, response_text, re.DOTALL)
-        for json_str in matches:
-            try:
-                parsed = json.loads(json_str)
-                if isinstance(parsed, dict) and ("name_jp" in parsed or "name" in parsed):
-                    return parsed
-            except json.JSONDecodeError:
-                continue
-    
-    return None
+# Import error handling utilities from tools
+from tools.utils.error_handler import (
+    ErrorHandler,
+    is_no_result_response,
+    parse_json_response
+)
 
-def is_no_result_response(response_text: str) -> bool:
-    """Check if the response indicates no results found."""
-    if not response_text:
-        return True
-    
-    # Check for "該当なし" in the response
-    if "該当なし" in response_text:
-        return True
-    
-    # Also check parsed JSON for "該当なし" in name_jp field
-    try:
-        json_data = parse_json_response(response_text)
-        if json_data and json_data.get("name_jp") == "該当なし":
-            return True
-    except:
-        pass
-    
-    return False
+# Import common molecular analysis functions
+from tools.utils.molecular_analysis import (
+    analyze_molecule_properties,
+    find_similar_molecules
+)
 
 def create_default_molecule_data() -> Dict[str, Union[str, None, Any]]:
     """Create default molecule data structure."""
@@ -1541,7 +688,7 @@ def parse_gemini_response(response_text: str, save_to_query_cache: bool = True) 
                     
                     logger.info(f"Attempting to get comprehensive data for: {molecule_name_en}")
                     # Get comprehensive data from PubChem
-                    success, detailed_info, cid, error_msg = get_comprehensive_molecule_data(molecule_name_en)
+                    success, detailed_info, cid, error_msg = get_comprehensive_molecule_data_with_cache(molecule_name_en)
                 
                     if success and detailed_info:
                         logger.info(f"Successfully got comprehensive data for {molecule_name_en}")
@@ -1687,7 +834,7 @@ def get_molecule_analysis() -> str:
         
         # Use saved detailed info for analysis
         logger.info(f"Generating analysis result for: {molecule_name}")
-        analysis_result = analyze_molecule_properties(detailed_info, molecule_name)
+        analysis_result = analyze_molecule_properties_with_cache(detailed_info, molecule_name)
         
         if analysis_result:
             return analysis_result
@@ -1699,7 +846,7 @@ def get_molecule_analysis() -> str:
 def find_and_process_similar_molecule() -> Optional[Dict]:
     """Find and process similar molecule data."""
     try:
-        similar_response = find_similar_molecules(get_molecule_name())
+        similar_response = find_similar_molecules_with_cache(get_molecule_name())
         if similar_response:
             # 関連分子処理時はqueriesキャッシュに保存しない
             return parse_gemini_response(similar_response, save_to_query_cache=False)
@@ -1707,9 +854,6 @@ def find_and_process_similar_molecule() -> Optional[Dict]:
     except Exception as e:
         logger.error(f"Error finding similar molecules: {e}")
         return None
-
-
-
 
 def show_initial_screen():
     """Display initial screen with greeting and random samples."""
