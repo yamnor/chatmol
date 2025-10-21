@@ -126,7 +126,7 @@ def show_action_buttons(key_prefix: str = "action") -> None:
         logger.info(f"Cache only mode: similar molecules available for {english_name}: {has_similar_molecules}")
     
     with col1:
-        if st.button("この分子を分析！", key=f"{key_prefix}_detail", use_container_width=True, icon="🧪", disabled=not has_cid):
+        if st.button("この分子の性質は？", key=f"{key_prefix}_detail", use_container_width=True, icon="🧪", disabled=not has_cid):
             if has_cid:
                 # Log user action
                 log_user_action("detail_view")
@@ -139,7 +139,7 @@ def show_action_buttons(key_prefix: str = "action") -> None:
     with col2:
         # Disable similar button if no similar molecules available in cache_only mode
         similar_button_disabled = not has_name or not has_similar_molecules
-        if st.button("似た分子を探して", key=f"{key_prefix}_similar", use_container_width=True, icon="🔍", disabled=similar_button_disabled):
+        if st.button("似た分子をさがして", key=f"{key_prefix}_similar", use_container_width=True, icon="🔍", disabled=similar_button_disabled):
             if has_name and has_similar_molecules:
                 # Log user action
                 log_user_action("similar_search")
@@ -149,7 +149,7 @@ def show_action_buttons(key_prefix: str = "action") -> None:
                 st.rerun()
     
     with col3:
-        if st.button("別の質問をしたい", key=f"{key_prefix}_new", use_container_width=True, icon="😀"):
+        if st.button("べつの質問をしたい", key=f"{key_prefix}_new", use_container_width=True, icon="😀"):
             reset_to_initial_state()
 
 # =============================================================================
@@ -1162,53 +1162,56 @@ def show_detail_response_screen():
         return
 
     with st.chat_message("user"):
-        st.write(f"「 **{get_molecule_name()}** 」を分析！")
+        st.write(f"「 **{get_molecule_name()}** 」の性質は？")
 
     # Execute analysis only once per screen transition
     if not st.session_state.get("detail_analysis_executed", False):
         analysis_result = get_molecule_analysis()
         st.session_state.cached_analysis_result = analysis_result
         st.session_state.detail_analysis_executed = True
-    
+
+    with st.chat_message("assistant"):
+        st.write("この分子の化学的な性質を示すよ。")
+
     # Display cached analysis result
     cached_result = st.session_state.get("cached_analysis_result", "")
     if cached_result:
-        with st.chat_message("assistant"):
 
-            # Display molecular properties metrics before analysis
-            current_data = st.session_state.get("current_molecule_data", None)
-            if current_data and current_data.get("detailed_info"):
-                detailed_info = current_data["detailed_info"]
-                
-                with st.container(border=True):
-
-                    # Display metrics in 3 columns
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        if detailed_info.molecular_formula:
-                            st.write(f"分子式: `{detailed_info.molecular_formula}` [[ ? ]](https://ja.wikipedia.org/wiki/%E5%8C%96%E5%AD%A6%E5%BC%8F#%E5%88%86%E5%AD%90%E5%BC%8F)")
-                        if detailed_info.xlogp is not None:
-                            st.write(f"LogP: `{detailed_info.xlogp:.2f}` [[ ? ]](https://ja.wikipedia.org/wiki/%E5%88%86%E9%85%8D%E4%BF%82%E6%95%B0)")
-                        if detailed_info.hbond_donor_count is not None:
-                            st.write(f"水素結合供与体数: `{detailed_info.hbond_donor_count}` [[ ? ]](https://ja.wikipedia.org/wiki/%E6%B0%B4%E7%B4%A0%E7%B5%90%E5%90%88)")
-                    
-                    with col2:
-                        if detailed_info.molecular_weight:
-                            st.write(f"分子量: `{detailed_info.molecular_weight:.2f} g/mol` [[ ? ]](https://ja.wikipedia.org/wiki/%E5%88%86%E5%AD%90%E9%87%8F)")
-                        if detailed_info.tpsa:
-                            st.write(f"tPSA: `{detailed_info.tpsa:.1f} Å²` [[ ? ]](https://ja.wikipedia.org/wiki/%E6%A5%B5%E6%80%A7%E8%A1%A8%E9%9D%A2%E7%A9%8D)")
-                        if detailed_info.hbond_acceptor_count is not None:
-                            st.write(f"水素結合受容体数: `{detailed_info.hbond_acceptor_count}` [[ ? ]](https://ja.wikipedia.org/wiki/%E6%B0%B4%E7%B4%A0%E7%B5%90%E5%90%88)")
-                    
-                    with col3:
-                        if detailed_info.heavy_atom_count is not None:
-                            st.write(f"重原子数: `{detailed_info.heavy_atom_count}`")
-                        if detailed_info.complexity:
-                            st.write(f"分子複雑度: `{detailed_info.complexity:.1f}`")
-                        if detailed_info.rotatable_bond_count is not None:
-                            st.write(f"回転可能結合数: `{detailed_info.rotatable_bond_count}`")
+        # Display molecular properties metrics before analysis
+        current_data = st.session_state.get("current_molecule_data", None)
+        if current_data and current_data.get("detailed_info"):
+            detailed_info = current_data["detailed_info"]
             
+            with st.container(border=True):
+
+                # Display metrics in 3 columns
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    if detailed_info.molecular_formula:
+                        st.write(f"分子式: `{detailed_info.molecular_formula}`")
+                    if detailed_info.xlogp is not None:
+                        st.write(f"LogP: `{detailed_info.xlogp:.2f}`")
+                    if detailed_info.hbond_donor_count is not None:
+                        st.write(f"水素結合供与体数: `{detailed_info.hbond_donor_count}`")
+                
+                with col2:
+                    if detailed_info.molecular_weight:
+                        st.write(f"分子量: `{detailed_info.molecular_weight:.2f} g/mol`")
+                    if detailed_info.tpsa:
+                        st.write(f"tPSA: `{detailed_info.tpsa:.1f} Å²`")
+                    if detailed_info.hbond_acceptor_count is not None:
+                        st.write(f"水素結合受容体数: `{detailed_info.hbond_acceptor_count}`")
+                
+                with col3:
+                    if detailed_info.heavy_atom_count is not None:
+                        st.write(f"重原子数: `{detailed_info.heavy_atom_count}`")
+                    if detailed_info.complexity:
+                        st.write(f"分子複雑度: `{detailed_info.complexity:.1f}`")
+                    if detailed_info.rotatable_bond_count is not None:
+                        st.write(f"回転可能結合数: `{detailed_info.rotatable_bond_count}`")
+        
+        st.write("このデータを読み解くと、次のようなことが分かるんだ。")
         st.write(cached_result)
 
     current_data = st.session_state.get("current_molecule_data", None)
