@@ -1141,19 +1141,19 @@ def show_detail_response_screen():
                     
                     with col1:
                         if detailed_info.molecular_formula:
-                            st.write(f"[分子式](https://ja.wikipedia.org/wiki/%E5%8C%96%E5%AD%A6%E5%BC%8F#%E5%88%86%E5%AD%90%E5%BC%8F): `{detailed_info.molecular_formula}`")
+                            st.write(f"分子式: `{detailed_info.molecular_formula}` [[ ? ]](https://ja.wikipedia.org/wiki/%E5%8C%96%E5%AD%A6%E5%BC%8F#%E5%88%86%E5%AD%90%E5%BC%8F)")
                         if detailed_info.xlogp is not None:
-                            st.write(f"[LogP](https://ja.wikipedia.org/wiki/%E5%88%86%E9%85%8D%E4%BF%82%E6%95%B0): `{detailed_info.xlogp:.2f}`")
+                            st.write(f"LogP: `{detailed_info.xlogp:.2f}` [[ ? ]](https://ja.wikipedia.org/wiki/%E5%88%86%E9%85%8D%E4%BF%82%E6%95%B0)")
                         if detailed_info.hbond_donor_count is not None:
-                            st.write(f"[水素結合供与体数](https://ja.wikipedia.org/wiki/%E6%B0%B4%E7%B4%A0%E7%B5%90%E5%90%88): `{detailed_info.hbond_donor_count}`")
+                            st.write(f"水素結合供与体数: `{detailed_info.hbond_donor_count}` [[ ? ]](https://ja.wikipedia.org/wiki/%E6%B0%B4%E7%B4%A0%E7%B5%90%E5%90%88)")
                     
                     with col2:
                         if detailed_info.molecular_weight:
-                            st.write(f"[分子量（g/mol）](https://ja.wikipedia.org/wiki/%E5%88%86%E5%AD%90%E9%87%8F): `{detailed_info.molecular_weight:.2f}`")
+                            st.write(f"分子量: `{detailed_info.molecular_weight:.2f} g/mol` [[ ? ]](https://ja.wikipedia.org/wiki/%E5%88%86%E5%AD%90%E9%87%8F)")
                         if detailed_info.tpsa:
-                            st.write(f"[tPSA（Å²）](https://ja.wikipedia.org/wiki/%E6%A5%B5%E6%80%A7%E8%A1%A8%E9%9D%A2%E7%A9%8D): `{detailed_info.tpsa:.1f}`")
+                            st.write(f"tPSA: `{detailed_info.tpsa:.1f} Å²` [[ ? ]](https://ja.wikipedia.org/wiki/%E6%A5%B5%E6%80%A7%E8%A1%A8%E9%9D%A2%E7%A9%8D)")
                         if detailed_info.hbond_acceptor_count is not None:
-                            st.write(f"[水素結合受容体数](https://ja.wikipedia.org/wiki/%E6%B0%B4%E7%B4%A0%E7%B5%90%E5%90%88): `{detailed_info.hbond_acceptor_count}`")
+                            st.write(f"水素結合受容体数: `{detailed_info.hbond_acceptor_count}` [[ ? ]](https://ja.wikipedia.org/wiki/%E6%B0%B4%E7%B4%A0%E7%B5%90%E5%90%88)")
                     
                     with col3:
                         if detailed_info.heavy_atom_count is not None:
