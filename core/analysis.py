@@ -129,7 +129,7 @@ def analyze_molecule_properties(detailed_info: DetailedMoleculeInfo,
     if detailed_info.xlogp is not None:
         properties_text.append(f"LogP: {detailed_info.xlogp:.2f}")
     if detailed_info.tpsa is not None:
-        properties_text.append(f"TPSA: {detailed_info.tpsa:.1f} Å²")
+        properties_text.append(f"tPSA: {detailed_info.tpsa:.1f} Å²")
     if detailed_info.complexity is not None:
         properties_text.append(f"分子複雑度: {detailed_info.complexity:.1f}")
     if detailed_info.hbond_donor_count is not None:

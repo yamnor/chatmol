@@ -126,7 +126,7 @@ def show_action_buttons(key_prefix: str = "action") -> None:
         logger.info(f"Cache only mode: similar molecules available for {english_name}: {has_similar_molecules}")
     
     with col1:
-        if st.button("詳しく知りたい", key=f"{key_prefix}_detail", use_container_width=True, icon="🧪", disabled=not has_cid):
+        if st.button("この分子を分析！", key=f"{key_prefix}_detail", use_container_width=True, icon="🧪", disabled=not has_cid):
             if has_cid:
                 # Log user action
                 log_user_action("detail_view")
@@ -139,7 +139,7 @@ def show_action_buttons(key_prefix: str = "action") -> None:
     with col2:
         # Disable similar button if no similar molecules available in cache_only mode
         similar_button_disabled = not has_name or not has_similar_molecules
-        if st.button("関連する分子は？", key=f"{key_prefix}_similar", use_container_width=True, icon="🔍", disabled=similar_button_disabled):
+        if st.button("似た分子を探して", key=f"{key_prefix}_similar", use_container_width=True, icon="🔍", disabled=similar_button_disabled):
             if has_name and has_similar_molecules:
                 # Log user action
                 log_user_action("similar_search")
@@ -149,7 +149,7 @@ def show_action_buttons(key_prefix: str = "action") -> None:
                 st.rerun()
     
     with col3:
-        if st.button("他の分子を探す", key=f"{key_prefix}_new", use_container_width=True, icon="😀"):
+        if st.button("別の質問をしたい", key=f"{key_prefix}_new", use_container_width=True, icon="😀"):
             reset_to_initial_state()
 
 # =============================================================================
@@ -1089,9 +1089,11 @@ def show_query_response_screen():
         else:
             st.session_state.current_molecule_data = output_data
 
-            message = f"あなたにオススメする分子は「 **[{output_data['name']}](https://pubchem.ncbi.nlm.nih.gov/compound/{output_data['cid']})** 」だよ。{output_data['memo']}"
+            message = f"あなたにオススメする分子は「 **[{output_data['name']}](https://pubchem.ncbi.nlm.nih.gov/compound/{output_data['cid']})** 」だよ。"
             with st.chat_message("assistant"):
                 st.write(message)
+
+            st.write(output_data['memo'])
                             
             display_molecule_3d(output_data)
             show_action_buttons("main_action")
@@ -1114,7 +1116,7 @@ def show_detail_response_screen():
         return
 
     with st.chat_message("user"):
-        st.write(f"「 **{get_molecule_name()}** 」について、詳しく教えて")
+        st.write(f"「 **{get_molecule_name()}** 」を分析！")
 
     # Execute analysis only once per screen transition
     if not st.session_state.get("detail_analysis_executed", False):
@@ -1139,19 +1141,19 @@ def show_detail_response_screen():
                     
                     with col1:
                         if detailed_info.molecular_formula:
-                            st.write(f"分子式: `{detailed_info.molecular_formula}`")
+                            st.write(f"[分子式](https://ja.wikipedia.org/wiki/%E5%8C%96%E5%AD%A6%E5%BC%8F#%E5%88%86%E5%AD%90%E5%BC%8F): `{detailed_info.molecular_formula}`")
                         if detailed_info.xlogp is not None:
-                            st.write(f"LogP: `{detailed_info.xlogp:.2f}`")
+                            st.write(f"[LogP](https://ja.wikipedia.org/wiki/%E5%88%86%E9%85%8D%E4%BF%82%E6%95%B0): `{detailed_info.xlogp:.2f}`")
                         if detailed_info.hbond_donor_count is not None:
-                            st.write(f"水素結合供与体数: `{detailed_info.hbond_donor_count}`")
+                            st.write(f"[水素結合供与体数](https://ja.wikipedia.org/wiki/%E6%B0%B4%E7%B4%A0%E7%B5%90%E5%90%88): `{detailed_info.hbond_donor_count}`")
                     
                     with col2:
                         if detailed_info.molecular_weight:
-                            st.write(f"分子量（g/mol）: `{detailed_info.molecular_weight:.2f}`")
+                            st.write(f"[分子量（g/mol）](https://ja.wikipedia.org/wiki/%E5%88%86%E5%AD%90%E9%87%8F): `{detailed_info.molecular_weight:.2f}`")
                         if detailed_info.tpsa:
-                            st.write(f"TPSA（Å²）: `{detailed_info.tpsa:.1f}`")
+                            st.write(f"[tPSA（Å²）](https://ja.wikipedia.org/wiki/%E6%A5%B5%E6%80%A7%E8%A1%A8%E9%9D%A2%E7%A9%8D): `{detailed_info.tpsa:.1f}`")
                         if detailed_info.hbond_acceptor_count is not None:
-                            st.write(f"水素結合受容体数: `{detailed_info.hbond_acceptor_count}`")
+                            st.write(f"[水素結合受容体数](https://ja.wikipedia.org/wiki/%E6%B0%B4%E7%B4%A0%E7%B5%90%E5%90%88): `{detailed_info.hbond_acceptor_count}`")
                     
                     with col3:
                         if detailed_info.heavy_atom_count is not None:
@@ -1161,7 +1163,7 @@ def show_detail_response_screen():
                         if detailed_info.rotatable_bond_count is not None:
                             st.write(f"回転可能結合数: `{detailed_info.rotatable_bond_count}`")
             
-            st.write(cached_result)
+        st.write(cached_result)
 
     current_data = st.session_state.get("current_molecule_data", None)
     display_molecule_3d(current_data)
@@ -1194,14 +1196,17 @@ def show_similar_response_screen():
     # Display current molecule data
     current_data = st.session_state.get("current_molecule_data", None)
     if current_data:
-        # For similar molecules, we may not have xyz_data or cid
-        if current_data.get("cid"):
-            message = f"あなたにオススメする分子は「 **[{current_data['name']}](https://pubchem.ncbi.nlm.nih.gov/compound/{current_data['cid']})** 」だよ。{current_data['memo']}"
-        else:
-            message = f"あなたにオススメする分子は「 **{current_data['name']}** 」だよ。{current_data['memo']}"
-        
+
         with st.chat_message("assistant"):
+        # For similar molecules, we may not have xyz_data or cid
+            if current_data.get("cid"):
+                message = f"あなたにオススメする分子は「 **[{current_data['name']}](https://pubchem.ncbi.nlm.nih.gov/compound/{current_data['cid']})** 」だよ。"
+            else:
+                message = f"あなたにオススメする分子は「 **{current_data['name']}** 」だよ。"
+        
             st.write(message)
+        
+        st.write(current_data['memo'])
         
         # Only display 3D structure if xyz_data is available
         if current_data.get("xyz_data"):
@@ -1281,6 +1286,7 @@ def display_molecule_3d(molecule_data: Dict) -> bool:
             viewer.setStyle({'stick': {}})  # Stick representation
             viewer.setZoomLimits(Config.VIEWER['zoom_min'], Config.VIEWER['zoom_max'])  # Set zoom limits
             viewer.zoomTo()  # Auto-fit molecule
+            viewer.zoom(1.5)
             viewer.spin('y', Config.VIEWER['rotation_speed'])  # Auto-rotate around Y-axis
             
             # Use components.html to display the viewer

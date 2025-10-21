@@ -69,7 +69,7 @@ class Config:
         'width_pc': 700,
         'height_pc': 450,
         'width_mobile': 340,
-        'height_mobile': 200,
+        'height_mobile': 180,
         'zoom_min': 0.1,
         'zoom_max': 50,
         'rotation_speed': 1,
