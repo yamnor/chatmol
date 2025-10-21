@@ -1132,32 +1132,34 @@ def show_detail_response_screen():
             if current_data and current_data.get("detailed_info"):
                 detailed_info = current_data["detailed_info"]
                 
-                # Display metrics in 3 columns
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    if detailed_info.molecular_formula:
-                        st.metric("分子式", detailed_info.molecular_formula)
-                    if detailed_info.xlogp is not None:
-                        st.metric("LogP", f"{detailed_info.xlogp:.2f}")
-                    if detailed_info.hbond_donor_count is not None:
-                        st.metric("水素結合供与体数", f"{detailed_info.hbond_donor_count}")
-                
-                with col2:
-                    if detailed_info.molecular_weight:
-                        st.metric("分子量（g/mol）", f"{detailed_info.molecular_weight:.2f}")
-                    if detailed_info.tpsa:
-                        st.metric("TPSA（Å²）", f"{detailed_info.tpsa:.1f}")
-                    if detailed_info.hbond_acceptor_count is not None:
-                        st.metric("水素結合受容体数", f"{detailed_info.hbond_acceptor_count}")
-                
-                with col3:
-                    if detailed_info.heavy_atom_count is not None:
-                        st.metric("重原子数", f"{detailed_info.heavy_atom_count}")
-                    if detailed_info.complexity:
-                        st.metric("分子複雑度", f"{detailed_info.complexity:.1f}")
-                    if detailed_info.rotatable_bond_count is not None:
-                        st.metric("回転可能結合数", f"{detailed_info.rotatable_bond_count}")
+                with st.container(border=True):
+
+                    # Display metrics in 3 columns
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        if detailed_info.molecular_formula:
+                            st.write(f"分子式: `{detailed_info.molecular_formula}`")
+                        if detailed_info.xlogp is not None:
+                            st.write(f"LogP: `{detailed_info.xlogp:.2f}`")
+                        if detailed_info.hbond_donor_count is not None:
+                            st.write(f"水素結合供与体数: `{detailed_info.hbond_donor_count}`")
+                    
+                    with col2:
+                        if detailed_info.molecular_weight:
+                            st.write(f"分子量（g/mol）: `{detailed_info.molecular_weight:.2f}`")
+                        if detailed_info.tpsa:
+                            st.write(f"TPSA（Å²）: `{detailed_info.tpsa:.1f}`")
+                        if detailed_info.hbond_acceptor_count is not None:
+                            st.write(f"水素結合受容体数: `{detailed_info.hbond_acceptor_count}`")
+                    
+                    with col3:
+                        if detailed_info.heavy_atom_count is not None:
+                            st.write(f"重原子数: `{detailed_info.heavy_atom_count}`")
+                        if detailed_info.complexity:
+                            st.write(f"分子複雑度: `{detailed_info.complexity:.1f}`")
+                        if detailed_info.rotatable_bond_count is not None:
+                            st.write(f"回転可能結合数: `{detailed_info.rotatable_bond_count}`")
             
             st.write(cached_result)
 
