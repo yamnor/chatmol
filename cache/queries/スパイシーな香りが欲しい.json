@@ -1,0 +1,19 @@
+{
+  "query_text": "スパイシーな香りが欲しい",
+  "icon": "🌶️",
+  "compounds": [
+    {
+      "compound_name": "eugenol",
+      "timestamp": "2025-10-21T19:28:51.319574"
+    },
+    {
+      "compound_name": "gingerol",
+      "timestamp": "2025-10-21T19:54:07.994804"
+    },
+    {
+      "compound_name": "capsaicin",
+      "timestamp": "2025-10-21T20:04:58.292227"
+    }
+  ],
+  "timestamp": "2025-10-21T20:41:15.924717"
+}

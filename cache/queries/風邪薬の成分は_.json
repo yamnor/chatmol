@@ -1,0 +1,11 @@
+{
+  "query_text": "風邪薬の成分は？",
+  "icon": "🤧",
+  "compounds": [
+    {
+      "compound_name": "acetaminophen",
+      "timestamp": "2025-10-21T19:35:54.246571"
+    }
+  ],
+  "timestamp": "2025-10-21T20:42:07.755575"
+}

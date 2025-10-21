@@ -1,0 +1,28 @@
+{
+  "compound_name": "vanillin",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:32:58.026683",
+  "cid": 1183,
+  "detailed_info": {
+    "molecular_formula": "C8H8O3",
+    "molecular_weight": 152.15,
+    "iupac_name": "4-hydroxy-3-methoxybenzaldehyde",
+    "synonyms": [
+      "vanillin",
+      "4-Hydroxy-3-methoxybenzaldehyde",
+      "121-33-5",
+      "Vanillic aldehyde",
+      "Vanillaldehyde"
+    ],
+    "inchi": "InChI=1S/C8H8O3/c1-11-8-4-6(5-9)2-3-7(8)10/h2-5,10H,1H3",
+    "xlogp": 1.2,
+    "tpsa": 46.5,
+    "complexity": 135.0,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 11,
+    "hbond_donor_count": 1,
+    "hbond_acceptor_count": 3,
+    "charge": 0,
+    "xyz_data": "19\nPubChem 3D coordinates for CID 1183\nO      2.262700    -0.987000     0.000000\nO      2.337200     1.791700     0.000400\nO     -3.670200    -0.303000     0.000400\nC      1.108500    -0.263400    -0.000100\nC     -1.306600    -0.198500    -0.000200\nC     -0.117700    -0.928100    -0.000100\nC      1.146000     1.130900    -0.000200\nC     -1.269000     1.195900    -0.000200\nC     -0.042800     1.860600    -0.000100\nC     -2.585300    -0.891200    -0.000100\nC      2.137100    -2.407700     0.000100\nH     -0.206200    -2.009500     0.000000\nH     -2.182600     1.784800    -0.000200\nH     -0.027900     2.947300     0.000000\nH     -2.553000    -1.994000    -0.000400\nH      1.647700    -2.770200    -0.910500\nH      1.647900    -2.770100     0.910600\nH      3.151600    -2.820300     0.000000\nH      2.168100     2.749600     0.000500"
+  }
+}

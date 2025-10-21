@@ -1,0 +1,28 @@
+{
+  "compound_name": "creatinine",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:29:54.328538",
+  "cid": 588,
+  "detailed_info": {
+    "molecular_formula": "C4H7N3O",
+    "molecular_weight": 113.12,
+    "iupac_name": "2-amino-3-methyl-4H-imidazol-5-one",
+    "synonyms": [
+      "2-Imino-1-methylimidazolidin-4-one",
+      "1-Methylglycocyamidine",
+      "1-Methylhydantoin-2-imide",
+      "Creatinine,heated",
+      "Kreatininum"
+    ],
+    "inchi": "InChI=1S/C4H7N3O/c1-7-2-3(8)6-4(7)5/h2H2,1H3,(H2,5,6,8)",
+    "xlogp": -1.8,
+    "tpsa": 58.7,
+    "complexity": 151.0,
+    "rotatable_bond_count": 0,
+    "heavy_atom_count": 8,
+    "hbond_donor_count": 1,
+    "hbond_acceptor_count": 1,
+    "charge": 0,
+    "xyz_data": "15\nPubChem 3D coordinates for CID 588\nO      2.621800     0.071600     0.001500\nN     -0.787200     0.630800    -0.001600\nN      0.622100    -1.124300    -0.000200\nN     -1.730500    -1.540900     0.000600\nC      0.510400     1.266400    -0.000900\nC     -0.631800    -0.733100    -0.000700\nC      1.398400     0.028000    -0.000300\nC     -2.003100     1.401300     0.001700\nH      0.678700     1.851100     0.906700\nH      0.679800     1.851100    -0.908300\nH     -2.605300     1.171200    -0.882800\nH     -1.793200     2.476000    -0.005400\nH     -2.594300     1.180300     0.895800\nH     -2.672400    -1.165900     0.001500\nH     -1.636900    -2.550800     0.002100"
+  }
+}

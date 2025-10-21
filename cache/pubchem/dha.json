@@ -1,0 +1,28 @@
+{
+  "compound_name": "dha",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:43:55.382751",
+  "cid": 15608515,
+  "detailed_info": {
+    "molecular_formula": "C7H10O8",
+    "molecular_weight": 222.15,
+    "iupac_name": "(4R,5R,6S)-2,4,5-trihydroxyoxane-2,6-dicarboxylic acid",
+    "synonyms": [
+      "3-Deoxy-Lyxo-Heptulosaric Acid",
+      "D-Dha",
+      "3-Deoxy-D-Lyxo-Heptopyran-2-ularic Acid",
+      "3-Deoxy-D-lyxo-hept-2-ulopyranosaric acid",
+      "3-Deoxy-D-Lyxo-Hept-2-ulo-Pyranosaric Acid"
+    ],
+    "inchi": "InChI=1S/C7H10O8/c8-2-1-7(14,6(12)13)15-4(3(2)9)5(10)11/h2-4,8-9,14H,1H2,(H,10,11)(H,12,13)/t2-,3-,4+,7?/m1/s1",
+    "xlogp": -2.0,
+    "tpsa": 145.0,
+    "complexity": 289.0,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 15,
+    "hbond_donor_count": 5,
+    "hbond_acceptor_count": 8,
+    "charge": 0,
+    "xyz_data": "25\nPubChem 3D coordinates for CID 15608515\nO     -0.036000     0.879500     0.038300\nO      0.182200    -3.260100    -0.301300\nO      1.455700    -1.052000    -1.456800\nO     -1.507800     0.163400     1.754900\nO     -3.537200     0.301500    -0.038400\nO      3.444400     0.742400     0.638800\nO     -2.222900     1.902800    -0.989400\nO      2.129500     2.200800    -0.518800\nC      0.101400    -1.979500     0.312100\nC      1.331400    -1.137600    -0.034800\nC     -1.174800    -1.276600    -0.154200\nC     -1.226000     0.163700     0.363100\nC      1.149600     0.265300     0.539600\nC     -2.350100     0.899800    -0.303000\nC      2.260700     1.186500     0.149900\nH      0.058400    -2.138800     1.395800\nH      2.237600    -1.626600     0.339400\nH     -1.214900    -1.289900    -1.252000\nH     -2.041200    -1.857500     0.187300\nH      1.100400     0.248900     1.635400\nH      0.276500    -3.125200    -1.259800\nH      2.309900    -0.632400    -1.655000\nH     -1.748900     1.069300     2.013100\nH     -4.286500     0.769000    -0.465400\nH      4.187500     1.333000     0.391800"
+  }
+}

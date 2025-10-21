@@ -1,0 +1,28 @@
+{
+  "compound_name": "dimethylsulfide",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:09:17.803020",
+  "cid": 1068,
+  "detailed_info": {
+    "molecular_formula": "C2H6S",
+    "molecular_weight": 62.14,
+    "iupac_name": "methylsulfanylmethane",
+    "synonyms": [
+      "dimethyl sulfide",
+      "Methyl sulfide",
+      "75-18-3",
+      "Methane, thiobis-",
+      "dimethyl sulphide"
+    ],
+    "inchi": "InChI=1S/C2H6S/c1-3-2/h1-2H3",
+    "xlogp": 0.9,
+    "tpsa": 25.3,
+    "complexity": 2.8,
+    "rotatable_bond_count": 0,
+    "heavy_atom_count": 3,
+    "hbond_donor_count": 0,
+    "hbond_acceptor_count": 1,
+    "charge": 0,
+    "xyz_data": "9\nPubChem 3D coordinates for CID 1068\nS      0.000000    -0.786400     0.000000\nC     -1.370700     0.393200     0.000000\nC      1.370700     0.393200     0.000000\nH     -1.332700     1.021200     0.893900\nH     -2.317100    -0.154100     0.000000\nH     -1.332600     1.021400    -0.893700\nH      1.332700     1.021300     0.893900\nH      1.332600     1.021400    -0.893700\nH      2.317100    -0.154100    -0.000100"
+  }
+}

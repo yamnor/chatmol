@@ -1,0 +1,19 @@
+{
+  "query_text": "血行を良くしたい",
+  "icon": "❤️",
+  "compounds": [
+    {
+      "compound_name": "vitamine",
+      "timestamp": "2025-10-21T19:17:02.244343"
+    },
+    {
+      "compound_name": "nicotinic",
+      "timestamp": "2025-10-21T19:37:21.192341"
+    },
+    {
+      "compound_name": "hesperidin",
+      "timestamp": "2025-10-21T20:19:03.889800"
+    }
+  ],
+  "timestamp": "2025-10-21T20:40:12.409231"
+}

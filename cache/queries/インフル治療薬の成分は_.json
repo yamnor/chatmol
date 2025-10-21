@@ -1,0 +1,15 @@
+{
+  "query_text": "インフル治療薬の成分は？",
+  "icon": "🦠",
+  "compounds": [
+    {
+      "compound_name": "oseltamivir",
+      "timestamp": "2025-10-21T19:24:32.762583"
+    },
+    {
+      "compound_name": "baloxavirmarboxil",
+      "timestamp": "2025-10-21T20:17:10.061578"
+    }
+  ],
+  "timestamp": "2025-10-21T20:22:22.178737"
+}

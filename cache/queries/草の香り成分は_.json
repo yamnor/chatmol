@@ -1,0 +1,23 @@
+{
+  "query_text": "草の香り成分は？",
+  "icon": "🌿",
+  "compounds": [
+    {
+      "compound_name": "alpha-pinene",
+      "timestamp": "2025-10-21T19:29:55.741969"
+    },
+    {
+      "compound_name": "cis-3-hexen-1-ol",
+      "timestamp": "2025-10-21T19:42:30.439982"
+    },
+    {
+      "compound_name": "cis-3-hexenal",
+      "timestamp": "2025-10-21T19:58:52.648491"
+    },
+    {
+      "compound_name": "hexanal",
+      "timestamp": "2025-10-21T20:15:40.437098"
+    }
+  ],
+  "timestamp": "2025-10-21T20:15:40.441302"
+}

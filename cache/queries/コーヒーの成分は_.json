@@ -1,0 +1,11 @@
+{
+  "query_text": "コーヒーの成分は？",
+  "icon": "☕",
+  "compounds": [
+    {
+      "compound_name": "caffeine",
+      "timestamp": "2025-10-21T19:16:23.642151"
+    }
+  ],
+  "timestamp": "2025-10-21T20:26:59.494851"
+}

@@ -1,0 +1,28 @@
+{
+  "compound_name": "creatine",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:38:29.759021",
+  "cid": 586,
+  "detailed_info": {
+    "molecular_formula": "C4H9N3O2",
+    "molecular_weight": 131.13,
+    "iupac_name": "2-[carbamimidoyl(methyl)amino]acetic acid",
+    "synonyms": [
+      "creatine",
+      "57-00-1",
+      "Creatin",
+      "Kreatin",
+      "N-amidinosarcosine"
+    ],
+    "inchi": "InChI=1S/C4H9N3O2/c1-7(4(5)6)2-3(8)9/h2H2,1H3,(H3,5,6)(H,8,9)",
+    "xlogp": -1.2,
+    "tpsa": 90.4,
+    "complexity": 134.0,
+    "rotatable_bond_count": 3,
+    "heavy_atom_count": 9,
+    "hbond_donor_count": 3,
+    "hbond_acceptor_count": 3,
+    "charge": 0,
+    "xyz_data": "18\nPubChem 3D coordinates for CID 586\nO      2.955100    -0.439100    -0.297000\nO      1.466200     0.043700     1.350800\nN     -0.550500     0.516800    -0.370300\nN     -2.682500     0.010700     0.509300\nN     -1.367400    -1.738700    -0.233600\nC      0.751200     0.184700    -0.946700\nC     -0.795100     1.937200    -0.126800\nC     -1.511200    -0.451200    -0.046800\nC      1.734100    -0.064100     0.161100\nH      1.123000     0.998200    -1.578900\nH      0.677100    -0.716900    -1.564000\nH      0.064600     2.555000    -0.409200\nH     -0.981200     2.120300     0.936800\nH     -1.651400     2.286000    -0.713300\nH     -2.869800     0.992000     0.675100\nH     -3.421400    -0.633900     0.769900\nH     -2.216200    -2.215100     0.089900\nH      3.585700    -0.605500     0.435900"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "query_text": "頭痛薬の成分を教えて",
+  "icon": "🤕",
+  "compounds": [
+    {
+      "compound_name": "acetaminophen",
+      "timestamp": "2025-10-21T20:27:12.507667"
+    }
+  ],
+  "timestamp": "2025-10-21T20:39:28.550748"
+}

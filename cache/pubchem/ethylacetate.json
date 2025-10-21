@@ -1,0 +1,28 @@
+{
+  "compound_name": "ethylacetate",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:40:26.316709",
+  "cid": 8857,
+  "detailed_info": {
+    "molecular_formula": "C4H8O2",
+    "molecular_weight": 88.11,
+    "iupac_name": "ethyl acetate",
+    "synonyms": [
+      "ETHYL ACETATE",
+      "141-78-6",
+      "Ethyl ethanoate",
+      "Acetic acid ethyl ester",
+      "Acetoxyethane"
+    ],
+    "inchi": "InChI=1S/C4H8O2/c1-3-6-4(2)5/h3H2,1-2H3",
+    "xlogp": 0.7,
+    "tpsa": 26.3,
+    "complexity": 49.5,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 6,
+    "hbond_donor_count": 0,
+    "hbond_acceptor_count": 2,
+    "charge": 0,
+    "xyz_data": "14\nPubChem 3D coordinates for CID 8857\nO     -0.257700    -0.478200    -0.000200\nO      1.247200     1.274500     0.000000\nC     -1.347000     0.449900     0.000100\nC     -2.650600    -0.319700     0.000100\nC      0.986700     0.078900    -0.000100\nC      2.021300    -1.005300     0.000100\nH     -1.289400     1.080400     0.894300\nH     -1.289500     1.080700    -0.894000\nH     -3.506500     0.360900     0.000200\nH     -2.714900    -0.968700    -0.879500\nH     -2.714700    -0.969000     0.879400\nH      1.915800    -1.618800    -0.898200\nH      1.916700    -1.617500     0.899400\nH      3.018200    -0.555300    -0.000700"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "query_text": "筋肉を鍛えたい",
+  "icon": "💪",
+  "compounds": [
+    {
+      "compound_name": "creatine",
+      "timestamp": "2025-10-21T19:19:13.836093"
+    },
+    {
+      "compound_name": "leucine",
+      "timestamp": "2025-10-21T20:24:54.181450"
+    }
+  ],
+  "timestamp": "2025-10-21T20:24:54.183838"
+}

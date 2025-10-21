@@ -1,0 +1,15 @@
+{
+  "query_text": "フレッシュな香りが欲しい",
+  "icon": "🌿",
+  "compounds": [
+    {
+      "compound_name": "limonene",
+      "timestamp": "2025-10-21T19:54:33.998840"
+    },
+    {
+      "compound_name": "linalool",
+      "timestamp": "2025-10-21T19:59:33.626281"
+    }
+  ],
+  "timestamp": "2025-10-21T20:01:49.666584"
+}

@@ -1,0 +1,19 @@
+{
+  "query_text": "疲労を回復させたい",
+  "icon": "🔄",
+  "compounds": [
+    {
+      "compound_name": "vitaminb1",
+      "timestamp": "2025-10-21T19:27:03.911820"
+    },
+    {
+      "compound_name": "citric",
+      "timestamp": "2025-10-21T20:27:25.259289"
+    },
+    {
+      "compound_name": "creatine",
+      "timestamp": "2025-10-21T20:36:08.312129"
+    }
+  ],
+  "timestamp": "2025-10-21T20:37:45.872973"
+}

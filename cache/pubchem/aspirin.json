@@ -1,0 +1,28 @@
+{
+  "compound_name": "aspirin",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:04:44.954470",
+  "cid": 2244,
+  "detailed_info": {
+    "molecular_formula": "C9H8O4",
+    "molecular_weight": 180.16,
+    "iupac_name": "2-acetyloxybenzoic acid",
+    "synonyms": [
+      "aspirin",
+      "ACETYLSALICYLIC ACID",
+      "50-78-2",
+      "2-Acetoxybenzoic acid",
+      "2-(Acetyloxy)benzoic acid"
+    ],
+    "inchi": "InChI=1S/C9H8O4/c1-6(10)13-8-5-3-2-4-7(8)9(11)12/h2-5H,1H3,(H,11,12)",
+    "xlogp": 1.2,
+    "tpsa": 63.6,
+    "complexity": 212.0,
+    "rotatable_bond_count": 3,
+    "heavy_atom_count": 13,
+    "hbond_donor_count": 1,
+    "hbond_acceptor_count": 4,
+    "charge": 0,
+    "xyz_data": "21\nPubChem 3D coordinates for CID 2244\nO      1.233300     0.554000     0.779200\nO     -0.695200    -2.714800    -0.750200\nO      0.795800    -2.184300     0.868500\nO      1.781300     0.810500    -1.482100\nC     -0.085700     0.608800     0.440300\nC     -0.792700    -0.551500     0.124400\nC     -0.728800     1.846400     0.413300\nC     -2.142600    -0.474100    -0.218400\nC     -2.078700     1.923800     0.070600\nC     -2.785500     0.763600    -0.245300\nC     -0.140900    -1.853600     0.147700\nC      2.109400     0.671500    -0.311300\nC      3.530500     0.599600     0.163500\nH     -0.185100     2.754500     0.659300\nH     -2.724700    -1.360500    -0.456400\nH     -2.579700     2.887200     0.050600\nH     -3.837400     0.823800    -0.509000\nH      3.729000     1.418400     0.859300\nH      4.204500     0.696900    -0.692400\nH      3.710500    -0.365900     0.642600\nH     -0.255500    -3.591600    -0.733700"
+  }
+}

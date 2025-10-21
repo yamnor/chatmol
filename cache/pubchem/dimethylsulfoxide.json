@@ -1,0 +1,28 @@
+{
+  "compound_name": "dimethylsulfoxide",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:08:02.465865",
+  "cid": 679,
+  "detailed_info": {
+    "molecular_formula": "C2H6OS",
+    "molecular_weight": 78.14,
+    "iupac_name": "methylsulfinylmethane",
+    "synonyms": [
+      "dimethyl sulfoxide",
+      "67-68-5",
+      "DMSO",
+      "Methylsulfinylmethane",
+      "Methyl sulfoxide"
+    ],
+    "inchi": "InChI=1S/C2H6OS/c1-4(2)3/h1-2H3",
+    "xlogp": -0.6,
+    "tpsa": 36.3,
+    "complexity": 29.0,
+    "rotatable_bond_count": 0,
+    "heavy_atom_count": 4,
+    "hbond_donor_count": 0,
+    "hbond_acceptor_count": 2,
+    "charge": 0,
+    "xyz_data": "10\nPubChem 3D coordinates for CID 679\nS      0.181700     0.006500    -0.521200\nO      1.480100     0.053200     0.228400\nC     -0.879200     1.311200     0.146400\nC     -0.782600    -1.370900     0.146400\nH     -0.448300     2.279600    -0.118200\nH     -0.936900     1.225200     1.234100\nH     -1.877300     1.228400    -0.290100\nH     -1.784000    -1.360100    -0.290000\nH     -0.846300    -1.289400     1.234100\nH     -0.283100    -2.305900    -0.118200"
+  }
+}

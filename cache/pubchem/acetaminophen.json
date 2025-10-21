@@ -1,0 +1,28 @@
+{
+  "compound_name": "acetaminophen",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:42:07.752374",
+  "cid": 1983,
+  "detailed_info": {
+    "molecular_formula": "C8H9NO2",
+    "molecular_weight": 151.16,
+    "iupac_name": "N-(4-hydroxyphenyl)acetamide",
+    "synonyms": [
+      "acetaminophen",
+      "Paracetamol",
+      "4-Acetamidophenol",
+      "103-90-2",
+      "Tylenol"
+    ],
+    "inchi": "InChI=1S/C8H9NO2/c1-6(10)9-7-2-4-8(11)5-3-7/h2-5,11H,1H3,(H,9,10)",
+    "xlogp": 0.5,
+    "tpsa": 49.3,
+    "complexity": 139.0,
+    "rotatable_bond_count": 1,
+    "heavy_atom_count": 11,
+    "hbond_donor_count": 2,
+    "hbond_acceptor_count": 2,
+    "charge": 0,
+    "xyz_data": "20\nPubChem 3D coordinates for CID 1983\nO      3.850900     0.451600     0.001200\nO     -2.599900     1.404100    -0.001800\nN     -1.570500    -0.717100     0.000100\nC     -0.206600    -0.423100    -0.000200\nC      0.220500     0.904700     0.000400\nC      0.729800    -1.457000    -0.000700\nC      1.584100     1.198600     0.000200\nC      2.093300    -1.162900    -0.000700\nC      2.520400     0.164800    -0.000300\nC     -2.648500     0.178200     0.000900\nC     -3.973500    -0.542000     0.001000\nH     -0.443600     1.757700     0.001200\nH      0.411300    -2.496300    -0.001000\nH     -1.801000    -1.708600     0.000100\nH      1.905300     2.237000     0.000900\nH      2.818000    -1.972600    -0.000800\nH     -4.065500    -1.146300    -0.905800\nH     -4.790400     0.184400     0.028800\nH     -4.044500    -1.188600     0.880200\nH      3.965000     1.417600     0.001700"
+  }
+}

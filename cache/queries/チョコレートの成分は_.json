@@ -1,0 +1,11 @@
+{
+  "query_text": "チョコレートの成分は？",
+  "icon": "🍫",
+  "compounds": [
+    {
+      "compound_name": "theobromine",
+      "timestamp": "2025-10-21T19:33:30.871588"
+    }
+  ],
+  "timestamp": "2025-10-21T20:37:26.104362"
+}

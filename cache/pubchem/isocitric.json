@@ -1,0 +1,28 @@
+{
+  "compound_name": "isocitric",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:24:19.801663",
+  "cid": 1198,
+  "detailed_info": {
+    "molecular_formula": "C6H8O7",
+    "molecular_weight": 192.12,
+    "iupac_name": "1-hydroxypropane-1,2,3-tricarboxylic acid",
+    "synonyms": [
+      "isocitric acid",
+      "320-77-4",
+      "1-Hydroxypropane-1,2,3-tricarboxylic acid",
+      "3-carboxy-2,3-dideoxypentaric acid",
+      "1-Hydroxytricarballylic acid"
+    ],
+    "inchi": "InChI=1S/C6H8O7/c7-3(8)1-2(5(10)11)4(9)6(12)13/h2,4,9H,1H2,(H,7,8)(H,10,11)(H,12,13)",
+    "xlogp": -1.8,
+    "tpsa": 132.0,
+    "complexity": 233.0,
+    "rotatable_bond_count": 5,
+    "heavy_atom_count": 13,
+    "hbond_donor_count": 4,
+    "hbond_acceptor_count": 7,
+    "charge": 0,
+    "xyz_data": "21\nPubChem 3D coordinates for CID 1198\nO     -0.483500    -0.330800     1.866600\nO     -1.723900     1.505600    -1.250100\nO     -1.811500    -1.719800    -1.172800\nO     -0.655200     2.500000     0.495300\nO      3.603100    -0.252100     0.705500\nO     -2.819400    -1.064600     0.751600\nO      2.525900    -1.158200    -1.078500\nC      0.161300     0.368700    -0.373300\nC     -0.419300    -0.751400     0.512200\nC      1.592700     0.804900    -0.025600\nC     -0.761400     1.573100    -0.295200\nC     -1.808600    -1.172100     0.069600\nC      2.599800    -0.303300    -0.205500\nH      0.169100     0.033000    -1.419600\nH      0.215500    -1.643100     0.485600\nH      1.906600     1.644900    -0.656200\nH      1.632300     1.147700     1.015700\nH     -1.066000     0.445000     1.924000\nH     -2.322800     2.281900    -1.221200\nH     -2.710500    -2.001000    -1.446400\nH      4.251200    -0.977200     0.577600"
+  }
+}

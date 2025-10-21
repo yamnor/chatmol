@@ -1,0 +1,19 @@
+{
+  "query_text": "気分をすっきりさせたい",
+  "icon": "😊",
+  "compounds": [
+    {
+      "compound_name": "menthol",
+      "timestamp": "2025-10-21T19:35:06.642336"
+    },
+    {
+      "compound_name": "l-theanine",
+      "timestamp": "2025-10-21T20:14:26.341777"
+    },
+    {
+      "compound_name": "caffeine",
+      "timestamp": "2025-10-21T20:28:57.041829"
+    }
+  ],
+  "timestamp": "2025-10-21T20:39:40.863361"
+}

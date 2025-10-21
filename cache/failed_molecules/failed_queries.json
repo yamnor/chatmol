@@ -1,0 +1,419 @@
+{
+  "failed_queries": [
+    {
+      "query_text": "集中力を高めたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:16:52.098729"
+    },
+    {
+      "query_text": "脳を活性化したい",
+      "error_message": "No response from Gemini API",
+      "error_type": "gemini_api_error",
+      "timestamp": "2025-10-21T19:27:27.020528"
+    },
+    {
+      "query_text": "桜の香り成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:27:29.595496"
+    },
+    {
+      "query_text": "デニムの青色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:31:18.592862"
+    },
+    {
+      "query_text": "木の香り成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:32:34.730701"
+    },
+    {
+      "query_text": "脳を活性化したい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:35:47.899979"
+    },
+    {
+      "query_text": "森の香り成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:38:46.841453"
+    },
+    {
+      "query_text": "風邪薬の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:38:49.805392"
+    },
+    {
+      "query_text": "甘い香りのする成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:39:43.383131"
+    },
+    {
+      "query_text": "コーヒーの成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:40:58.085809"
+    },
+    {
+      "query_text": "ベリーの青色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:42:23.850674"
+    },
+    {
+      "query_text": "レモンの黄色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:43:08.416429"
+    },
+    {
+      "query_text": "気分をすっきりさせたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:43:32.947087"
+    },
+    {
+      "query_text": "酸っぱい味の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:44:22.711133"
+    },
+    {
+      "query_text": "バニラの成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:44:26.452632"
+    },
+    {
+      "query_text": "酸っぱい味の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:47:20.161109"
+    },
+    {
+      "query_text": "ベリーの青色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:47:57.088765"
+    },
+    {
+      "query_text": "海の香り成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:50:26.431570"
+    },
+    {
+      "query_text": "瞬発力をアップさせたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:50:30.160040"
+    },
+    {
+      "query_text": "肌を美しく保ちたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:50:36.315818"
+    },
+    {
+      "query_text": "リンゴの赤色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:52:23.372074"
+    },
+    {
+      "query_text": "木の香り成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:52:28.660430"
+    },
+    {
+      "query_text": "木の香り成分は？",
+      "error_message": "No response from Gemini API",
+      "error_type": "gemini_api_error",
+      "timestamp": "2025-10-21T19:54:02.479000"
+    },
+    {
+      "query_text": "ベリーの青色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:54:25.207317"
+    },
+    {
+      "query_text": "リンゴの赤色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:54:28.149337"
+    },
+    {
+      "query_text": "リンゴの赤色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:55:16.338053"
+    },
+    {
+      "query_text": "ぶどうの紫色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:55:42.106923"
+    },
+    {
+      "query_text": "インフル治療薬の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:56:56.577052"
+    },
+    {
+      "query_text": "シミを防ぎたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T19:58:47.959017"
+    },
+    {
+      "query_text": "疲労を回復させたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:01:26.057953"
+    },
+    {
+      "query_text": "心を落ち着かせたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:01:29.015823"
+    },
+    {
+      "query_text": "脳を活性化したい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:02:03.820185"
+    },
+    {
+      "query_text": "甘い香りのする成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:02:53.236566"
+    },
+    {
+      "query_text": "瞬発力をアップさせたい",
+      "error_message": "No response from Gemini API",
+      "error_type": "gemini_api_error",
+      "timestamp": "2025-10-21T20:04:26.336135"
+    },
+    {
+      "query_text": "うま味の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:04:29.303030"
+    },
+    {
+      "query_text": "リンゴの赤色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:04:51.466671"
+    },
+    {
+      "query_text": "海の香り成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:06:00.411879"
+    },
+    {
+      "query_text": "酸っぱい味の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:10:53.023420"
+    },
+    {
+      "query_text": "ミントの成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:12:08.236479"
+    },
+    {
+      "query_text": "ベリーの青色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:12:51.973814"
+    },
+    {
+      "query_text": "ミントの成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:13:29.056398"
+    },
+    {
+      "query_text": "うま味の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:14:00.698668"
+    },
+    {
+      "query_text": "バラの香り成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:14:37.355384"
+    },
+    {
+      "query_text": "チョコレートの成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:15:52.670994"
+    },
+    {
+      "query_text": "勉強に集中したい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:16:04.735787"
+    },
+    {
+      "query_text": "抗生物質の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:22:33.123024"
+    },
+    {
+      "query_text": "木の香り成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:22:40.941835"
+    },
+    {
+      "query_text": "チョコレートの成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:22:44.209923"
+    },
+    {
+      "query_text": "落ち着く香りを探している",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:23:38.801546"
+    },
+    {
+      "query_text": "ミントの成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:23:42.612704"
+    },
+    {
+      "query_text": "ベリーの青色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:23:51.652684"
+    },
+    {
+      "query_text": "甘い香りのする成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:24:20.359217"
+    },
+    {
+      "query_text": "髪の毛を健康にしたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:25:27.468638"
+    },
+    {
+      "query_text": "木の香り成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:25:32.490460"
+    },
+    {
+      "query_text": "落ち着く香りを探している",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:25:35.216191"
+    },
+    {
+      "query_text": "ベリーの青色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:26:38.564571"
+    },
+    {
+      "query_text": "木の香り成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:26:54.402835"
+    },
+    {
+      "query_text": "ゆっくり休みたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:27:43.159242"
+    },
+    {
+      "query_text": "抗生物質の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:28:11.047330"
+    },
+    {
+      "query_text": "思考力を高めたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:28:28.016198"
+    },
+    {
+      "query_text": "インフル治療薬の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:32:18.553799"
+    },
+    {
+      "query_text": "疲れを取りたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:32:21.273056"
+    },
+    {
+      "query_text": "ベリーの青色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:32:52.907447"
+    },
+    {
+      "query_text": "目覚めを良くしたい",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:35:08.116426"
+    },
+    {
+      "query_text": "甘い香りのする成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:36:22.245241"
+    },
+    {
+      "query_text": "土の匂い成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:38:39.614229"
+    },
+    {
+      "query_text": "デニムの青色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:39:00.585331"
+    },
+    {
+      "query_text": "バラの香り成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:41:57.571966"
+    },
+    {
+      "query_text": "デニムの青色の成分は？",
+      "error_message": "No valid compound found",
+      "error_type": "no_result",
+      "timestamp": "2025-10-21T20:42:01.364161"
+    }
+  ],
+  "timestamp": "2025-10-21T20:42:01.364176"
+}

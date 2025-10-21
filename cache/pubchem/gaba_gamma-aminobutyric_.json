@@ -1,0 +1,28 @@
+{
+  "compound_name": "gaba_gamma-aminobutyric_",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:21:17.214054",
+  "cid": 119,
+  "detailed_info": {
+    "molecular_formula": "C4H9NO2",
+    "molecular_weight": 103.12,
+    "iupac_name": "4-aminobutanoic acid",
+    "synonyms": [
+      "gamma-aminobutyric acid",
+      "GABA",
+      "56-12-2",
+      "Piperidic acid",
+      "Piperidinic acid"
+    ],
+    "inchi": "InChI=1S/C4H9NO2/c5-3-1-2-4(6)7/h1-3,5H2,(H,6,7)",
+    "xlogp": -3.2,
+    "tpsa": 63.3,
+    "complexity": 62.7,
+    "rotatable_bond_count": 3,
+    "heavy_atom_count": 7,
+    "hbond_donor_count": 2,
+    "hbond_acceptor_count": 3,
+    "charge": 0,
+    "xyz_data": "16\nPubChem 3D coordinates for CID 119\nO     -2.730400     0.711300     0.034000\nO     -1.689300    -1.306500    -0.023500\nN      3.324400    -0.360300     0.027800\nC      0.877000    -0.217500     0.023600\nC     -0.342500     0.697600    -0.031600\nC      2.193300     0.559000    -0.031400\nC     -1.632600    -0.083500     0.001100\nH      0.838700    -0.816800     0.943100\nH      0.836300    -0.928500    -0.812300\nH     -0.326200     1.287500    -0.954500\nH     -0.332700     1.378000     0.826900\nH      2.252800     1.142900    -0.956000\nH      2.256700     1.260900     0.806900\nH      3.266100    -1.024800    -0.743100\nH      3.269600    -0.916100     0.880600\nH     -3.560700     0.188900     0.043000"
+  }
+}

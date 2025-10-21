@@ -1,0 +1,15 @@
+{
+  "query_text": "ラベンダーの香り成分は？",
+  "icon": "💜",
+  "compounds": [
+    {
+      "compound_name": "linalylacetate",
+      "timestamp": "2025-10-21T19:18:56.675954"
+    },
+    {
+      "compound_name": "linalool",
+      "timestamp": "2025-10-21T19:51:19.377092"
+    }
+  ],
+  "timestamp": "2025-10-21T19:51:19.378501"
+}

@@ -1,0 +1,28 @@
+{
+  "compound_name": "methylacetate",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:30:59.912528",
+  "cid": 6584,
+  "detailed_info": {
+    "molecular_formula": "C3H6O2",
+    "molecular_weight": 74.08,
+    "iupac_name": "methyl acetate",
+    "synonyms": [
+      "METHYL ACETATE",
+      "79-20-9",
+      "Methyl ethanoate",
+      "Devoton",
+      "Tereton"
+    ],
+    "inchi": "InChI=1S/C3H6O2/c1-3(4)5-2/h1-2H3",
+    "xlogp": 0.2,
+    "tpsa": 26.3,
+    "complexity": 40.2,
+    "rotatable_bond_count": 1,
+    "heavy_atom_count": 5,
+    "hbond_donor_count": 0,
+    "hbond_acceptor_count": 2,
+    "charge": 0,
+    "xyz_data": "11\nPubChem 3D coordinates for CID 6584\nO     -0.641200     0.709600     0.000100\nO      0.417900    -1.343500     0.000000\nC      1.697900     0.695700    -0.000100\nC      0.440800    -0.120100     0.000200\nC     -1.915500     0.058400    -0.000100\nH      1.737100     1.317100     0.897900\nH      1.737900     1.315100    -0.899700\nH      2.563800     0.027400     0.001100\nH     -2.028100    -0.553300    -0.900400\nH     -2.691100     0.828800    -0.000100\nH     -2.028300    -0.553600     0.899900"
+  }
+}

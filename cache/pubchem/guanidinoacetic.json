@@ -1,0 +1,28 @@
+{
+  "compound_name": "guanidinoacetic",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:28:41.822362",
+  "cid": 763,
+  "detailed_info": {
+    "molecular_formula": "C3H7N3O2",
+    "molecular_weight": 117.11,
+    "iupac_name": "2-(diaminomethylideneamino)acetic acid",
+    "synonyms": [
+      "glycocyamine",
+      "352-97-6",
+      "guanidinoacetic acid",
+      "Guanidineacetic acid",
+      "Guanidoacetic acid"
+    ],
+    "inchi": "InChI=1S/C3H7N3O2/c4-3(5)6-1-2(7)8/h1H2,(H,7,8)(H4,4,5,6)",
+    "xlogp": -1.6,
+    "tpsa": 102.0,
+    "complexity": 116.0,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 8,
+    "hbond_donor_count": 3,
+    "hbond_acceptor_count": 3,
+    "charge": 0,
+    "xyz_data": "15\nPubChem 3D coordinates for CID 763\nO      2.845000     0.851900     0.011800\nO      2.051100    -1.280600    -0.001400\nN     -0.515500    -0.423600    -0.006200\nN     -2.782300    -0.932500     0.008100\nN     -2.214100     1.274800     0.001300\nC      0.514700     0.607100    -0.013900\nC     -1.751600    -0.022300     0.000600\nC      1.852500    -0.074900    -0.000300\nH      0.444200     1.234200     0.881500\nH      0.450800     1.213700    -0.923800\nH     -2.599900    -1.930200     0.009000\nH     -3.752000    -0.635700     0.014400\nH     -3.208400     1.475400     0.006700\nH     -1.587500     2.071700    -0.004800\nH      3.733500     0.436200     0.020000"
+  }
+}

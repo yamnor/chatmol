@@ -1,0 +1,28 @@
+{
+  "compound_name": "aminocaproic",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:34:20.117341",
+  "cid": 564,
+  "detailed_info": {
+    "molecular_formula": "C6H13NO2",
+    "molecular_weight": 131.17,
+    "iupac_name": "6-aminohexanoic acid",
+    "synonyms": [
+      "6-aminohexanoic acid",
+      "6-Aminocaproic acid",
+      "aminocaproic acid",
+      "60-32-2",
+      "Hexanoic acid, 6-amino-"
+    ],
+    "inchi": "InChI=1S/C6H13NO2/c7-5-3-1-2-4-6(8)9/h1-5,7H2,(H,8,9)",
+    "xlogp": -3.0,
+    "tpsa": 63.3,
+    "complexity": 83.1,
+    "rotatable_bond_count": 5,
+    "heavy_atom_count": 9,
+    "hbond_donor_count": 2,
+    "hbond_acceptor_count": 3,
+    "charge": 0,
+    "xyz_data": "22\nPubChem 3D coordinates for CID 564\nO     -3.900200    -0.720000    -0.050000\nO     -2.918700     1.327800    -0.018700\nN      4.694800     0.416900    -0.051800\nC      0.992300    -0.553700     0.058900\nC     -0.309500     0.249900     0.071300\nC      2.248600     0.322800     0.042400\nC     -1.528900    -0.670500     0.013900\nC      3.545100    -0.481600    -0.047700\nC     -2.823600     0.108500    -0.018400\nH      1.023100    -1.210900     0.936800\nH      1.003800    -1.204700    -0.824300\nH     -0.352400     0.871200     0.974300\nH     -0.325000     0.935900    -0.784800\nH      2.259200     0.941800     0.948800\nH      2.188600     1.012000    -0.809900\nH     -1.485400    -1.290600    -0.888400\nH     -1.543100    -1.321600     0.895000\nH      3.556600    -1.085200    -0.961400\nH      3.627200    -1.167400     0.802200\nH      4.683800     0.990600     0.790800\nH      4.618400     1.066800    -0.833600\nH     -4.744500    -0.221000    -0.072000"
+  }
+}

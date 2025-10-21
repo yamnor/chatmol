@@ -128,9 +128,17 @@ class Config:
 
 # Announcement Configuration
 ANNOUNCEMENT_MESSAGE: str = """
+このアプリの開発にご支援・ご援助いただける方は、こちらからお願いします！
+
+![](https://i.gyazo.com/602d3779cdf830009e0c5f7dcc9d6d63.png)
+
+---
+
 [![サイエンスアゴラ2025](https://i.gyazo.com/208ecdf2f06260f4d90d58ae291f0104.png)](https://yamlab.jp/sciago2025)
 
-10/25, 26 の サイエンスアゴラ で、分子を作る / 動かす/ 感じる体験 & 展示を出展。詳細は **[【こちら】](https://yamlab.jp/sciago2025)**
+10/25, 26 の サイエンスアゴラ で「日本コンピュータ化学会」は、分子を作る / 動かす/ 感じる体験を出展するよ！
+
+詳細は **[【こちら】](https://yamlab.jp/sciago2025)**
 """
 
 MENU_ITEMS_ABOUT: str = '''

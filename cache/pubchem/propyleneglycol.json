@@ -1,0 +1,28 @@
+{
+  "compound_name": "propyleneglycol",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:30:47.193239",
+  "cid": 1030,
+  "detailed_info": {
+    "molecular_formula": "C3H8O2",
+    "molecular_weight": 76.09,
+    "iupac_name": "propane-1,2-diol",
+    "synonyms": [
+      "propylene glycol",
+      "1,2-propanediol",
+      "57-55-6",
+      "propane-1,2-diol",
+      "1,2-Propylene glycol"
+    ],
+    "inchi": "InChI=1S/C3H8O2/c1-3(5)2-4/h3-5H,2H2,1H3",
+    "xlogp": -0.9,
+    "tpsa": 40.5,
+    "complexity": 20.9,
+    "rotatable_bond_count": 1,
+    "heavy_atom_count": 5,
+    "hbond_donor_count": 2,
+    "hbond_acceptor_count": 2,
+    "charge": 0,
+    "xyz_data": "13\nPubChem 3D coordinates for CID 1030\nO     -0.472100    -1.353600    -0.155800\nO      1.934000     0.001300     0.107600\nC     -0.453500    -0.016800     0.342800\nC      0.748900     0.700900    -0.256900\nC     -1.757300     0.668100    -0.037700\nH     -0.349100    -0.076500     1.431700\nH      0.701200     0.721100    -1.350700\nH      0.826000     1.727500     0.113000\nH     -2.611100     0.130800     0.389000\nH     -1.782400     1.701300     0.321600\nH     -1.898300     0.669100    -1.124100\nH     -1.233900    -1.805400     0.245600\nH      1.847500    -0.909700    -0.221400"
+  }
+}

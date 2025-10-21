@@ -1,0 +1,28 @@
+{
+  "compound_name": "ethylvanillin",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:05:35.087734",
+  "cid": 8467,
+  "detailed_info": {
+    "molecular_formula": "C9H10O3",
+    "molecular_weight": 166.17,
+    "iupac_name": "3-ethoxy-4-hydroxybenzaldehyde",
+    "synonyms": [
+      "3-Ethoxy-4-hydroxybenzaldehyde",
+      "ETHYL VANILLIN",
+      "Ethylvanillin",
+      "121-32-4",
+      "Ethylprotal"
+    ],
+    "inchi": "InChI=1S/C9H10O3/c1-2-12-9-5-7(6-10)3-4-8(9)11/h3-6,11H,2H2,1H3",
+    "xlogp": 1.6,
+    "tpsa": 46.5,
+    "complexity": 147.0,
+    "rotatable_bond_count": 3,
+    "heavy_atom_count": 12,
+    "hbond_donor_count": 1,
+    "hbond_acceptor_count": 3,
+    "charge": 0,
+    "xyz_data": "22\nPubChem 3D coordinates for CID 8467\nO      1.818700     0.495200     0.563400\nO      1.693100    -2.242400     0.102400\nO     -2.980900     2.080700     0.093400\nC      0.628200    -0.105900     0.286500\nC     -0.534000     0.664000     0.235400\nC      0.565200    -1.480000     0.054800\nC     -1.758900     0.059600    -0.047500\nC      2.253600     1.516000    -0.332900\nC     -0.659700    -2.084300    -0.228200\nC     -1.821700    -1.314500    -0.279300\nC      3.766900     1.549300    -0.345600\nC     -2.970500     0.862300    -0.102500\nH     -0.478200     1.733100     0.425800\nH      1.888500     1.327900    -1.350300\nH      1.863400     2.480500     0.010000\nH     -0.722900    -3.153700    -0.410800\nH     -2.768700    -1.799800    -0.501200\nH      4.135500     2.330900    -1.015700\nH      4.157300     1.733800     0.660700\nH      4.170500     0.584900    -0.671500\nH     -3.908200     0.328100    -0.331600\nH      1.457900    -3.167800    -0.083200"
+  }
+}

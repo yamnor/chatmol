@@ -1,0 +1,15 @@
+{
+  "query_text": "ジャスミンの香り成分は？",
+  "icon": "🌼",
+  "compounds": [
+    {
+      "compound_name": "cis-jasmone",
+      "timestamp": "2025-10-21T19:25:48.002682"
+    },
+    {
+      "compound_name": "benzylacetate",
+      "timestamp": "2025-10-21T20:19:55.925292"
+    }
+  ],
+  "timestamp": "2025-10-21T20:40:40.779538"
+}

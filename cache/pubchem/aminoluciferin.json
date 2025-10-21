@@ -1,0 +1,28 @@
+{
+  "compound_name": "aminoluciferin",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:31:53.835359",
+  "cid": 40429037,
+  "detailed_info": {
+    "molecular_formula": "C11H9N3O2S2",
+    "molecular_weight": 279.3,
+    "iupac_name": "(4S)-2-(6-amino-1,3-benzothiazol-2-yl)-4,5-dihydro-1,3-thiazole-4-carboxylic acid",
+    "synonyms": [
+      "aminoluciferin",
+      "161055-47-6",
+      "6-Amino-D-luciferin",
+      "6 inverted exclamation marka-Amino-D-luciferin",
+      "(4S)-2-(6-AMINO-1,3-BENZOTHIAZOL-2-YL)-4,5-DIHYDRO-1,3-THIAZOLE-4-CARBOXYLIC ACID"
+    ],
+    "inchi": "InChI=1S/C11H9N3O2S2/c12-5-1-2-6-8(3-5)18-10(13-6)9-14-7(4-17-9)11(15)16/h1-3,7H,4,12H2,(H,15,16)/t7-/m1/s1",
+    "xlogp": 1.9,
+    "tpsa": 142.0,
+    "complexity": 390.0,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 18,
+    "hbond_donor_count": 2,
+    "hbond_acceptor_count": 7,
+    "charge": 0,
+    "xyz_data": "27\nPubChem 3D coordinates for CID 40429037\nS      2.127300     2.127400     0.017100\nS     -0.658400    -1.275900     0.324600\nO      5.860400    -0.500500    -0.103000\nO      4.191900    -1.945400    -0.672300\nN      2.298900    -0.432600     0.421100\nN     -0.877400     1.267300    -0.044000\nN     -5.896600    -1.216000    -0.059800\nC      3.664300     0.109600     0.512500\nC      3.760300     1.417000    -0.247200\nC      1.449200     0.525700     0.226700\nC     -0.013600     0.298800     0.152800\nC     -2.246900    -0.636900     0.121800\nC     -2.163000     0.746400    -0.063800\nC      4.567400    -0.903600    -0.155700\nC     -3.478700    -1.311000     0.126500\nC     -3.355800     1.478600    -0.250300\nC     -4.643900    -0.562900    -0.060500\nC     -4.585600     0.813900    -0.246500\nH      3.950300     0.202000     1.567000\nH      4.548300     2.067500     0.142700\nH      3.919700     1.274500    -1.321500\nH     -3.520300    -2.386900     0.272400\nH     -3.321500     2.554400    -0.396700\nH     -5.495500     1.391500    -0.391500\nH     -6.745300    -0.682800    -0.194900\nH     -5.945100    -2.217200     0.074500\nH      6.463000    -1.145200    -0.531400"
+  }
+}

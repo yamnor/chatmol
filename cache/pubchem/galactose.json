@@ -1,0 +1,28 @@
+{
+  "compound_name": "galactose",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:30:43.089253",
+  "cid": 6036,
+  "detailed_info": {
+    "molecular_formula": "C6H12O6",
+    "molecular_weight": 180.16,
+    "iupac_name": "(3R,4S,5R,6R)-6-(hydroxymethyl)oxane-2,3,4,5-tetrol",
+    "synonyms": [
+      "D-Galactopyranose",
+      "galactopyranose",
+      "galactopyranoside",
+      "(3R,4S,5R,6R)-6-(hydroxymethyl)oxane-2,3,4,5-tetrol",
+      "Galactose, pure"
+    ],
+    "inchi": "InChI=1S/C6H12O6/c7-1-2-3(8)4(9)5(10)6(11)12-2/h2-11H,1H2/t2-,3+,4+,5-,6?/m1/s1",
+    "xlogp": -2.6,
+    "tpsa": 110.0,
+    "complexity": 151.0,
+    "rotatable_bond_count": 1,
+    "heavy_atom_count": 12,
+    "hbond_donor_count": 5,
+    "hbond_acceptor_count": 6,
+    "charge": 0,
+    "xyz_data": "24\nPubChem 3D coordinates for CID 6036\nO      0.817300     0.966700    -0.236600\nO      0.354200    -1.664900    -1.246300\nO     -2.058000    -1.991200     0.096800\nO     -2.781500     0.790500     0.419700\nO     -0.827100     2.584000    -0.596400\nO      3.474400     0.614300     0.359500\nC      0.283100    -1.370300     0.150300\nC     -1.148200    -0.979300     0.519700\nC      1.234800    -0.211000     0.465100\nC     -1.538600     0.349600    -0.126600\nC     -0.479500     1.418800     0.151100\nC      2.669200    -0.507400     0.043700\nH      0.575500    -2.281700     0.682300\nH     -1.239200    -0.903900     1.610500\nH      1.222600     0.016500     1.539100\nH     -1.696900     0.220500    -1.204100\nH     -0.476100     1.698900     1.212100\nH      2.754300    -0.676100    -1.034500\nH      3.064800    -1.381100     0.569700\nH      0.245800    -0.834400    -1.739700\nH     -2.953700    -1.695100     0.333200\nH     -2.993200     1.645800     0.008000\nH     -0.425400     3.344200    -0.142500\nH      3.106900     1.382000    -0.110900"
+  }
+}

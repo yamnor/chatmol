@@ -1,0 +1,15 @@
+{
+  "query_text": "レモンの成分は？",
+  "icon": "🍋",
+  "compounds": [
+    {
+      "compound_name": "limonene",
+      "timestamp": "2025-10-21T19:35:24.340409"
+    },
+    {
+      "compound_name": "citric",
+      "timestamp": "2025-10-21T19:57:44.133072"
+    }
+  ],
+  "timestamp": "2025-10-21T19:57:44.134086"
+}

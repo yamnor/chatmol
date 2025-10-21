@@ -1,0 +1,15 @@
+{
+  "query_text": "良い香りのする成分は？",
+  "icon": "🌸",
+  "compounds": [
+    {
+      "compound_name": "vanillin",
+      "timestamp": "2025-10-21T20:05:20.134753"
+    },
+    {
+      "compound_name": "ethylacetate",
+      "timestamp": "2025-10-21T20:30:53.054948"
+    }
+  ],
+  "timestamp": "2025-10-21T20:40:26.322440"
+}

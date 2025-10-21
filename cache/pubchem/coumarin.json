@@ -1,0 +1,28 @@
+{
+  "compound_name": "coumarin",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:16:39.626018",
+  "cid": 323,
+  "detailed_info": {
+    "molecular_formula": "C9H6O2",
+    "molecular_weight": 146.14,
+    "iupac_name": "chromen-2-one",
+    "synonyms": [
+      "coumarin",
+      "91-64-5",
+      "2H-Chromen-2-one",
+      "2H-1-Benzopyran-2-one",
+      "cumarin"
+    ],
+    "inchi": "InChI=1S/C9H6O2/c10-9-6-5-7-3-1-2-4-8(7)11-9/h1-6H",
+    "xlogp": 1.4,
+    "tpsa": 26.3,
+    "complexity": 196.0,
+    "rotatable_bond_count": 0,
+    "heavy_atom_count": 11,
+    "hbond_donor_count": 0,
+    "hbond_acceptor_count": 2,
+    "charge": 0,
+    "xyz_data": "17\nPubChem 3D coordinates for CID 323\nO     -1.057500     1.126800     0.000400\nO     -3.319100     0.764400    -0.000700\nC      0.447500    -0.786200    -0.000100\nC      0.246900     0.591600     0.000200\nC      1.754700    -1.278000    -0.000400\nC     -0.711000    -1.663000     0.000200\nC      1.313800     1.487800     0.000100\nC      2.834900    -0.390600    -0.000200\nC      2.614500     0.988800     0.000000\nC     -1.943300    -1.148400     0.000400\nC     -2.181500     0.307000    -0.000100\nH      1.947900    -2.347800    -0.000500\nH     -0.558900    -2.736600     0.000400\nH      1.141200     2.559600     0.000300\nH      3.850700    -0.775800    -0.000300\nH      3.458700     1.672300     0.000000\nH     -2.812900    -1.796600     0.000600"
+  }
+}

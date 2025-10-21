@@ -1,0 +1,11 @@
+{
+  "query_text": "苦い味の成分は？",
+  "icon": "☕",
+  "compounds": [
+    {
+      "compound_name": "caffeine",
+      "timestamp": "2025-10-21T19:52:34.044829"
+    }
+  ],
+  "timestamp": "2025-10-21T20:27:49.045986"
+}

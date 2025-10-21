@@ -1,0 +1,28 @@
+{
+  "compound_name": "citric",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:27:25.259362",
+  "cid": 311,
+  "detailed_info": {
+    "molecular_formula": "C6H8O7",
+    "molecular_weight": 192.12,
+    "iupac_name": "2-hydroxypropane-1,2,3-tricarboxylic acid",
+    "synonyms": [
+      "citric acid",
+      "77-92-9",
+      "Citric acid, anhydrous",
+      "2-hydroxypropane-1,2,3-tricarboxylic acid",
+      "Aciletten"
+    ],
+    "inchi": "InChI=1S/C6H8O7/c7-3(8)1-6(13,5(11)12)2-4(9)10/h13H,1-2H2,(H,7,8)(H,9,10)(H,11,12)",
+    "xlogp": -1.7,
+    "tpsa": 132.0,
+    "complexity": 227.0,
+    "rotatable_bond_count": 5,
+    "heavy_atom_count": 13,
+    "hbond_donor_count": 4,
+    "hbond_acceptor_count": 7,
+    "charge": 0,
+    "xyz_data": "21\nPubChem 3D coordinates for CID 311\nO      0.029600     0.209500     1.606900\nO     -0.855800     1.797900    -1.496200\nO     -1.355400     2.268900     0.662200\nO     -2.390800    -2.304600    -0.787100\nO      3.535100    -0.403300    -0.927300\nO     -2.555900    -0.626500     0.731700\nO      2.543800    -1.124500     0.983500\nC      0.100700     0.362000     0.194100\nC     -0.490500    -0.879100    -0.497100\nC      1.537400     0.709600    -0.226600\nC     -0.765000     1.577300    -0.158700\nC     -1.909800    -1.230500    -0.115400\nC      2.576700    -0.356800     0.030000\nH      0.112000    -1.755500    -0.228600\nH     -0.457400    -0.761400    -1.586600\nH      1.884200     1.608000     0.300000\nH      1.558900     0.936100    -1.300400\nH      0.462000     0.977100     2.018600\nH     -1.429300     2.566900    -1.701500\nH     -3.307800    -2.525200    -0.517200\nH      4.191400    -1.111600    -0.754600"
+  }
+}

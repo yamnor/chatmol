@@ -1,0 +1,15 @@
+{
+  "query_text": "疲れを取りたい",
+  "icon": "😴",
+  "compounds": [
+    {
+      "compound_name": "citric",
+      "timestamp": "2025-10-21T19:48:04.173774"
+    },
+    {
+      "compound_name": "fursultiamine",
+      "timestamp": "2025-10-21T19:49:09.051002"
+    }
+  ],
+  "timestamp": "2025-10-21T19:49:09.054225"
+}

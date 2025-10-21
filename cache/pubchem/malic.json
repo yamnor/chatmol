@@ -1,0 +1,28 @@
+{
+  "compound_name": "malic",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:29:30.929236",
+  "cid": 525,
+  "detailed_info": {
+    "molecular_formula": "C4H6O5",
+    "molecular_weight": 134.09,
+    "iupac_name": "2-hydroxybutanedioic acid",
+    "synonyms": [
+      "malic acid",
+      "6915-15-7",
+      "2-Hydroxybutanedioic acid",
+      "Butanedioic acid, hydroxy-",
+      "hydroxysuccinic acid"
+    ],
+    "inchi": "InChI=1S/C4H6O5/c5-2(4(8)9)1-3(6)7/h2,5H,1H2,(H,6,7)(H,8,9)",
+    "xlogp": -1.3,
+    "tpsa": 94.8,
+    "complexity": 129.0,
+    "rotatable_bond_count": 3,
+    "heavy_atom_count": 9,
+    "hbond_donor_count": 3,
+    "hbond_acceptor_count": 5,
+    "charge": 0,
+    "xyz_data": "15\nPubChem 3D coordinates for CID 525\nO      0.337200    -1.612100     0.183700\nO      2.168200     1.384300    -0.573500\nO     -2.850100     0.961600     0.576900\nO      2.712500    -0.459300     0.633900\nO     -2.271400    -0.860300    -0.657100\nC      0.501500    -0.311900    -0.366800\nC     -0.547200     0.609500     0.253900\nC      1.903600     0.162700    -0.042300\nC     -1.954300     0.125500    -0.008800\nH      0.385000    -0.385800    -1.453400\nH     -0.450200     1.623700    -0.148600\nH     -0.410800     0.644700     1.341800\nH      0.943400    -2.208300    -0.288500\nH      3.073300     1.691000    -0.352300\nH     -3.774900     0.675500     0.418500"
+  }
+}

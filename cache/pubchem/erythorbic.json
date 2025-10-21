@@ -1,0 +1,28 @@
+{
+  "compound_name": "erythorbic",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:03:52.479955",
+  "cid": 54675810,
+  "detailed_info": {
+    "molecular_formula": "C6H8O6",
+    "molecular_weight": 176.12,
+    "iupac_name": "(2R)-2-[(1R)-1,2-dihydroxyethyl]-3,4-dihydroxy-2H-furan-5-one",
+    "synonyms": [
+      "Erythorbic acid",
+      "89-65-6",
+      "D-Isoascorbic acid",
+      "Isoascorbic acid",
+      "D-Araboascorbic acid"
+    ],
+    "inchi": "InChI=1S/C6H8O6/c7-1-2(8)5-3(9)4(10)6(11)12-5/h2,5,7-10H,1H2/t2-,5-/m1/s1",
+    "xlogp": -1.6,
+    "tpsa": 107.0,
+    "complexity": 232.0,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 12,
+    "hbond_donor_count": 4,
+    "hbond_acceptor_count": 6,
+    "charge": 0,
+    "xyz_data": "20\nPubChem 3D coordinates for CID 54675810\nO      0.221000    -1.166800     0.597200\nO     -2.257300     1.457600     0.100700\nO      0.713900     2.357500     0.097700\nO     -3.661000    -0.821200    -0.713600\nO      3.044300     0.669200    -0.670700\nO      2.208300    -2.103400    -0.102600\nC     -0.314900     0.170200     0.669700\nC     -1.574000     0.236600    -0.179800\nC      0.796800     0.997800     0.161600\nC     -2.517300    -0.919600     0.128500\nC      1.848000     0.258700    -0.178100\nC      1.492300    -1.136500     0.089400\nH     -0.523200     0.405900     1.720000\nH     -1.335800     0.230300    -1.250900\nH     -2.051200    -1.891600    -0.057100\nH     -2.865500    -0.874900     1.165900\nH     -3.064900     1.471100    -0.441100\nH     -0.161600     2.612400     0.436500\nH     -4.245800    -1.564800    -0.488200\nH      3.588400    -0.126100    -0.805300"
+  }
+}

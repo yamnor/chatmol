@@ -1,0 +1,28 @@
+{
+  "compound_name": "n-acetylcysteine",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:26:27.944490",
+  "cid": 12035,
+  "detailed_info": {
+    "molecular_formula": "C5H9NO3S",
+    "molecular_weight": 163.2,
+    "iupac_name": "(2R)-2-acetamido-3-sulfanylpropanoic acid",
+    "synonyms": [
+      "N-Acetyl-L-cysteine",
+      "acetylcysteine",
+      "616-91-1",
+      "N-Acetylcysteine",
+      "mercapturic acid"
+    ],
+    "inchi": "InChI=1S/C5H9NO3S/c1-3(7)6-4(2-10)5(8)9/h4,10H,2H2,1H3,(H,6,7)(H,8,9)/t4-/m0/s1",
+    "xlogp": 0.4,
+    "tpsa": 67.4,
+    "complexity": 148.0,
+    "rotatable_bond_count": 3,
+    "heavy_atom_count": 10,
+    "hbond_donor_count": 3,
+    "hbond_acceptor_count": 4,
+    "charge": 0,
+    "xyz_data": "19\nPubChem 3D coordinates for CID 12035\nS     -1.408000     2.198200    -1.044000\nO     -1.370300    -1.565300    -0.973000\nO     -2.636100    -0.856300     0.769300\nO      2.390200     0.147000     1.261600\nN      0.732000    -0.176700    -0.340500\nC     -0.410900     0.069500     0.503000\nC     -0.783500     1.553800     0.543600\nC     -1.591000    -0.812900     0.131500\nC      2.040100    -0.116400     0.114200\nC      3.037400    -0.440800    -0.965600\nH     -0.123500    -0.237600     1.517100\nH      0.084200     2.157500     0.830100\nH     -1.566200     1.723400     1.290700\nH      0.562300    -0.393000    -1.318800\nH      4.046800    -0.202800    -0.618900\nH      2.981200    -1.505900    -1.206300\nH      2.827500     0.147700    -1.863400\nH     -2.526500     1.459700    -1.087700\nH     -2.141100    -2.131500    -1.191200"
+  }
+}

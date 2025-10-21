@@ -1,0 +1,28 @@
+{
+  "compound_name": "glutamic",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:38:11.000104",
+  "cid": 33032,
+  "detailed_info": {
+    "molecular_formula": "C5H9NO4",
+    "molecular_weight": 147.13,
+    "iupac_name": "(2S)-2-aminopentanedioic acid",
+    "synonyms": [
+      "L-glutamic acid",
+      "GLUTAMIC ACID",
+      "56-86-0",
+      "(2S)-2-Aminopentanedioic acid",
+      "L-glutamate"
+    ],
+    "inchi": "InChI=1S/C5H9NO4/c6-3(5(9)10)1-2-4(7)8/h3H,1-2,6H2,(H,7,8)(H,9,10)/t3-/m0/s1",
+    "xlogp": -3.7,
+    "tpsa": 101.0,
+    "complexity": 145.0,
+    "rotatable_bond_count": 4,
+    "heavy_atom_count": 10,
+    "hbond_donor_count": 3,
+    "hbond_acceptor_count": 5,
+    "charge": 0,
+    "xyz_data": "19\nPubChem 3D coordinates for CID 33032\nO      1.867300     1.474000    -1.005300\nO     -3.116300     0.707100     1.079400\nO      2.587800     0.741000     1.015400\nO     -2.918400    -0.234700    -0.978900\nN      1.680600    -1.779700     0.589400\nC     -0.123800    -0.664900    -0.714600\nC      1.385600    -0.797000    -0.451200\nC     -0.960900    -0.083200     0.427900\nC      2.013700     0.524100    -0.044000\nC     -2.415600     0.113200     0.081800\nH     -0.528200    -1.648600    -0.989400\nH     -0.266800    -0.033700    -1.602200\nH      1.883600    -1.126800    -1.370800\nH     -0.912900    -0.748600     1.296900\nH     -0.564300     0.896700     0.715600\nH      2.687900    -1.924500     0.649400\nH      1.278600    -2.680500     0.332700\nH      2.271300     2.327500    -0.739800\nH     -4.061500     0.823500     0.844100"
+  }
+}

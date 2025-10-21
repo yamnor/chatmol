@@ -1,0 +1,28 @@
+{
+  "compound_name": "cis-3-hexenal",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:58:52.648553",
+  "cid": 643941,
+  "detailed_info": {
+    "molecular_formula": "C6H10O",
+    "molecular_weight": 98.14,
+    "iupac_name": "(Z)-hex-3-enal",
+    "synonyms": [
+      "cis-3-Hexenal",
+      "6789-80-6",
+      "3-Hexenal, (3Z)-",
+      "(Z)-3-HEXENAL",
+      "3-(Z)-Hexenal"
+    ],
+    "inchi": "InChI=1S/C6H10O/c1-2-3-4-5-6-7/h3-4,6H,2,5H2,1H3/b4-3-",
+    "xlogp": 1.1,
+    "tpsa": 17.1,
+    "complexity": 64.6,
+    "rotatable_bond_count": 3,
+    "heavy_atom_count": 7,
+    "hbond_donor_count": 0,
+    "hbond_acceptor_count": 1,
+    "charge": 0,
+    "xyz_data": "17\nPubChem 3D coordinates for CID 643941\nO     -2.249400    -0.506800     0.772300\nC      1.572700    -0.592500     0.534700\nC      0.926200     0.752600     0.685700\nC     -0.146300     1.147400    -0.016500\nC      2.661800    -0.568400    -0.526400\nC     -0.830000     0.295100    -1.036900\nC     -1.935000    -0.527400    -0.413100\nH      2.011000    -0.875400     1.499400\nH      0.840800    -1.373200     0.301700\nH      1.368800     1.442900     1.398900\nH     -0.550100     2.140900     0.159300\nH      3.138800    -1.551200    -0.597600\nH      2.261600    -0.317100    -1.513700\nH      3.438000     0.164000    -0.278800\nH     -1.279200     0.936700    -1.802600\nH     -0.146600    -0.384800    -1.552800\nH     -2.479400    -1.178200    -1.119400"
+  }
+}

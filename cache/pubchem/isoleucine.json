@@ -1,0 +1,28 @@
+{
+  "compound_name": "isoleucine",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:25:01.110314",
+  "cid": 6306,
+  "detailed_info": {
+    "molecular_formula": "C6H13NO2",
+    "molecular_weight": 131.17,
+    "iupac_name": "(2S,3S)-2-amino-3-methylpentanoic acid",
+    "synonyms": [
+      "l-isoleucine",
+      "Isoleucine",
+      "73-32-5",
+      "(2S,3S)-2-Amino-3-methylpentanoic acid",
+      "2S,3S-Isoleucine"
+    ],
+    "inchi": "InChI=1S/C6H13NO2/c1-3-4(2)5(7)6(8)9/h4-5H,3,7H2,1-2H3,(H,8,9)/t4-,5-/m0/s1",
+    "xlogp": -1.7,
+    "tpsa": 63.3,
+    "complexity": 103.0,
+    "rotatable_bond_count": 3,
+    "heavy_atom_count": 9,
+    "hbond_donor_count": 2,
+    "hbond_acceptor_count": 3,
+    "charge": 0,
+    "xyz_data": "22\nPubChem 3D coordinates for CID 6306\nO      1.731800     1.070900    -1.222800\nO      2.259400     0.478500     0.901400\nN      0.628400    -1.611200     0.926500\nC     -0.849900    -0.196600    -0.511300\nC      0.559900    -0.801200    -0.293200\nC     -1.328400     0.716200     0.642500\nC     -1.890900    -1.294900    -0.779400\nC     -2.705200     1.337500     0.448500\nC      1.594900     0.300700    -0.112100\nH     -0.806200     0.424000    -1.417100\nH      0.858400    -1.420000    -1.146500\nH     -0.610200     1.533800     0.776000\nH     -1.347200     0.159600     1.586500\nH     -1.524200    -1.995700    -1.537400\nH     -2.118600    -1.865000     0.127300\nH     -2.825700    -0.873800    -1.162500\nH     -2.768200     1.858900    -0.511800\nH     -2.902700     2.065300     1.242400\nH     -3.497500     0.584700     0.491100\nH      0.472600    -1.032800     1.750500\nH      1.563200    -2.005600     1.026000\nH      2.407700     1.771200    -1.100800"
+  }
+}

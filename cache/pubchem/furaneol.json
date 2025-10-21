@@ -1,0 +1,28 @@
+{
+  "compound_name": "furaneol",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:46:22.499029",
+  "cid": 19309,
+  "detailed_info": {
+    "molecular_formula": "C6H8O3",
+    "molecular_weight": 128.13,
+    "iupac_name": "4-hydroxy-2,5-dimethylfuran-3-one",
+    "synonyms": [
+      "Furaneol",
+      "3658-77-3",
+      "4-hydroxy-2,5-dimethylfuran-3(2H)-one",
+      "4-Hydroxy-2,5-dimethyl-3(2H)-furanone",
+      "2,5-Dimethyl-4-hydroxy-3(2H)-furanone"
+    ],
+    "inchi": "InChI=1S/C6H8O3/c1-3-5(7)6(8)4(2)9-3/h3,8H,1-2H3",
+    "xlogp": 0.7,
+    "tpsa": 46.5,
+    "complexity": 181.0,
+    "rotatable_bond_count": 0,
+    "heavy_atom_count": 9,
+    "hbond_donor_count": 1,
+    "hbond_acceptor_count": 3,
+    "charge": 0,
+    "xyz_data": "17\nPubChem 3D coordinates for CID 19309\nO      0.040700     1.466900     0.258100\nO     -1.502400    -1.796400    -0.244800\nO      1.383400    -1.760400     0.131100\nC      1.219400     0.648100     0.403400\nC      0.709700    -0.743900     0.161000\nC     -1.022100     0.591900     0.038400\nC     -0.731300    -0.704900    -0.034500\nC      2.261500     1.066000    -0.613100\nC     -2.358700     1.232500    -0.099600\nH      1.582800     0.740000     1.431900\nH      1.876600     0.974000    -1.635000\nH      2.536500     2.116200    -0.470400\nH      3.162700     0.450400    -0.532700\nH     -2.611600     1.782300     0.812400\nH     -3.146200     0.493500    -0.278200\nH     -2.358000     1.935400    -0.938500\nH     -0.916000    -2.572500    -0.234000"
+  }
+}

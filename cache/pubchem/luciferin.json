@@ -1,0 +1,28 @@
+{
+  "compound_name": "luciferin",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:29:10.064791",
+  "cid": 92934,
+  "detailed_info": {
+    "molecular_formula": "C11H8N2O3S2",
+    "molecular_weight": 280.3,
+    "iupac_name": "(4S)-2-(6-hydroxy-1,3-benzothiazol-2-yl)-4,5-dihydro-1,3-thiazole-4-carboxylic acid",
+    "synonyms": [
+      "2591-17-5",
+      "Firefly luciferin",
+      "Photinus luciferin",
+      "(4S)-2-(6-hydroxy-1,3-benzothiazol-2-yl)-4,5-dihydro-1,3-thiazole-4-carboxylic acid",
+      "(S)-4,5-Dihydro-2-(6-hydroxybenzothiazol-2-yl)thiazole-4-carboxylic acid"
+    ],
+    "inchi": "InChI=1S/C11H8N2O3S2/c14-5-1-2-6-8(3-5)18-10(12-6)9-13-7(4-17-9)11(15)16/h1-3,7,14H,4H2,(H,15,16)/t7-/m1/s1",
+    "xlogp": 2.2,
+    "tpsa": 136.0,
+    "complexity": 390.0,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 18,
+    "hbond_donor_count": 2,
+    "hbond_acceptor_count": 7,
+    "charge": 0,
+    "xyz_data": "26\nPubChem 3D coordinates for CID 92934\nS      2.088200     2.130700     0.012600\nS     -0.646100    -1.283300     0.293900\nO      5.851500    -0.503700    -0.051200\nO      4.188800    -1.947100    -0.641400\nO     -5.842600    -1.203300    -0.061000\nN      2.292900    -0.434000     0.387500\nN     -0.871500     1.265400    -0.030600\nC      3.654400     0.124100     0.473700\nC      3.725600     1.441200    -0.277600\nC      1.433600     0.519900     0.213900\nC     -0.004900     0.295400     0.145400\nC     -2.236900    -0.643800     0.110300\nC     -2.156300     0.742600    -0.052200\nC      4.557100    -0.897200    -0.135900\nC     -3.467400    -1.320100     0.110500\nC     -3.351400     1.475600    -0.219800\nC     -4.634900    -0.571100    -0.057400\nC     -4.580000     0.808700    -0.220600\nH      3.921000     0.235000     1.532500\nH      4.513100     2.096000     0.105700\nH      3.875400     1.300900    -1.353400\nH     -3.506000    -2.398100     0.238500\nH     -3.319900     2.553900    -0.348100\nH     -5.495200     1.380800    -0.350400\nH      6.461500    -1.162700    -0.446300\nH     -5.699900    -2.157300     0.063800"
+  }
+}

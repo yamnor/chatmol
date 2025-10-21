@@ -1,0 +1,28 @@
+{
+  "compound_name": "ascorbic",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:27:33.043072",
+  "cid": 54670067,
+  "detailed_info": {
+    "molecular_formula": "C6H8O6",
+    "molecular_weight": 176.12,
+    "iupac_name": "(2R)-2-[(1S)-1,2-dihydroxyethyl]-3,4-dihydroxy-2H-furan-5-one",
+    "synonyms": [
+      "l-ascorbic acid",
+      "ascorbic acid",
+      "vitamin C",
+      "50-81-7",
+      "L(+)-Ascorbic acid"
+    ],
+    "inchi": "InChI=1S/C6H8O6/c7-1-2(8)5-3(9)4(10)6(11)12-5/h2,5,7-10H,1H2/t2-,5+/m0/s1",
+    "xlogp": -1.6,
+    "tpsa": 107.0,
+    "complexity": 232.0,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 12,
+    "hbond_donor_count": 4,
+    "hbond_acceptor_count": 6,
+    "charge": 0,
+    "xyz_data": "20\nPubChem 3D coordinates for CID 54670067\nO      0.093200    -1.106600     0.644500\nO     -1.343600     0.089200    -1.386300\nO      0.839200     2.390100     0.284400\nO     -3.892900    -0.204000    -0.332600\nO      3.022000     0.569500    -0.605600\nO      1.991500    -2.156000    -0.137600\nC     -0.339700     0.261800     0.785300\nC     -1.605900     0.458500    -0.033000\nC      0.821200     1.026500     0.288700\nC     -2.746400    -0.408200     0.486300\nC      1.807700     0.227300    -0.104900\nC      1.353600    -1.148100     0.110800\nH     -0.515400     0.460900     1.848400\nH     -1.916200     1.509200    -0.043200\nH     -2.498900    -1.473500     0.435100\nH     -3.001300    -0.146200     1.517900\nH     -1.099900    -0.852200    -1.398600\nH      0.003900     2.695700     0.678000\nH     -4.602300    -0.764400     0.025700\nH      3.502400    -0.257200    -0.785600"
+  }
+}

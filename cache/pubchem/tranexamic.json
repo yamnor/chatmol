@@ -1,0 +1,28 @@
+{
+  "compound_name": "tranexamic",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:18:50.837507",
+  "cid": 5526,
+  "detailed_info": {
+    "molecular_formula": "C8H15NO2",
+    "molecular_weight": 157.21,
+    "iupac_name": "4-(aminomethyl)cyclohexane-1-carboxylic acid",
+    "synonyms": [
+      "701-54-2",
+      "4-(Aminomethyl)cyclohexanecarboxylic acid",
+      "Cyclohexanecarboxylic acid, 4-(aminomethyl)-",
+      "4-(Aminomethyl)-Cyclohexanecarboxylic Acid",
+      "DTXSID50904827"
+    ],
+    "inchi": "InChI=1S/C8H15NO2/c9-5-6-1-3-7(4-2-6)8(10)11/h6-7H,1-5,9H2,(H,10,11)",
+    "xlogp": -2.0,
+    "tpsa": 63.3,
+    "complexity": 139.0,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 11,
+    "hbond_donor_count": 2,
+    "hbond_acceptor_count": 3,
+    "charge": 0,
+    "xyz_data": "26\nPubChem 3D coordinates for CID 5526\nO     -3.456900    -0.568600    -0.665900\nO     -2.921400     0.952900     0.923800\nN      4.009100     0.718000     0.162000\nC      1.734800    -0.202800     0.275300\nC      1.151600     0.961000    -0.537300\nC      0.897500    -1.474900     0.086200\nC     -1.149500    -0.071400    -0.388200\nC     -0.319700     1.199100    -0.204300\nC     -0.574100    -1.236400     0.417600\nC      3.191400    -0.453500    -0.111000\nC     -2.562800     0.176500     0.041600\nH      1.695300     0.067800     1.340300\nH      1.247800     0.753500    -1.610900\nH      1.702100     1.888500    -0.342400\nH      1.285500    -2.276900     0.725500\nH      0.981100    -1.826500    -0.950100\nH     -1.152800    -0.323800    -1.456800\nH     -0.394600     1.560500     0.829800\nH     -0.714800     2.000800    -0.840400\nH     -1.145300    -2.151200     0.217400\nH     -0.677400    -1.038800     1.492800\nH      3.269700    -0.706000    -1.174500\nH      3.588500    -1.303500     0.455600\nH      4.983900     0.508300    -0.048700\nH      3.972900     0.940300     1.156000\nH     -4.379600    -0.400100    -0.378400"
+  }
+}

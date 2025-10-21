@@ -1,0 +1,28 @@
+{
+  "compound_name": "l-glutamine",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:25:37.991338",
+  "cid": 5961,
+  "detailed_info": {
+    "molecular_formula": "C5H10N2O3",
+    "molecular_weight": 146.14,
+    "iupac_name": "(2S)-2,5-diamino-5-oxopentanoic acid",
+    "synonyms": [
+      "L-glutamine",
+      "glutamine",
+      "56-85-9",
+      "Levoglutamide",
+      "L-(+)-Glutamine"
+    ],
+    "inchi": "InChI=1S/C5H10N2O3/c6-3(5(9)10)1-2-4(7)8/h3H,1-2,6H2,(H2,7,8)(H,9,10)/t3-/m0/s1",
+    "xlogp": -3.1,
+    "tpsa": 106.0,
+    "complexity": 146.0,
+    "rotatable_bond_count": 4,
+    "heavy_atom_count": 10,
+    "hbond_donor_count": 3,
+    "hbond_acceptor_count": 4,
+    "charge": 0,
+    "xyz_data": "20\nPubChem 3D coordinates for CID 5961\nO     -2.138900     1.637000     0.509900\nO     -2.677300     0.247500    -1.197300\nO      2.903900     0.255100     1.035100\nN     -1.478900    -1.892200    -0.029100\nN      3.244100     0.193200    -1.238500\nC      0.133800    -0.235500     0.875800\nC     -1.342400    -0.608600     0.659000\nC      1.003200    -0.145800    -0.383900\nC     -2.115800     0.435600    -0.125700\nC      2.468300     0.113600    -0.105100\nH      0.190400     0.723600     1.407100\nH      0.578300    -0.976400     1.554500\nH     -1.831900    -0.704100     1.635500\nH      0.950000    -1.082100    -0.950900\nH      0.633900     0.656800    -1.033100\nH     -1.136000    -1.818600    -0.985800\nH     -2.464800    -2.142000    -0.098800\nH      2.856000     0.078000    -2.169300\nH      4.241400     0.369700    -1.178100\nH     -2.645000     2.308100     0.004100"
+  }
+}

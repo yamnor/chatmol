@@ -1,0 +1,28 @@
+{
+  "compound_name": "cyclocreatine",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T19:55:57.233658",
+  "cid": 2896,
+  "detailed_info": {
+    "molecular_formula": "C5H9N3O2",
+    "molecular_weight": 143.14,
+    "iupac_name": "2-(2-amino-4,5-dihydroimidazol-1-yl)acetic acid",
+    "synonyms": [
+      "cyclocreatine",
+      "35404-50-3",
+      "1-Carboxymethyl-2-iminoimidazolidine",
+      "2-Imino-1-imidazolidineacetic acid",
+      "6732XGX1RK"
+    ],
+    "inchi": "InChI=1S/C5H9N3O2/c6-5-7-1-2-8(5)3-4(9)10/h1-3H2,(H2,6,7)(H,9,10)",
+    "xlogp": -1.6,
+    "tpsa": 78.9,
+    "complexity": 178.0,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 10,
+    "hbond_donor_count": 2,
+    "hbond_acceptor_count": 3,
+    "charge": 0,
+    "xyz_data": "19\nPubChem 3D coordinates for CID 2896\nO      3.288900     0.059000     0.270000\nO      1.707300     0.104800    -1.361300\nN     -0.319900     0.237600     0.392400\nN     -2.384800    -0.391600    -0.333700\nN     -0.775700    -2.068600     0.165600\nC     -1.006000     1.503000     0.339800\nC     -2.335900     1.097900    -0.301800\nC      1.007000     0.135300     0.944800\nC     -1.188200    -0.771300     0.058700\nC      2.007400     0.093900    -0.174500\nH     -0.473800     2.242900    -0.265800\nH     -1.165500     1.905900     1.345600\nH     -3.184400     1.489200     0.268700\nH     -2.407400     1.478300    -1.326800\nH      1.118300    -0.757600     1.567300\nH      1.226500     1.011400     1.565400\nH      0.170400    -2.318300     0.428800\nH     -1.401100    -2.832800    -0.066200\nH      3.932600     0.039500    -0.470000"
+  }
+}

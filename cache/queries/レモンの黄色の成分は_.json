@@ -1,0 +1,15 @@
+{
+  "query_text": "レモンの黄色の成分は？",
+  "icon": "🍋",
+  "compounds": [
+    {
+      "compound_name": "limonene",
+      "timestamp": "2025-10-21T19:18:23.060465"
+    },
+    {
+      "compound_name": "carotenoids",
+      "timestamp": "2025-10-21T20:41:29.007316"
+    }
+  ],
+  "timestamp": "2025-10-21T20:41:29.010749"
+}

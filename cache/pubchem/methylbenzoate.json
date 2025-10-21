@@ -1,0 +1,28 @@
+{
+  "compound_name": "methylbenzoate",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:20:31.115031",
+  "cid": 7150,
+  "detailed_info": {
+    "molecular_formula": "C8H8O2",
+    "molecular_weight": 136.15,
+    "iupac_name": "methyl benzoate",
+    "synonyms": [
+      "METHYL BENZOATE",
+      "93-58-3",
+      "Methylbenzoate",
+      "Benzoic acid, methyl ester",
+      "benzoic acid methyl ester"
+    ],
+    "inchi": "InChI=1S/C8H8O2/c1-10-8(9)7-5-3-2-4-6-7/h2-6H,1H3",
+    "xlogp": 2.1,
+    "tpsa": 26.3,
+    "complexity": 114.0,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 10,
+    "hbond_donor_count": 0,
+    "hbond_acceptor_count": 2,
+    "charge": 0,
+    "xyz_data": "18\nPubChem 3D coordinates for CID 7150\nO      2.053800    -0.784500     0.000200\nO      1.876600     1.510700    -0.000800\nC     -0.084000     0.153900    -0.000200\nC     -0.968000     1.233000     0.000400\nC     -0.576600    -1.151200    -0.000500\nC     -2.344400     1.007200     0.000700\nC     -1.953200    -1.377000    -0.000400\nC     -2.837000    -0.297800     0.000200\nC      1.350900     0.389500    -0.000700\nC      3.481900    -0.683700     0.001000\nH     -0.605300     2.257500     0.000700\nH      0.073300    -2.021700    -0.001100\nH     -3.032900     1.847200     0.001100\nH     -2.337600    -2.392900    -0.000700\nH     -3.908700    -0.473700     0.000300\nH      3.822500    -0.163200     0.900900\nH      3.823600    -0.163800    -0.898900\nH      3.894700    -1.695800     0.001600"
+  }
+}

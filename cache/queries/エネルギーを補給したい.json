@@ -1,0 +1,19 @@
+{
+  "query_text": "エネルギーを補給したい",
+  "icon": "⚡",
+  "compounds": [
+    {
+      "compound_name": "glucose",
+      "timestamp": "2025-10-21T19:56:05.954741"
+    },
+    {
+      "compound_name": "fructose",
+      "timestamp": "2025-10-21T20:00:00.952582"
+    },
+    {
+      "compound_name": "adenosinetriphosphate",
+      "timestamp": "2025-10-21T20:06:06.437152"
+    }
+  ],
+  "timestamp": "2025-10-21T20:06:06.441096"
+}

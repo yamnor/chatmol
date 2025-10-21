@@ -1,0 +1,23 @@
+{
+  "query_text": "脳を活性化したい",
+  "icon": "🧠",
+  "compounds": [
+    {
+      "compound_name": "dha",
+      "timestamp": "2025-10-21T19:43:55.382638"
+    },
+    {
+      "compound_name": "acetylcholine",
+      "timestamp": "2025-10-21T19:49:28.451423"
+    },
+    {
+      "compound_name": "caffeine",
+      "timestamp": "2025-10-21T19:50:56.393129"
+    },
+    {
+      "compound_name": "docosahexaenoic",
+      "timestamp": "2025-10-21T20:35:13.327333"
+    }
+  ],
+  "timestamp": "2025-10-21T20:35:13.329058"
+}

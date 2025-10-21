@@ -1,0 +1,28 @@
+{
+  "compound_name": "benzylacetate",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:19:55.925359",
+  "cid": 8785,
+  "detailed_info": {
+    "molecular_formula": "C9H10O2",
+    "molecular_weight": 150.17,
+    "iupac_name": "benzyl acetate",
+    "synonyms": [
+      "BENZYL ACETATE",
+      "140-11-4",
+      "Acetic acid, phenylmethyl ester",
+      "Acetic acid benzyl ester",
+      "Benzyl ethanoate"
+    ],
+    "inchi": "InChI=1S/C9H10O2/c1-8(10)11-7-9-5-3-2-4-6-9/h2-6H,7H2,1H3",
+    "xlogp": 2.0,
+    "tpsa": 26.3,
+    "complexity": 126.0,
+    "rotatable_bond_count": 3,
+    "heavy_atom_count": 11,
+    "hbond_donor_count": 0,
+    "hbond_acceptor_count": 2,
+    "charge": 0,
+    "xyz_data": "21\nPubChem 3D coordinates for CID 8785\nO      1.557400     0.000100    -0.328100\nO      3.434600    -0.000100     1.018400\nC     -0.709000    -0.000200     0.392800\nC      0.719700    -0.000200     0.821200\nC     -1.377000     1.207900     0.192400\nC     -1.377100    -1.208200     0.192200\nC     -2.713000     1.208100    -0.208400\nC     -2.713200    -1.207900    -0.208800\nC     -3.381000     0.000300    -0.409100\nC      2.902600     0.000200    -0.083500\nC      3.655900     0.000100    -1.379100\nH      0.930400     0.884900     1.434800\nH      0.930600    -0.885600     1.434400\nH     -0.866900     2.155600     0.343200\nH     -0.867300    -2.156100     0.342800\nH     -3.233000     2.148700    -0.365000\nH     -3.233400    -2.148300    -0.365600\nH     -4.421100     0.000400    -0.721500\nH      3.409500     0.898300    -1.950900\nH      3.411100    -0.899300    -1.949800\nH      4.730300     0.001200    -1.174200"
+  }
+}

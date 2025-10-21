@@ -1,0 +1,28 @@
+{
+  "compound_name": "maleic",
+  "data_source": "pubchem",
+  "timestamp": "2025-10-21T20:08:57.610367",
+  "cid": 444266,
+  "detailed_info": {
+    "molecular_formula": "C4H4O4",
+    "molecular_weight": 116.07,
+    "iupac_name": "(Z)-but-2-enedioic acid",
+    "synonyms": [
+      "maleic acid",
+      "110-16-7",
+      "cis-butenedioic acid",
+      "Toxilic acid",
+      "Maleinic acid"
+    ],
+    "inchi": "InChI=1S/C4H4O4/c5-3(6)1-2-4(7)8/h1-2H,(H,5,6)(H,7,8)/b2-1-",
+    "xlogp": -0.3,
+    "tpsa": 74.6,
+    "complexity": 119.0,
+    "rotatable_bond_count": 2,
+    "heavy_atom_count": 8,
+    "hbond_donor_count": 2,
+    "hbond_acceptor_count": 4,
+    "charge": 0,
+    "xyz_data": "12\nPubChem 3D coordinates for CID 444266\nO      1.816600    -0.332600     1.189700\nO     -2.735800    -0.085900     0.021500\nO      1.857300    -0.474700    -1.080700\nO     -0.798600    -1.290600     0.007700\nC      0.558200     1.226400    -0.055500\nC     -0.776100     1.118600    -0.030100\nC      1.467900     0.062900    -0.054100\nC     -1.389500    -0.224100     0.001400\nH      1.029000     2.203400    -0.077200\nH     -1.410500     1.997100    -0.031500\nH      2.420300    -1.105700     1.174500\nH     -3.193800    -0.953200     0.042500"
+  }
+}
