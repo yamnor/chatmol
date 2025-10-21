@@ -22,132 +22,25 @@ from st_screen_stats import WindowQueryHelper
 # TYPE DEFINITIONS
 # =============================================================================
 
-# Import shared models from tools
-from tools.utils.shared_models import DetailedMoleculeInfo
+# Import shared models from core
+from core.models import DetailedMoleculeInfo
+
+# Import common utilities from core
+from core.utils import execute_with_timeout
+from core.gemini_client import call_gemini_api
 
 # =============================================================================
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
 
-class Config:
-    """Application configuration constants."""
-    
-    # Timeout settings for preventing freezes
-    TIMEOUTS = {
-        'api': 10,  # Gemini API timeout
-        'pubchem_3d': 10,  # PubChem 3D record fetch timeout
-    }
-    
-    # Random sample configuration
-    RANDOM_QUERY = {
-        'count': 30,  # Number of random samples to display
-        'columns': 2,  # Number of columns for random samples
-    }
-    
-    # Cache configuration
-    CACHE = {
-        'enabled': False,  # Enable/disable cache functionality (can be overridden by secrets.toml)
-        'base_directory': 'cache',  # Base cache directory name
-        'max_size_mb': 100,  # Maximum cache size in MB
-        'max_age_days': 360,  # Maximum age of cache entries in days
-        'data_sources': {
-            'pubchem': {
-                'enabled': True,
-                'directory': 'pubchem',
-                'max_age_days': 36500,
-            },
-            'queries': {
-                'enabled': True,
-                'directory': 'queries',
-                'max_age_days': 36500,
-                'max_items_per_file': 25,
-            },
-            'descriptions': {
-                'enabled': True,
-                'directory': 'descriptions',
-                'max_age_days': 36500,
-                'max_items_per_file': 25,
-            },
-            'analysis': {
-                'enabled': True,
-                'directory': 'analysis',
-                'max_age_days': 180,
-                'max_items_per_file': 25,
-            },
-            'similar': {
-                'enabled': True,
-                'directory': 'similar',
-                'max_age_days': 180,  #
-                'max_items_per_file': 50,
-                'max_items_per_data': 25,
-            },
-            'failed_molecules': {
-                'enabled': True,
-                'directory': 'failed_molecules',
-                'max_age_days': 365,
-                'max_items_per_file': 1000,
-            },
-        }
-    }
-        
-    # 3D Molecular Viewer Configuration
-    # Responsive viewer size based on window size
-    VIEWER = {
-        'width_pc': 700,
-        'height_pc': 550,
-        'width_mobile': 340,
-        'height_mobile': 200,
-        'zoom_min': 0.1,
-        'zoom_max': 50,
-        'rotation_speed': 1,
-    }
-    
-    # Default AI Model Configuration
-    DEFAULT_MODEL_NAME = "gemini-2.5-flash-lite"
-    
-    # Error messages - simplified to essential ones only
-    ERROR_MESSAGES = {
-        # API related errors
-        'api_error': "API接続エラーが発生しました。しばらく待ってから再試行してください。",
-        'timeout': "操作がタイムアウトしました。",
-        
-        # Data retrieval errors
-        'molecule_not_found': "分子データが見つかりませんでした。",
-        'invalid_data': "無効なデータが返されました。",
-        
-        # Molecular processing errors
-        'processing_error': "分子データの処理中にエラーが発生しました。",
-        
-        # General errors
-        'parse_error': "データの解析に失敗しました。",
-        'display_error': "表示中にエラーが発生しました。",
-        'no_data': "データが見つかりません。最初からやり直してください。",
-        'general_error': "予期しないエラーが発生しました。",
-    }
-
-# Announcement Configuration
-ANNOUNCEMENT_MESSAGE: str = """
-[![サイエンスアゴラ2025](https://i.gyazo.com/208ecdf2f06260f4d90d58ae291f0104.png)](https://yamlab.jp/sciago2025)
-
-10/25, 26 の サイエンスアゴラ で、分子を作る / 動かす/ 感じる体験 & 展示を出展。詳細は **[【こちら】](https://yamlab.jp/sciago2025)**
-"""
-
-MENU_ITEMS_ABOUT: str = '''
-**ChatMOL** was created by [yamnor](https://yamnor.me),
-a chemist 🧪 specializing in molecular simulation 🖥️ living in Japan 🇯🇵.
-
-If you have any questions, thoughts, or comments,
-feel free to [contact me](https://letterbird.co/yamnor) ✉️
-or find me on [X (Twitter)](https://x.com/yamnor) 🐦.
-
-GitHub: [yamnor/chatmol](https://github.com/yamnor/chatmol)
-'''
-
-# Import shared prompts from tools
-from tools.utils.shared_prompts import AIPrompts
+# Import shared prompts from core
+from core.prompts import AIPrompts
 
 # Import sample queries from config
 from config.sample_queries import SAMPLE_QUERIES
+
+# Import settings from config
+from config.settings import Config, ANNOUNCEMENT_MESSAGE, MENU_ITEMS_ABOUT
 
 # =============================================================================
 # LOGGING CONFIGURATION
@@ -181,7 +74,7 @@ logger = setup_logging()
 # ERROR HANDLING
 # =============================================================================
 
-# ErrorHandler is now imported from tools.utils.error_handler
+# ErrorHandler is now imported from core.error_handler
 # Add Streamlit-specific error display method
 def show_error(message: str) -> None:
     """Show error message using Streamlit."""
@@ -245,18 +138,6 @@ def reset_to_initial_state():
     
     st.rerun()
 
-def execute_with_timeout(func, timeout_seconds: int, error_type: str = "timeout"):
-    """Execute a function with timeout control using ThreadPoolExecutor."""
-    try:
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(func)
-            return future.result(timeout=timeout_seconds)
-    except FutureTimeoutError:
-        show_error(ErrorHandler.handle_error(Exception("Timeout"), error_type))
-        return None
-    except Exception as e:
-        show_error(ErrorHandler.handle_error(e, "general_error"))
-        return None
 
 def generate_random_queries() -> List[Dict[str, str]]:
     """Generate random samples from all available queries."""
@@ -274,13 +155,13 @@ import os
 import hashlib
 from datetime import datetime, timedelta
 
-# Import unified cache utilities
-from tools.utils.cache_utils import normalize_compound_name, NameMappingCacheManager, BaseCacheManager
-from tools.utils.updated_cache_managers import (
+# Import unified cache utilities from core
+from core.cache_utils import normalize_compound_name, NameMappingCacheManager, BaseCacheManager
+from core.cache_managers import (
     PubChemCacheManager, QueryCacheManager, DescriptionCacheManager,
     SimilarMoleculesCacheManager, AnalysisCacheManager, FailedMoleculesCacheManager
 )
-from tools.utils.unified_cache_manager import UnifiedCacheManager
+from core.cache import UnifiedCacheManager
 
 # Initialize cache manager using UnifiedCacheManager
 cache_manager = UnifiedCacheManager(cache_base_dir=Config.CACHE['base_directory'], config=Config.CACHE)
@@ -325,10 +206,6 @@ def log_user_action(action_type: str):
         else:
             data = {"sessions": []}
         
-        # Migrate old data structure if needed
-        if "selections" in data and "sessions" not in data:
-            data = migrate_old_analytics_data(data)
-        
         # Get current session ID
         session_id = get_or_create_session_id()
         current_time = datetime.now().isoformat()
@@ -367,42 +244,6 @@ def log_user_action(action_type: str):
     except Exception as e:
         logger.error(f"Error logging user action: {e}")
 
-def migrate_old_analytics_data(data: Dict) -> Dict:
-    """Migrate old analytics data structure to new session-based structure."""
-    try:
-        sessions = []
-        
-        # Convert old selections to sessions
-        if "selections" in data:
-            for query_text, timestamps in data["selections"].items():
-                for i, timestamp in enumerate(timestamps):
-                    session_id = str(uuid.uuid4())
-                    sessions.append({
-                        "session_id": session_id,
-                        "initial_query": query_text,
-                        "initial_timestamp": timestamp,
-                        "actions": [
-                            {
-                                "action_type": "initial_query",
-                                "timestamp": timestamp
-                            }
-                        ]
-                    })
-        
-        # Create new data structure
-        new_data = {"sessions": sessions}
-        
-        # Backup old data
-        backup_file = os.path.join(Config.CACHE['base_directory'], 'analytics', 'query_log_backup.json')
-        with open(backup_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        
-        logger.info(f"Migrated old analytics data. Backup saved to {backup_file}")
-        return new_data
-        
-    except Exception as e:
-        logger.error(f"Error migrating analytics data: {e}")
-        return {"sessions": []}
 
 def save_query_selection(query_text: str):
     """Save query selection to analytics log using new session-based structure."""
@@ -413,45 +254,6 @@ def save_query_selection(query_text: str):
 # AI AND MOLECULAR PROCESSING FUNCTIONS
 # =============================================================================
 
-def call_gemini_api(prompt: str, use_google_search: bool = True) -> Optional[str]:
-    """Common function to call Gemini API with configurable options."""
-    logger.info(f"Calling Gemini API with prompt length: {len(prompt)}")
-    
-    def api_call():
-        """Execute API call with optional Google Search tool."""
-        config = types.GenerateContentConfig()
-        
-        # Add Google Search tool if requested
-        if use_google_search:
-            search_tool = types.Tool(
-                google_search=types.GoogleSearch()
-            )
-            config.tools = [search_tool]
-        
-        # Generate content using the model
-        return client.models.generate_content(
-            model=model_name,
-            contents=prompt,
-            config=config
-        )
-        
-    with st.spinner(f"AI (`{model_name}`) に問い合わせ中...", show_time=True):
-        response = execute_with_timeout(
-            api_call, 
-            Config.TIMEOUTS['api'], 
-            "api_error"
-        )
-    
-    if response is None:
-        logger.warning("No response received from Gemini API")
-        return None
-    
-    try:
-        logger.info("Successfully received response from Gemini API")
-        return response.text
-    except Exception as e:
-        show_error(ErrorHandler.handle_error(e, "api_error"))
-        return None
 
 def search_molecule_by_query(user_input_text: str) -> Optional[str]:
     """Search and recommend molecules based on user query."""
@@ -459,10 +261,14 @@ def search_molecule_by_query(user_input_text: str) -> Optional[str]:
     
     prompt = AIPrompts.MOLECULAR_SEARCH.format(user_input=user_input_text)
     
-    response_text = call_gemini_api(
-        prompt=prompt,
-        use_google_search=True
-    )
+    with st.spinner(f"AI (`{model_name}`) に問い合わせ中...", show_time=True):
+        response_text = call_gemini_api(
+            prompt=prompt,
+            client=client,
+            model_name=model_name,
+            use_google_search=True,
+            timeout=Config.TIMEOUTS['api']
+        )
     
     # Check if response indicates no results
     if is_no_result_response(response_text):
@@ -488,11 +294,21 @@ def find_similar_molecules_with_cache(molecule_name: str) -> Optional[str]:
     # Get English name from current data for cache key
     current_data = st.session_state.get("current_molecule_data", None)
     
+    # Create a wrapper function that matches the expected signature
+    def gemini_client_wrapper(prompt: str, use_google_search: bool = True) -> Optional[str]:
+        return call_gemini_api(
+            prompt=prompt,
+            client=client,
+            model_name=model_name,
+            use_google_search=use_google_search,
+            timeout=Config.TIMEOUTS['api']
+        )
+    
     # Use common function for similar molecule search
-    return find_similar_molecules(molecule_name, call_gemini_api, cache_manager, current_data)
+    return find_similar_molecules(molecule_name, gemini_client_wrapper, cache_manager, current_data)
 
-# Import PubChem client functions from tools
-from tools.utils.pubchem_client import (
+# Import PubChem client functions from core
+from core.pubchem import (
     get_compounds_by_name,
     get_3d_coordinates_by_cid,
     convert_pubchem_to_xyz,
@@ -512,7 +328,7 @@ def get_comprehensive_molecule_data_with_cache(english_name: str) -> Tuple[bool,
         return True, detailed_info, cid, None
     
     with st.spinner("分子データを取得中...", show_time=True):
-        # Use the shared function from tools
+        # Use the shared function from core
         success, detailed_info, cid, error_msg = get_comprehensive_molecule_data(english_name)
         
         if success and detailed_info:
@@ -541,8 +357,18 @@ def analyze_molecule_properties_with_cache(detailed_info: DetailedMoleculeInfo, 
             # Return the most recent analysis
             return cached_analyses[-1]['description']
     
+    # Create a wrapper function that matches the expected signature
+    def gemini_client_wrapper(prompt: str, use_google_search: bool = False) -> Optional[str]:
+        return call_gemini_api(
+            prompt=prompt,
+            client=client,
+            model_name=model_name,
+            use_google_search=use_google_search,
+            timeout=Config.TIMEOUTS['api']
+        )
+    
     # Use common function for analysis
-    return analyze_molecule_properties(detailed_info, molecule_name, call_gemini_api, cache_manager)
+    return analyze_molecule_properties(detailed_info, molecule_name, gemini_client_wrapper, cache_manager)
 
 # =============================================================================
 # APPLICATION INITIALIZATION
@@ -598,15 +424,15 @@ except Exception as e:
 # RESPONSE PARSING AND VISUALIZATION FUNCTIONS
 # =============================================================================
 
-# Import error handling utilities from tools
-from tools.utils.error_handler import (
+# Import error handling utilities from core
+from core.error_handler import (
     ErrorHandler,
     is_no_result_response,
     parse_json_response
 )
 
-# Import common molecular analysis functions
-from tools.utils.molecular_analysis import (
+# Import common molecular analysis functions from core
+from core.analysis import (
     analyze_molecule_properties,
     find_similar_molecules
 )

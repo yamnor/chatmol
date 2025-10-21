@@ -7,7 +7,7 @@ import sys
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from tools.batch_processor.main import main
+from core.batch_main import main
 
 if __name__ == '__main__':
     sys.exit(main())

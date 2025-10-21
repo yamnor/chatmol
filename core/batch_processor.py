@@ -8,18 +8,20 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
-# Import unified cache utilities
-from tools.utils.cache_utils import normalize_compound_name, NameMappingCacheManager
-from tools.utils.updated_cache_managers import (
+# Import unified cache utilities from core
+from core.cache_utils import normalize_compound_name, NameMappingCacheManager
+from core.cache_managers import (
     PubChemCacheManager, QueryCacheManager, DescriptionCacheManager,
     SimilarMoleculesCacheManager, AnalysisCacheManager, FailedMoleculesCacheManager
 )
-from tools.utils.unified_cache_manager import UnifiedCacheManager
-from ..utils.shared_models import DetailedMoleculeInfo
-from ..utils.shared_prompts import AIPrompts
-from ..utils.pubchem_client import get_comprehensive_molecule_data
-from ..utils.error_handler import ErrorHandler, is_no_result_response, parse_json_response
-from ..utils.molecular_analysis import analyze_molecule_properties, find_similar_molecules
+from core.cache import UnifiedCacheManager
+from core.models import DetailedMoleculeInfo
+from core.prompts import AIPrompts
+from core.pubchem import get_comprehensive_molecule_data
+from core.error_handler import ErrorHandler, is_no_result_response, parse_json_response
+from core.analysis import analyze_molecule_properties, find_similar_molecules
+from core.utils import execute_with_timeout
+from core.gemini_client import call_gemini_api
 
 logger = logging.getLogger(__name__)
 
@@ -97,9 +99,7 @@ class GeminiClient:
             )
         
         try:
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(api_call)
-                response = future.result(timeout=self.timeout)
+            response = execute_with_timeout(api_call, self.timeout, "api_error")
             
             # Record successful API call
             self.api_calls.append(time.time())
@@ -111,9 +111,6 @@ class GeminiClient:
             logger.info("Successfully received response from Gemini API")
             return response.text
             
-        except FutureTimeoutError:
-            logger.warning(f"Gemini API timeout after {self.timeout} seconds")
-            return None
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
             return None

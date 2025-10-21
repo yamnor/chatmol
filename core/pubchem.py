@@ -3,7 +3,7 @@ import pubchempy as pcp
 import logging
 from typing import Optional, Any, Tuple
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
-from .shared_models import DetailedMoleculeInfo
+from core.models import DetailedMoleculeInfo
 
 logger = logging.getLogger(__name__)
 

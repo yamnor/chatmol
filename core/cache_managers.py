@@ -6,34 +6,9 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 
-from tools.utils.cache_utils import BaseCacheManager, normalize_compound_name
+from core.cache_utils import BaseCacheManager, normalize_compound_name
 
-# Import DetailedMoleculeInfo from main module
-try:
-    from main import DetailedMoleculeInfo
-except ImportError:
-    # Fallback for when main.py is not available
-    from dataclasses import dataclass
-    from typing import Optional, List
-    
-    @dataclass
-    class DetailedMoleculeInfo:
-        """Detailed molecule information from PubChem."""
-        molecular_formula: Optional[str]
-        molecular_weight: Optional[float]
-        iupac_name: Optional[str]
-        synonyms: List[str]
-        inchi: Optional[str]
-        # Chemical properties
-        xlogp: Optional[float]  # LogP (calculated)
-        tpsa: Optional[float]  # Topological polar surface area
-        complexity: Optional[float]  # Molecular complexity
-        rotatable_bond_count: Optional[int]  # Number of rotatable bonds
-        heavy_atom_count: Optional[int]  # Number of heavy atoms
-        hbond_donor_count: Optional[int]  # Number of H-bond donors
-        hbond_acceptor_count: Optional[int]  # Number of H-bond acceptors
-        charge: Optional[int]  # Total charge
-        xyz_data: Optional[str]  # XYZ coordinate data for 3D visualization
+from core.models import DetailedMoleculeInfo
 
 logger = logging.getLogger(__name__)
 

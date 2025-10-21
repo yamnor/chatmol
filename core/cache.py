@@ -5,9 +5,9 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
 
-# Import unified cache utilities
-from tools.utils.cache_utils import normalize_compound_name, NameMappingCacheManager
-from tools.utils.updated_cache_managers import (
+# Import unified cache utilities from core
+from core.cache_utils import normalize_compound_name, NameMappingCacheManager
+from core.cache_managers import (
     PubChemCacheManager, QueryCacheManager, DescriptionCacheManager,
     SimilarMoleculesCacheManager, AnalysisCacheManager, FailedMoleculesCacheManager
 )

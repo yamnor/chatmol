@@ -4,9 +4,9 @@ import logging
 from datetime import datetime
 from typing import Optional, Dict, Any
 
-from tools.utils.shared_models import DetailedMoleculeInfo
-from tools.utils.shared_prompts import AIPrompts
-from tools.utils.error_handler import is_no_result_response, parse_json_response
+from core.models import DetailedMoleculeInfo
+from core.prompts import AIPrompts
+from core.error_handler import is_no_result_response, parse_json_response
 
 logger = logging.getLogger(__name__)
 

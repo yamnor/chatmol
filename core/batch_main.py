@@ -10,8 +10,8 @@ from typing import List, Dict, Any
 # Add the project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from tools.batch_processor.config import BatchConfig
-from tools.batch_processor.processor import BatchProcessor
+from core.batch_config import BatchConfig
+from core.batch_processor import BatchProcessor
 
 def setup_logging(config: BatchConfig):
     """Setup logging configuration."""
