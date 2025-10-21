@@ -80,6 +80,12 @@ class UnifiedCacheManager:
                     'max_items_per_file': 50,
                     'max_items_per_data': 25
                 },
+                'name_mappings': {
+                    'enabled': True,
+                    'directory': 'name_mappings',
+                    'max_age_days': 36500,
+                    'max_items_per_file': 1
+                },
                 'failed_molecules': {
                     'enabled': True,
                     'directory': 'failed_molecules',
@@ -158,6 +164,34 @@ class UnifiedCacheManager:
     def get_compound_names_for_display(self, compound_name: str) -> Tuple[str, str]:
         """Get Japanese and English names for display purposes."""
         return self.name_mappings.get_names_for_display(normalize_compound_name(compound_name))
+    
+    # =============================================================================
+    # Batch processing specific methods
+    # =============================================================================
+    
+    def save_query_compound_mapping(self, query_obj: Dict[str, str], compounds: List[Dict]):
+        """Save query-compound mapping for batch processing."""
+        self.queries.save_query_compound_mapping(query_obj, compounds, pubchem_manager=self.pubchem)
+    
+    def save_compound_description(self, compound_name: str, description: str):
+        """Save compound description for batch processing."""
+        self.descriptions.save_compound_description(compound_name, description, pubchem_manager=self.pubchem)
+    
+    def save_pubchem_data(self, compound_name: str, detailed_info, cid: int):
+        """Save PubChem data for batch processing."""
+        self.pubchem.save_cached_molecule_data(compound_name, detailed_info, cid)
+    
+    def save_name_mapping(self, japanese_name: str, english_name: str):
+        """Save name mapping for batch processing."""
+        self.name_mappings.save_mapping(normalize_compound_name(english_name), japanese_name, english_name)
+    
+    def save_similar_molecules(self, compound_name: str, similar_compounds: List[Dict], gemini_client=None):
+        """Save similar molecules for batch processing."""
+        self.similar.save_similar_molecules(compound_name, similar_compounds, pubchem_manager=self.pubchem, gemini_client=gemini_client, name_mapping_manager=self.name_mappings, unified_cache_manager=self)
+    
+    def save_analysis_result(self, compound_name: str, analysis_text: str):
+        """Save analysis result for batch processing."""
+        self.analysis.save_analysis_result(compound_name, analysis_text)
     
     def get_fallback_molecule_data(self, user_query: str = "") -> Optional[Tuple[str, str, str]]:
         """
@@ -281,9 +315,9 @@ class UnifiedCacheManager:
     # Batch processor CacheManager methods
     # =============================================================================
     
-    def save_query_compound_mapping(self, query_text: str, compounds: List[Dict]):
+    def save_query_compound_mapping(self, query_obj: Dict[str, str], compounds: List[Dict]):
         """Save query-compound mapping to cache."""
-        self.queries.save_query_compound_mapping(query_text, compounds)
+        self.queries.save_query_compound_mapping(query_obj, compounds)
     
     def save_compound_description(self, compound_name: str, description: str):
         """Save compound description to cache."""
@@ -297,9 +331,9 @@ class UnifiedCacheManager:
         """Save analysis result to cache."""
         self.analysis.save_analysis_result(compound_name, analysis_text)
     
-    def save_similar_molecules(self, compound_name: str, similar_molecules: List[Dict]):
+    def save_similar_molecules(self, compound_name: str, similar_molecules: List[Dict], gemini_client=None):
         """Save similar molecules to cache."""
-        self.similar.save_similar_molecules(compound_name, similar_molecules)
+        self.similar.save_similar_molecules(compound_name, similar_molecules, gemini_client=gemini_client, name_mapping_manager=self.name_mappings, unified_cache_manager=self)
     
     def save_name_mapping(self, name_jp: str, name_en: str):
         """Save name mapping to cache."""

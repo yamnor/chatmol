@@ -73,19 +73,30 @@ class GeminiClient:
             self.api_calls = [call_time for call_time in self.api_calls 
                              if current_time - call_time < 60]
     
-    def call_api(self, prompt: str) -> Optional[str]:
-        """Call Gemini API with rate limiting and timeout protection."""
+    def call_api(self, prompt: str, query_type: str = "molecular_search") -> Optional[Dict]:
+        """Call Gemini API with rate limiting, query-type specific parameters, and grounding metadata support."""
         # Check rate limit before making the call
         self._check_rate_limit()
         
-        logger.info(f"Calling Gemini API with prompt length: {len(prompt)}")
+        logger.info(f"Calling Gemini API with prompt length: {len(prompt)}, query_type: {query_type}")
+        
+        # Import Config here to avoid circular imports
+        from config.settings import Config
+        
+        # Get configuration for query type
+        base_config = Config.GEMINI_CONFIG.get(query_type, Config.GEMINI_CONFIG['molecular_search'])
         
         def api_call():
-            """Execute API call with optional Google Search tool."""
-            config = self.types.GenerateContentConfig()
+            """Execute API call with query-type specific configuration."""
+            config = self.types.GenerateContentConfig(
+                temperature=base_config['temperature'],
+                top_p=base_config['top_p'],
+                top_k=base_config['top_k'],
+                max_output_tokens=base_config['max_output_tokens']
+            )
             
             # Add Google Search tool if requested
-            if self.use_google_search:
+            if base_config['use_google_search']:
                 search_tool = self.types.Tool(
                     google_search=self.types.GoogleSearch()
                 )
@@ -99,7 +110,7 @@ class GeminiClient:
             )
         
         try:
-            response = execute_with_timeout(api_call, self.timeout, "api_error")
+            response = execute_with_timeout(api_call, base_config['timeout'], "api_error")
             
             # Record successful API call
             self.api_calls.append(time.time())
@@ -109,6 +120,7 @@ class GeminiClient:
                 return None
             
             logger.info("Successfully received response from Gemini API")
+            
             return response.text
             
         except Exception as e:
@@ -139,25 +151,30 @@ class BatchProcessor:
             'errors': []
         }
     
-    def select_random_query(self, queries: List[str]) -> str:
+    
+    def select_random_query(self, queries: List[Dict[str, str]]) -> Dict[str, str]:
         """Select a random query from the list."""
         return random.choice(queries)
     
-    def process_single_query(self, query: str, iteration: int) -> Dict[str, Any]:
+    def process_single_query(self, query_obj: Dict[str, str], iteration: int) -> Dict[str, Any]:
         """Process a single query through the complete pipeline."""
+        query_text = query_obj['text']
+        query_icon = query_obj['icon']
+        
         start_time = time.time()
         iteration_data = {
             'iteration': iteration,
-            'selected_query': query,
+            'selected_query': query_text,
+            'selected_icon': query_icon,
             'timestamp': datetime.now().isoformat(),
             'status': 'processing'
         }
         
         try:
             # Step 1: Gemini API call
-            logger.info(f"Iteration {iteration}: Processing query: {query}")
-            prompt = AIPrompts.MOLECULAR_SEARCH.format(user_input=query)
-            gemini_response = self.gemini_client.call_api(prompt)
+            logger.info(f"Iteration {iteration}: Processing query: {query_text}")
+            prompt = AIPrompts.MOLECULAR_SEARCH.format(user_input=query_text)
+            gemini_response = self.gemini_client.call_api(prompt, query_type="molecular_search")
             
             if not gemini_response:
                 iteration_data.update({
@@ -165,16 +182,37 @@ class BatchProcessor:
                     'error_type': 'gemini_api_error',
                     'error_message': 'No response from Gemini API'
                 })
+                # Save failed query to cache
+                try:
+                    self.cache_manager.failed_molecules.save_failed_query(
+                        query_text, 
+                        'No response from Gemini API', 
+                        'gemini_api_error'
+                    )
+                except Exception as cache_error:
+                    logger.warning(f"Failed to save failed query to cache: {cache_error}")
                 return iteration_data
             
+            # Handle response
+            response_text = gemini_response
+            
             # Parse Gemini response
-            parsed_data = parse_json_response(gemini_response)
-            if not parsed_data or is_no_result_response(gemini_response):
+            parsed_data = parse_json_response(response_text)
+            if not parsed_data or is_no_result_response(response_text):
                 iteration_data.update({
                     'status': 'failed',
                     'error_type': 'no_result',
                     'error_message': 'No valid compound found'
                 })
+                # Save failed query to cache
+                try:
+                    self.cache_manager.failed_molecules.save_failed_query(
+                        query_text, 
+                        'No valid compound found', 
+                        'no_result'
+                    )
+                except Exception as cache_error:
+                    logger.warning(f"Failed to save failed query to cache: {cache_error}")
                 return iteration_data
             
             english_name = parsed_data.get('name_en', '').strip()
@@ -187,6 +225,15 @@ class BatchProcessor:
                     'error_type': 'invalid_data',
                     'error_message': 'No English name found'
                 })
+                # Save failed query to cache
+                try:
+                    self.cache_manager.failed_molecules.save_failed_query(
+                        query_text, 
+                        'No English name found', 
+                        'invalid_data'
+                    )
+                except Exception as cache_error:
+                    logger.warning(f"Failed to save failed query to cache: {cache_error}")
                 return iteration_data
             
             iteration_data.update({
@@ -207,6 +254,16 @@ class BatchProcessor:
                     'error_type': 'pubchem_error',
                     'error_message': error_msg or 'PubChem data retrieval failed'
                 })
+                # Save failed molecule to cache
+                try:
+                    self.cache_manager.failed_molecules.save_failed_molecule(
+                        english_name, 
+                        query_text, 
+                        error_msg or 'PubChem data retrieval failed', 
+                        'pubchem_error'
+                    )
+                except Exception as cache_error:
+                    logger.warning(f"Failed to save failed molecule to cache: {cache_error}")
                 return iteration_data
             
             iteration_data['pubchem_success'] = True
@@ -219,6 +276,16 @@ class BatchProcessor:
                     'error_type': 'xyz_unavailable',
                     'error_message': 'XYZ coordinates not available'
                 })
+                # Save failed molecule to cache
+                try:
+                    self.cache_manager.failed_molecules.save_failed_molecule(
+                        english_name, 
+                        query_text, 
+                        'XYZ coordinates not available', 
+                        'xyz_unavailable'
+                    )
+                except Exception as cache_error:
+                    logger.warning(f"Failed to save failed molecule to cache: {cache_error}")
                 return iteration_data
             
             iteration_data['xyz_available'] = True
@@ -226,10 +293,12 @@ class BatchProcessor:
             # Step 4: Save to cache
             logger.info(f"Iteration {iteration}: Saving to cache: {english_name}")
             compounds = [{"compound_name": english_name, "timestamp": datetime.now().isoformat()}]
-            self.cache_manager.save_query_compound_mapping(query, compounds)
-            self.cache_manager.save_compound_description(english_name, description)
+            # Save PubChem data first so other cache managers can find it
             self.cache_manager.save_pubchem_data(english_name, detailed_info, cid)
             self.cache_manager.save_name_mapping(japanese_name, english_name)
+            # Then save dependent caches
+            self.cache_manager.save_query_compound_mapping(query_obj, compounds)
+            self.cache_manager.save_compound_description(english_name, description)
             
             # Step 5: Molecular analysis
             logger.info(f"Iteration {iteration}: Performing molecular analysis for: {english_name}")
@@ -237,11 +306,29 @@ class BatchProcessor:
             if analysis_result:
                 iteration_data['analysis_performed'] = True
             
-            # Step 6: Similar molecule search
+            # Step 6: Similar molecule search with retry
             logger.info(f"Iteration {iteration}: Finding similar molecules for: {english_name}")
-            similar_result = find_similar_molecules(english_name, self.gemini_client, self.cache_manager)
+            current_data = {"name_en": english_name}
+            
+            # Get retry configuration for similar molecule search
+            retry_config = self.config.get('similar_molecule_retry', {})
+            if retry_config.get('enabled', False):
+                logger.info(f"Similar molecule retry enabled: {retry_config}")
+            
+            similar_result = find_similar_molecules(
+                english_name, 
+                self.gemini_client, 
+                self.cache_manager, 
+                current_data,
+                is_batch_mode=True,
+                retry_config=retry_config
+            )
             if similar_result:
                 iteration_data['similar_search_performed'] = True
+                # Add retry statistics if available
+                if retry_config.get('enabled', False):
+                    iteration_data['similar_search_retry_enabled'] = True
+                    iteration_data['similar_search_max_retries'] = retry_config.get('max_retries', 3)
             
             processing_time = time.time() - start_time
             iteration_data.update({
@@ -261,10 +348,23 @@ class BatchProcessor:
                 'error_message': str(e),
                 'processing_time_seconds': round(processing_time, 2)
             })
-            logger.error(f"Iteration {iteration}: Error processing query '{query}': {e}")
+            
+            # Save failed molecule to cache
+            try:
+                if 'english_name' in locals() and english_name:
+                    self.cache_manager.failed_molecules.save_failed_molecule(
+                        english_name, 
+                        query_text, 
+                        str(e), 
+                        iteration_data.get('error_type', 'general_error')
+                    )
+            except Exception as cache_error:
+                logger.warning(f"Failed to save failed molecule to cache: {cache_error}")
+            
+            logger.error(f"Iteration {iteration}: Error processing query '{query_text}': {e}")
             return iteration_data
     
-    def run_batch_processing(self, queries: List[str]) -> Dict[str, Any]:
+    def run_batch_processing(self, queries: List[Dict[str, str]]) -> Dict[str, Any]:
         """Run batch processing on the given queries."""
         max_iterations = self.config.get('execution.max_iterations', 10)
         max_duration_minutes = self.config.get('execution.max_duration_minutes', 30)
@@ -298,7 +398,8 @@ class BatchProcessor:
                 self.execution_log['failed_iterations'] += 1
                 self.execution_log['errors'].append({
                     'iteration': iteration,
-                    'query': selected_query,
+                    'query': selected_query['text'],
+                    'icon': selected_query['icon'],
                     'error_type': iteration_result.get('error_type'),
                     'error_message': iteration_result.get('error_message'),
                     'timestamp': iteration_result['timestamp']

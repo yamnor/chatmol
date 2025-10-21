@@ -3,12 +3,13 @@
     "key": "",
     "model": "gemini-2.5-flash-lite",
     "use_google_search": true,
-    "timeout": 10,
-    "rate_limit_per_minute": 100
+    "timeout": 20,
+    "rate_limit_per_minute": 100,
+    "secrets_file": ".streamlit/secrets.toml"
   },
   "execution": {
-    "max_iterations": 1000,
-    "max_duration_minutes": 120,
+    "max_iterations": 2000,
+    "max_duration_minutes": 180,
     "stop_on_error": false,
     "continue_on_xyz_failure": true
   },
@@ -16,6 +17,16 @@
     "max_retries": 3,
     "retry_delay_seconds": 5,
     "exponential_backoff": true
+  },
+  "similar_molecule_retry": {
+    "enabled": true,
+    "max_retries": 3,
+    "retry_delay_seconds": 5,
+    "exponential_backoff": true,
+    "prompt_variation": true,
+    "molecule_name_variations": true,
+    "fallback_to_cache": true,
+    "log_retry_details": true
   },
   "logging": {
     "log_level": "INFO",
@@ -37,26 +48,32 @@
         "enabled": true,
         "directory": "queries",
         "max_age_days": 36500,
-        "max_items_per_file": 10
+        "max_items_per_file": 20
       },
       "descriptions": {
         "enabled": true,
         "directory": "descriptions",
         "max_age_days": 36500,
-        "max_items_per_file": 5
+        "max_items_per_file": 10
       },
       "analysis": {
         "enabled": true,
         "directory": "analysis",
         "max_age_days": 180,
-        "max_items_per_file": 5
+        "max_items_per_file": 10
       },
       "similar": {
         "enabled": true,
         "directory": "similar",
         "max_age_days": 180,
-        "max_items_per_file": 10,
-        "max_items_per_data": 5
+        "max_items_per_file": 20,
+        "max_items_per_data": 10
+      },
+      "name_mappings": {
+        "enabled": true,
+        "directory": "name_mappings",
+        "max_age_days": 36500,
+        "max_items_per_file": 1
       },
       "failed_molecules": {
         "enabled": true,

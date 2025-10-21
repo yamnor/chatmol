@@ -1,90 +1,40 @@
 #!/usr/bin/env python3
 # Sample queries configuration for ChatMOL
+import json
+import os
 from typing import List, Dict
 
-# Sample queries organized by category for readability
-SAMPLE_QUERIES: List[Dict[str, str]] = [
-    # 🌸 香り
-    {"icon": "🌸", "text": "良い香りのする成分は？"},
-    {"icon": "🍯", "text": "甘い香りのする成分は？"},
-    {"icon": "🌿", "text": "フレッシュな香りが欲しい"},
-    {"icon": "🕯️", "text": "落ち着く香りを探している"},
-    {"icon": "🌶️", "text": "スパイシーな香りが欲しい"},
+def load_sample_queries(config_file: str = "config/sample_queries.json") -> List[Dict[str, str]]:
+    """Load sample queries from JSON file."""
+    if not os.path.exists(config_file):
+        return []
     
-    # 🍋 食べ物・飲み物
-    {"icon": "🍋", "text": "レモンの成分は？"},
-    {"icon": "🍦", "text": "バニラの成分は？"},
-    {"icon": "☕", "text": "コーヒーの成分は？"},
-    {"icon": "🍫", "text": "チョコレートの成分は？"},
-    {"icon": "🌿", "text": "ミントの成分は？"},
-    
-    # 🌸 花・植物
-    {"icon": "🌹", "text": "バラの香り成分は？"},
-    {"icon": "🌸", "text": "桜の香り成分は？"},
-    {"icon": "💜", "text": "ラベンダーの香り成分は？"},
-    {"icon": "🌼", "text": "ジャスミンの香り成分は？"},
-    {"icon": "🌺", "text": "金木犀の香り成分は？"},
-    
-    # 🎨 色・染料
-    {"icon": "🍎", "text": "リンゴの赤色の成分は？"},
-    {"icon": "🫐", "text": "ベリーの青色の成分は？"},
-    {"icon": "🍋", "text": "レモンの黄色の成分は？"},
-    {"icon": "🍇", "text": "ぶどうの紫色の成分は？"},
-    {"icon": "👖", "text": "デニムの青色の成分は？"},
-    
-    # 👅 味覚
-    {"icon": "🍯", "text": "甘い味の成分は？"},
-    {"icon": "🍋", "text": "酸っぱい味の成分は？"},
-    {"icon": "☕", "text": "苦い味の成分は？"},
-    {"icon": "🌶️", "text": "辛い味の成分は？"},
-    {"icon": "🍄", "text": "うま味の成分は？"},
-    
-    # 💊 医薬品
-    {"icon": "🤧", "text": "風邪薬の成分は？"},
-    {"icon": "🤕", "text": "頭痛薬の成分を教えて"},
-    {"icon": "🤢", "text": "胃薬の成分は？"},
-    {"icon": "🦠", "text": "インフル治療薬の成分は？"},
-    {"icon": "💉", "text": "抗生物質の成分は？"},
-    
-    # 🌲 自然・環境
-    {"icon": "🌲", "text": "森の香り成分は？"},
-    {"icon": "🌊", "text": "海の香り成分は？"},
-    {"icon": "🌱", "text": "土の匂い成分は？"},
-    {"icon": "🌳", "text": "木の香り成分は？"},
-    {"icon": "🌿", "text": "草の香り成分は？"},
-    
-    # 💪 スポーツ・運動
-    {"icon": "💪", "text": "筋肉を鍛えたい"},
-    {"icon": "🔄", "text": "疲労を回復させたい"},
-    {"icon": "🏃", "text": "持久力をアップさせたい"},
-    {"icon": "⚡", "text": "瞬発力をアップさせたい"},
-    {"icon": "⚡", "text": "エネルギーを補給したい"},
-    
-    # 💚 健康・体調
-    {"icon": "😊", "text": "気分をすっきりさせたい"},
-    {"icon": "😴", "text": "疲れを取りたい"},
-    {"icon": "🌅", "text": "目覚めを良くしたい"},
-    {"icon": "🛡️", "text": "免疫力を高めたい"},
-    {"icon": "❤️", "text": "血行を良くしたい"},
-    
-    # 😴 リラックス・睡眠
-    {"icon": "🧘", "text": "リラックスしたい"},
-    {"icon": "🕊️", "text": "心を落ち着かせたい"},
-    {"icon": "😌", "text": "ゆっくり休みたい"},
-    {"icon": "😊", "text": "幸福感を感じたい"},
-    
-    # 🧠 集中・学習
-    {"icon": "🎯", "text": "集中力を高めたい"},
-    {"icon": "📚", "text": "勉強に集中したい"},
-    {"icon": "💡", "text": "思考力を高めたい"},
-    {"icon": "🧠", "text": "脳を活性化したい"},
-    
-    # ✨ 美容・スキンケア
-    {"icon": "✨", "text": "肌を美しく保ちたい"},
-    {"icon": "🌟", "text": "若々しさを維持したい"},
-    {"icon": "💇", "text": "髪の毛を健康にしたい"},
-    {"icon": "🛡️", "text": "シミを防ぎたい"},
-    {"icon": "💧", "text": "肌の潤いを保ちたい"},
+    try:
+        with open(config_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        queries = []
+        for category_name, category_data in data.get('categories', {}).items():
+            queries.extend(category_data.get('queries', []))
+        
+        return queries
+    except Exception as e:
+        print(f"Error loading sample queries from {config_file}: {e}")
+        return []
 
-    {"icon": "🪲", "text": "ホタルが光るのはなぜ？"},
-]
+def get_sample_queries_by_category(config_file: str = "config/sample_queries.json") -> Dict[str, Dict]:
+    """Load sample queries organized by category from JSON file."""
+    if not os.path.exists(config_file):
+        return {}
+    
+    try:
+        with open(config_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        return data.get('categories', {})
+    except Exception as e:
+        print(f"Error loading sample queries by category from {config_file}: {e}")
+        return {}
+
+# Load all queries for backward compatibility
+SAMPLE_QUERIES: List[Dict[str, str]] = load_sample_queries()

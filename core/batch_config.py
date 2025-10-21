@@ -1,6 +1,7 @@
 # Batch processor configuration
 import json
 import os
+import toml
 from typing import Dict, Any, Optional
 
 class BatchConfig:
@@ -32,7 +33,52 @@ class BatchConfig:
         },
         "cache": {
             "enabled": True,
-            "base_directory": "cache"
+            "base_directory": "cache",
+            "data_sources": {
+                "pubchem": {
+                    "enabled": True,
+                    "directory": "pubchem",
+                    "max_age_days": 36500,
+                    "max_items_per_file": 1
+                },
+                "queries": {
+                    "enabled": True,
+                    "directory": "queries",
+                    "max_age_days": 36500,
+                    "max_items_per_file": 10
+                },
+                "descriptions": {
+                    "enabled": True,
+                    "directory": "descriptions",
+                    "max_age_days": 36500,
+                    "max_items_per_file": 5
+                },
+                "analysis": {
+                    "enabled": True,
+                    "directory": "analysis",
+                    "max_age_days": 180,
+                    "max_items_per_file": 5
+                },
+                "similar": {
+                    "enabled": True,
+                    "directory": "similar",
+                    "max_age_days": 180,
+                    "max_items_per_file": 10,
+                    "max_items_per_data": 5
+                },
+                "name_mappings": {
+                    "enabled": True,
+                    "directory": "name_mappings",
+                    "max_age_days": 36500,
+                    "max_items_per_file": 1
+                },
+                "failed_molecules": {
+                    "enabled": True,
+                    "directory": "failed_molecules",
+                    "max_age_days": 365,
+                    "max_items_per_file": 1000
+                }
+            }
         },
         "output": {
             "results_directory": "data/output/results",
@@ -48,6 +94,9 @@ class BatchConfig:
         if config_file and os.path.exists(config_file):
             self.load_from_file(config_file)
         
+        # Load from secrets.toml
+        self.load_from_secrets()
+        
         # Override with environment variables
         self.load_from_env()
     
@@ -60,6 +109,23 @@ class BatchConfig:
             print(f"Configuration loaded from: {config_file}")
         except Exception as e:
             print(f"Error loading config file {config_file}: {e}")
+    
+    def load_from_secrets(self):
+        """Load configuration from secrets.toml file."""
+        # Get secrets file path from config, default to .streamlit/secrets.toml
+        secrets_file = self.get('api.secrets_file', '.streamlit/secrets.toml')
+        
+        if os.path.exists(secrets_file):
+            try:
+                with open(secrets_file, 'r', encoding='utf-8') as f:
+                    secrets = toml.load(f)
+                    if 'api_key' in secrets:
+                        self._set_nested_value(['api', 'key'], secrets['api_key'])
+                        print(f"API key loaded from {secrets_file}")
+            except Exception as e:
+                print(f"Error loading {secrets_file}: {e}")
+        else:
+            print(f"Secrets file not found: {secrets_file}")
     
     def load_from_env(self):
         """Load configuration from environment variables."""

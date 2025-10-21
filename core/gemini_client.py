@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Common Gemini API client functions for both Streamlit app and batch processing
 import logging
-from typing import Optional
+from typing import Optional, Dict, Union
 
 from google import genai
 from google.genai import types
@@ -13,27 +13,43 @@ logger = logging.getLogger(__name__)
 
 
 def call_gemini_api(prompt: str, client, model_name: str, 
-                   use_google_search: bool = True, timeout: int = 10) -> Optional[str]:
-    """Common function to call Gemini API with configurable options.
+                   query_type: str = "molecular_search",
+                   config_override: Optional[Dict] = None) -> Optional[Union[str, Dict]]:
+    """Common function to call Gemini API with query-type specific parameters and grounding metadata support.
     
     Args:
         prompt: Prompt text to send to Gemini API
         client: Gemini client instance
         model_name: Model name to use
-        use_google_search: Whether to enable Google Search tool
-        timeout: Timeout in seconds
+        query_type: Type of query ('molecular_search', 'molecular_analysis', 'similar_molecule_search')
+        config_override: Optional configuration override dictionary
         
     Returns:
-        Response text or None if failed
+        Response text (str) for backward compatibility
     """
-    logger.info(f"Calling Gemini API with prompt length: {len(prompt)}")
+    logger.info(f"Calling Gemini API with prompt length: {len(prompt)}, query_type: {query_type}")
+    
+    # Import Config here to avoid circular imports
+    from config.settings import Config
+    
+    # Get configuration for query type
+    base_config = Config.GEMINI_CONFIG.get(query_type, Config.GEMINI_CONFIG['molecular_search'])
+    
+    # Override with custom config if provided
+    if config_override:
+        base_config = {**base_config, **config_override}
     
     def api_call():
-        """Execute API call with optional Google Search tool."""
-        config = types.GenerateContentConfig()
+        """Execute API call with query-type specific configuration."""
+        config = types.GenerateContentConfig(
+            temperature=base_config['temperature'],
+            top_p=base_config['top_p'],
+            top_k=base_config['top_k'],
+            max_output_tokens=base_config['max_output_tokens']
+        )
         
         # Add Google Search tool if requested
-        if use_google_search:
+        if base_config['use_google_search']:
             search_tool = types.Tool(
                 google_search=types.GoogleSearch()
             )
@@ -48,7 +64,7 @@ def call_gemini_api(prompt: str, client, model_name: str,
     
     response = execute_with_timeout(
         api_call, 
-        timeout, 
+        base_config['timeout'], 
         "api_error"
     )
 
@@ -58,7 +74,10 @@ def call_gemini_api(prompt: str, client, model_name: str,
     
     try:
         logger.info("Successfully received response from Gemini API")
+        
+        # For backward compatibility, return text only
         return response.text
+        
     except Exception as e:
         logger.error(f"Error processing Gemini API response: {e}")
         return None

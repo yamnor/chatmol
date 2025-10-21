@@ -35,31 +35,37 @@ def setup_logging(config: BatchConfig):
     logger.info(f"Logging configured: level={log_level}, file={log_file}")
     return logger
 
-def load_queries(input_file: str) -> List[str]:
-    """Load queries from input file."""
-    queries = []
-    
+def load_queries(input_file: str) -> List[Dict[str, str]]:
+    """Load queries from JSON configuration file."""
     if not os.path.exists(input_file):
         raise FileNotFoundError(f"Input file not found: {input_file}")
     
     try:
         if input_file.endswith('.json'):
+            # Load from JSON file
             with open(input_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                if isinstance(data, list):
-                    queries = data
-                elif isinstance(data, dict) and 'queries' in data:
-                    queries = data['queries']
-                else:
-                    raise ValueError("Invalid JSON format")
+            
+            queries = []
+            for category_name, category_data in data.get('categories', {}).items():
+                queries.extend(category_data.get('queries', []))
+            
+            logger = logging.getLogger(__name__)
+            logger.info(f"Loaded {len(queries)} queries from {input_file}")
+            return queries
         else:
-            # Assume text file with one query per line
-            with open(input_file, 'r', encoding='utf-8') as f:
-                queries = [line.strip() for line in f if line.strip()]
-        
-        logger = logging.getLogger(__name__)
-        logger.info(f"Loaded {len(queries)} queries from {input_file}")
-        return queries
+            # Fallback: try to import from Python file (for backward compatibility)
+            import importlib.util
+            
+            spec = importlib.util.spec_from_file_location("sample_queries", input_file)
+            sample_queries_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(sample_queries_module)
+            
+            queries = sample_queries_module.SAMPLE_QUERIES
+            
+            logger = logging.getLogger(__name__)
+            logger.info(f"Loaded {len(queries)} queries from {input_file}")
+            return queries
         
     except Exception as e:
         raise Exception(f"Error loading queries from {input_file}: {e}")
@@ -101,8 +107,8 @@ def main():
     parser = argparse.ArgumentParser(description='ChatMOL Batch Processor')
     parser.add_argument('--config', '-c', default='config/batch_processor.json',
                        help='Configuration file path')
-    parser.add_argument('--input', '-i', default='data/input/queries.txt',
-                       help='Input queries file path')
+    parser.add_argument('--input', '-i', default='config/sample_queries.json',
+                       help='Input queries configuration file path')
     parser.add_argument('--output', '-o', default='data/output/results',
                        help='Output directory path')
     parser.add_argument('--api-key', help='Gemini API key (overrides config)')

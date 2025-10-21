@@ -43,6 +43,18 @@ from config.sample_queries import SAMPLE_QUERIES
 from config.settings import Config, ANNOUNCEMENT_MESSAGE, MENU_ITEMS_ABOUT
 
 # =============================================================================
+# CACHE MODE CONFIGURATION
+# =============================================================================
+
+def get_cache_mode():
+    """secrets.tomlからキャッシュモードを取得"""
+    try:
+        return st.secrets.get("CACHE_MODE", "fallback_only")
+    except Exception as e:
+        logger.warning(f"Failed to read CACHE_MODE from secrets: {e}")
+        return "fallback_only"  # デフォルト値
+
+# =============================================================================
 # LOGGING CONFIGURATION
 # =============================================================================
 
@@ -81,6 +93,22 @@ def show_error(message: str) -> None:
     st.error(f"⚠️ {message}")
 
 
+def has_similar_molecules_in_cache(english_name: str) -> bool:
+    """Check if similar molecules exist in cache for the given English name."""
+    try:
+        if not english_name:
+            return False
+        
+        # Normalize the English name for cache lookup
+        normalized_name = english_name.lower()
+        
+        # Check if similar molecules cache exists for this compound
+        similar_result = cache_manager.similar.get_random_similar_compound(normalized_name)
+        return similar_result is not None
+    except Exception as e:
+        logger.warning(f"Error checking similar molecules cache for {english_name}: {e}")
+        return False
+
 def show_action_buttons(key_prefix: str = "action") -> None:
     """Show standardized action button set: 詳しく知りたい, 関連する分子は？, 他の分子を探す."""
     col1, col2, col3 = st.columns(3)
@@ -89,6 +117,13 @@ def show_action_buttons(key_prefix: str = "action") -> None:
     current_data = st.session_state.get("current_molecule_data", None)
     has_cid = current_data and current_data.get("cid") is not None
     has_name = current_data and current_data.get("name") is not None
+    
+    # For cache_only mode, also check if similar molecules exist in cache
+    has_similar_molecules = True  # Default to True for fallback_only mode
+    if get_cache_mode() == 'cache_only':
+        english_name = current_data.get("name_en") if current_data else None
+        has_similar_molecules = has_similar_molecules_in_cache(english_name) if english_name else False
+        logger.info(f"Cache only mode: similar molecules available for {english_name}: {has_similar_molecules}")
     
     with col1:
         if st.button("詳しく知りたい", key=f"{key_prefix}_detail", use_container_width=True, icon="🧪", disabled=not has_cid):
@@ -102,8 +137,10 @@ def show_action_buttons(key_prefix: str = "action") -> None:
                 st.rerun()
     
     with col2:
-        if st.button("関連する分子は？", key=f"{key_prefix}_similar", use_container_width=True, icon="🔍", disabled=not has_name):
-            if has_name:
+        # Disable similar button if no similar molecules available in cache_only mode
+        similar_button_disabled = not has_name or not has_similar_molecules
+        if st.button("関連する分子は？", key=f"{key_prefix}_similar", use_container_width=True, icon="🔍", disabled=similar_button_disabled):
+            if has_name and has_similar_molecules:
                 # Log user action
                 log_user_action("similar_search")
                 # Reset search execution flag to allow new search
@@ -139,12 +176,132 @@ def reset_to_initial_state():
     st.rerun()
 
 
+def generate_random_queries_from_cache() -> List[Dict[str, str]]:
+    """Cache Onlyモード用: cache/queries/からクエリを取得"""
+    cache_dir = "cache/queries"
+    if not os.path.exists(cache_dir):
+        logger.warning(f"Cache directory not found: {cache_dir}")
+        return []
+    
+    # 全クエリファイルを取得
+    query_files = [f for f in os.listdir(cache_dir) if f.endswith('.json')]
+    if not query_files:
+        logger.warning(f"No query files found in: {cache_dir}")
+        return []
+    
+    # 各ファイルからクエリ情報を読み取り
+    queries = []
+    for file in query_files:
+        file_path = os.path.join(cache_dir, file)
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                query_text = data.get('query_text', '')
+                icon = data.get('icon', '🔍')
+                if query_text:
+                    queries.append({
+                        'text': query_text,
+                        'icon': icon
+                    })
+        except Exception as e:
+            logger.warning(f"Failed to read query file {file}: {e}")
+    
+    # 指定された最大数までランダム選択
+    max_count = Config.RANDOM_QUERY['count']
+    if len(queries) <= max_count:
+        return queries
+    else:
+        return random.sample(queries, max_count)
+
+
 def generate_random_queries() -> List[Dict[str, str]]:
     """Generate random samples from all available queries."""
-    if SAMPLE_QUERIES:
-        return random.sample(SAMPLE_QUERIES, min(Config.RANDOM_QUERY['count'], len(SAMPLE_QUERIES)))
+    cache_mode = get_cache_mode()
+    
+    if cache_mode == 'cache_only':
+        return generate_random_queries_from_cache()
     else:
-        return []
+        # 既存の実装
+        if SAMPLE_QUERIES:
+            return random.sample(SAMPLE_QUERIES, min(Config.RANDOM_QUERY['count'], len(SAMPLE_QUERIES)))
+        else:
+            return []
+
+
+def get_compound_from_query_cache(query_text: str) -> Optional[str]:
+    """選択されたクエリからランダムに化合物を選択"""
+    # QueryCacheManagerのメソッドを使用して正規化されたファイルパスを取得
+    cache_file_path = cache_manager.queries._get_source_cache_file_path(query_text)
+    if not cache_file_path or not os.path.exists(cache_file_path):
+        logger.warning(f"Query cache file not found for: {query_text}")
+        return None
+    
+    try:
+        with open(cache_file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        compounds = data.get('compounds', [])
+        if not compounds:
+            logger.warning(f"No compounds found in query cache: {query_text}")
+            return None
+        
+        # ランダムに1つ選択
+        random_compound = random.choice(compounds)
+        compound_name = random_compound.get('compound_name')
+        logger.info(f"Selected compound from query cache: {compound_name}")
+        return compound_name
+    except Exception as e:
+        logger.error(f"Failed to read compound from query cache: {e}")
+        return None
+
+
+def build_molecule_data_from_cache(compound_name: str) -> Optional[Dict[str, Any]]:
+    """キャッシュのみから分子データを構築"""
+    try:
+        logger.info(f"Building molecule data from cache for: {compound_name}")
+        
+        # 1. 日本語名を取得
+        name_jp, name_en = cache_manager.get_compound_names_for_display(compound_name)
+        logger.info(f"Retrieved names: JP={name_jp}, EN={name_en}")
+        
+        # 2. 説明を取得
+        description = cache_manager.descriptions.get_random_description(compound_name)
+        if not description:
+            logger.warning(f"No description found for: {compound_name}")
+            return None
+        logger.info(f"Retrieved description for: {compound_name}")
+        
+        # 3. 立体構造データを取得
+        cached_data = cache_manager.pubchem.get_cached_molecule_data(compound_name)
+        if not cached_data:
+            logger.warning(f"No PubChem data found for: {compound_name}")
+            return None
+        
+        detailed_info, cid = cached_data
+        if not detailed_info or not detailed_info.xyz_data:
+            logger.warning(f"No XYZ data found for: {compound_name}")
+            return None
+        
+        logger.info(f"Retrieved XYZ data for: {compound_name}")
+        
+        # 4. 統合された分子データを構築
+        molecule_data = {
+            'name': name_jp,
+            'name_en': name_en,
+            'cid': cid,
+            'xyz_data': detailed_info.xyz_data,
+            'memo': description,
+            'molecular_formula': detailed_info.molecular_formula,
+            'molecular_weight': detailed_info.molecular_weight,
+            'canonical_smiles': getattr(detailed_info, 'canonical_smiles', None),  # 安全にアクセス
+            'detailed_info': detailed_info  # detailed_infoオブジェクトを保存
+        }
+        
+        logger.info(f"Successfully built molecule data for: {compound_name}")
+        return molecule_data
+    except Exception as e:
+        logger.error(f"Failed to build molecule data from cache: {e}")
+        return None
 
 
 # =============================================================================
@@ -255,57 +412,143 @@ def save_query_selection(query_text: str):
 # =============================================================================
 
 
+def search_molecule_by_query_cache_only(user_input_text: str) -> Optional[Dict[str, Any]]:
+    """Cache Onlyモード用: キャッシュのみを使用する検索関数"""
+    logger.info(f"Cache Only mode: Processing query: {user_input_text[:50]}...")
+    
+    # 1. クエリから化合物を選択
+    compound_name = get_compound_from_query_cache(user_input_text)
+    if not compound_name:
+        logger.info(f"No cached compounds found for query: {user_input_text[:50]}...")
+        return None
+    
+    # 2. 分子データを構築
+    molecule_data = build_molecule_data_from_cache(compound_name)
+    if not molecule_data:
+        logger.info(f"Failed to build molecule data for: {compound_name}")
+        return None
+    
+    logger.info(f"Successfully built molecule data for: {compound_name}")
+    return molecule_data
+
+
 def search_molecule_by_query(user_input_text: str) -> Optional[str]:
     """Search and recommend molecules based on user query."""
-    logger.info(f"Processing user query: {user_input_text[:50]}...")
+    cache_mode = get_cache_mode()
+    logger.info(f"Processing user query: {user_input_text[:50]}... (Cache mode: {cache_mode})")
     
-    prompt = AIPrompts.MOLECULAR_SEARCH.format(user_input=user_input_text)
-    
-    with st.spinner(f"AI (`{model_name}`) に問い合わせ中...", show_time=True):
-        response_text = call_gemini_api(
-            prompt=prompt,
-            client=client,
-            model_name=model_name,
-            use_google_search=True,
-            timeout=Config.TIMEOUTS['api']
-        )
-    
-    # Check if response indicates no results
-    if is_no_result_response(response_text):
-        logger.info(f"No results from Gemini for query: {user_input_text[:50]}...")
-        
-        # Try to get a random compound from cache
-        random_compound = cache_manager.queries.get_random_compound_from_query(user_input_text)
-        if random_compound:
-            logger.info(f"Using cached compound as fallback: {random_compound}")
-            # Create a fallback response with the cached compound
-            fallback_response = f'{{"name_jp": "{random_compound}", "name_en": "{random_compound}", "description": "過去の検索結果から選んだ分子だよ！✨ この分子について詳しく調べてみよう！"}}'
-            return fallback_response
+    if cache_mode == 'cache_only':
+        # Cache Only: キャッシュのみ使用
+        logger.info("Using cache-only mode")
+        molecule_data = search_molecule_by_query_cache_only(user_input_text)
+        if molecule_data:
+            # 分子データをセッションに保存
+            st.session_state.current_molecule_data = molecule_data
+            st.session_state.gemini_output = molecule_data
+            logger.info(f"Successfully processed query in cache-only mode: {user_input_text[:50]}...")
+            return "success"  # 成功を示すマーカー
         else:
-            logger.info(f"No cached compounds found for query: {user_input_text[:50]}...")
-            return response_text  # Return original "該当なし" response
+            logger.info(f"No cached data available for query: {user_input_text[:50]}...")
+            return None  # キャッシュがない場合は何も返さない
+    else:
+        # Fallback Only: 既存の実装
+        logger.info("Using fallback-only mode")
+        prompt = AIPrompts.MOLECULAR_SEARCH.format(user_input=user_input_text)
+        
+        with st.spinner(f"AI (`{model_name}`) に問い合わせ中...", show_time=True):
+            response = call_gemini_api(
+                prompt=prompt,
+                client=client,
+                model_name=model_name,
+                query_type="molecular_search"
+            )
+            # Handle response (backward compatibility)
+            response_text = response if isinstance(response, str) else response['text'] if isinstance(response, dict) else None
+        
+        # Check if response indicates no results
+        if is_no_result_response(response_text):
+            logger.info(f"No results from Gemini for query: {user_input_text[:50]}...")
+            
+            # Try to get a random compound from cache
+            random_compound = cache_manager.queries.get_random_compound_from_query(user_input_text)
+            if random_compound:
+                logger.info(f"Using cached compound as fallback: {random_compound}")
+                # Create a fallback response with the cached compound
+                fallback_response = f'{{"name_jp": "{random_compound}", "name_en": "{random_compound}", "description": "過去の検索結果から選んだ分子だよ！✨ この分子について詳しく調べてみよう！"}}'
+                return fallback_response
+            else:
+                logger.info(f"No cached compounds found for query: {user_input_text[:50]}...")
+                return response_text  # Return original "該当なし" response
+        
+        return response_text
+
+def find_similar_molecules_cache_only(molecule_name: str) -> Optional[str]:
+    """Cache Onlyモード用: キャッシュのみを使用する類似分子検索関数"""
+    logger.info(f"Cache Only mode: Finding similar molecules for: {molecule_name}")
     
-    return response_text
+    current_data = st.session_state.get("current_molecule_data", None)
+    if not current_data:
+        logger.warning("No current_molecule_data available")
+        return None
+    
+    # 英語名を取得（name_enフィールドから）
+    english_name = current_data.get("name_en")
+    if not english_name:
+        logger.warning(f"No English name found in current_molecule_data: {current_data}")
+        return None
+    
+    # 英語名を小文字に正規化してキャッシュを検索
+    normalized_english_name = english_name.lower()
+    logger.info(f"Searching similar compounds for normalized name: {normalized_english_name}")
+    
+    random_result = cache_manager.similar.get_random_similar_compound(normalized_english_name)
+    if random_result:
+        logger.info(f"Using cached similar compound for: {normalized_english_name}")
+        # ランダムに1つ選択
+        random_compound_name, random_description = random_result
+        
+        # 日本語名と英語名を適切に取得
+        name_jp, name_en = cache_manager.get_compound_names_for_display(random_compound_name)
+        
+        # 日本語名が取得できない場合は英語名を使用
+        if not name_jp:
+            name_jp = name_en
+        
+        similar_response = f'{{"name_jp": "{name_jp}", "name_en": "{name_en}", "description": "{random_description}"}}'
+        return similar_response
+    
+    logger.info(f"No cached similar compounds available for: {normalized_english_name}")
+    return None
+
 
 def find_similar_molecules_with_cache(molecule_name: str) -> Optional[str]:
     """Find similar molecules using common function with cache support."""
-    logger.info(f"Searching for similar molecules to: {molecule_name}")
+    cache_mode = get_cache_mode()
+    logger.info(f"Searching for similar molecules to: {molecule_name} (Cache mode: {cache_mode})")
     
-    # Get English name from current data for cache key
-    current_data = st.session_state.get("current_molecule_data", None)
-    
-    # Create a wrapper function that matches the expected signature
-    def gemini_client_wrapper(prompt: str, use_google_search: bool = True) -> Optional[str]:
-        return call_gemini_api(
-            prompt=prompt,
-            client=client,
-            model_name=model_name,
-            use_google_search=use_google_search,
-            timeout=Config.TIMEOUTS['api']
-        )
-    
-    # Use common function for similar molecule search
-    return find_similar_molecules(molecule_name, gemini_client_wrapper, cache_manager, current_data)
+    if cache_mode == 'cache_only':
+        # Cache Only: キャッシュのみ使用
+        logger.info("Using cache-only mode")
+        return find_similar_molecules_cache_only(molecule_name)
+    else:
+        # Fallback Only: 既存の実装
+        logger.info("Using fallback-only mode")
+        # Get English name from current data for cache key
+        current_data = st.session_state.get("current_molecule_data", None)
+        
+        # Create a wrapper function that matches the expected signature
+        def gemini_client_wrapper(prompt: str, use_google_search: bool = True) -> Optional[str]:
+            response = call_gemini_api(
+                prompt=prompt,
+                client=client,
+                model_name=model_name,
+                query_type="similar_molecule_search"
+            )
+            # Handle response (backward compatibility)
+            return response if isinstance(response, str) else response['text'] if isinstance(response, dict) else None
+        
+        # Use common function for similar molecule search
+        return find_similar_molecules(molecule_name, gemini_client_wrapper, cache_manager, current_data)
 
 # Import PubChem client functions from core
 from core.pubchem import (
@@ -316,37 +559,58 @@ from core.pubchem import (
     get_comprehensive_molecule_data
 )
 
-def get_comprehensive_molecule_data_with_cache(english_name: str) -> Tuple[bool, Optional[DetailedMoleculeInfo], Optional[int], Optional[str]]:
-    """Get comprehensive molecule data from PubChem using English name with cache support."""
-    logger.info(f"Getting comprehensive data for: {english_name}")
+def get_comprehensive_molecule_data_cache_only(english_name: str) -> Tuple[bool, Optional[DetailedMoleculeInfo], Optional[int], Optional[str]]:
+    """Cache Onlyモード用: キャッシュのみを使用する分子データ取得関数"""
+    logger.info(f"Cache Only mode: Getting data for: {english_name}")
     
-    # Check cache first
     cached_data = cache_manager.pubchem.get_cached_molecule_data(english_name)
     if cached_data:
         detailed_info, cid = cached_data
         logger.info(f"Using cached data for: {english_name}")
         return True, detailed_info, cid, None
-    
-    with st.spinner("分子データを取得中...", show_time=True):
-        # Use the shared function from core
-        success, detailed_info, cid, error_msg = get_comprehensive_molecule_data(english_name)
-        
-        if success and detailed_info:
-            # Save to cache only if xyz_data is available
-            if detailed_info.xyz_data:
-                cache_manager.pubchem.save_cached_molecule_data(english_name, detailed_info, cid)
-            else:
-                logger.warning(f"Skipping cache save for {english_name}: No xyz_data available")
-                # Add to failed molecules list when XYZ data is not available
-                cache_manager.failed_molecules.add_failed_molecule(english_name)
-        
-        return success, detailed_info, cid, error_msg
+    else:
+        logger.info(f"No cached data available for: {english_name}")
+        return False, None, None, "No cached data available"
 
-def analyze_molecule_properties_with_cache(detailed_info: DetailedMoleculeInfo, molecule_name: str) -> Optional[str]:
-    """Analyze molecular properties using common function with cache support."""
-    logger.info(f"Getting Gemini analysis for molecule: {molecule_name}")
+
+def get_comprehensive_molecule_data_with_cache(english_name: str) -> Tuple[bool, Optional[DetailedMoleculeInfo], Optional[int], Optional[str]]:
+    """Get comprehensive molecule data from PubChem using English name with cache support."""
+    cache_mode = get_cache_mode()
+    logger.info(f"Getting comprehensive data for: {english_name} (Cache mode: {cache_mode})")
     
-    # Check cache first using English name
+    if cache_mode == 'cache_only':
+        # Cache Only: キャッシュのみ使用
+        logger.info("Using cache-only mode")
+        return get_comprehensive_molecule_data_cache_only(english_name)
+    else:
+        # Fallback Only: 既存の実装
+        logger.info("Using fallback-only mode")
+        # Check cache first
+        cached_data = cache_manager.pubchem.get_cached_molecule_data(english_name)
+        if cached_data:
+            detailed_info, cid = cached_data
+            logger.info(f"Using cached data for: {english_name}")
+            return True, detailed_info, cid, None
+        
+        with st.spinner("分子データを取得中...", show_time=True):
+            # Use the shared function from core
+            success, detailed_info, cid, error_msg = get_comprehensive_molecule_data(english_name)
+            
+            if success and detailed_info:
+                # Save to cache only if xyz_data is available
+                if detailed_info.xyz_data:
+                    cache_manager.pubchem.save_cached_molecule_data(english_name, detailed_info, cid)
+                else:
+                    logger.warning(f"Skipping cache save for {english_name}: No xyz_data available")
+                    # Add to failed molecules list when XYZ data is not available
+                    cache_manager.failed_molecules.add_failed_molecule(english_name)
+            
+            return success, detailed_info, cid, error_msg
+
+def analyze_molecule_properties_cache_only(detailed_info: DetailedMoleculeInfo, molecule_name: str) -> Optional[str]:
+    """Cache Onlyモード用: キャッシュのみを使用する分析関数"""
+    logger.info(f"Cache Only mode: Getting analysis for: {molecule_name}")
+    
     current_data = st.session_state.get("current_molecule_data", None)
     english_name = current_data.get("name_en") if current_data else None
     
@@ -354,21 +618,50 @@ def analyze_molecule_properties_with_cache(detailed_info: DetailedMoleculeInfo, 
         cached_analyses = cache_manager.analysis.get_analysis_results(english_name)
         if cached_analyses:
             logger.info(f"Using cached analysis for: {english_name}")
-            # Return the most recent analysis
-            return cached_analyses[-1]['description']
+            # ランダムに1つ選択
+            random_analysis = random.choice(cached_analyses)
+            return random_analysis.get('description')
     
-    # Create a wrapper function that matches the expected signature
-    def gemini_client_wrapper(prompt: str, use_google_search: bool = False) -> Optional[str]:
-        return call_gemini_api(
-            prompt=prompt,
-            client=client,
-            model_name=model_name,
-            use_google_search=use_google_search,
-            timeout=Config.TIMEOUTS['api']
-        )
+    logger.info(f"No cached analysis available for: {molecule_name}")
+    return None
+
+
+def analyze_molecule_properties_with_cache(detailed_info: DetailedMoleculeInfo, molecule_name: str) -> Optional[str]:
+    """Analyze molecular properties using common function with cache support."""
+    cache_mode = get_cache_mode()
+    logger.info(f"Getting Gemini analysis for molecule: {molecule_name} (Cache mode: {cache_mode})")
     
-    # Use common function for analysis
-    return analyze_molecule_properties(detailed_info, molecule_name, gemini_client_wrapper, cache_manager)
+    if cache_mode == 'cache_only':
+        # Cache Only: キャッシュのみ使用
+        logger.info("Using cache-only mode")
+        return analyze_molecule_properties_cache_only(detailed_info, molecule_name)
+    else:
+        # Fallback Only: 既存の実装
+        logger.info("Using fallback-only mode")
+        # Check cache first using English name
+        current_data = st.session_state.get("current_molecule_data", None)
+        english_name = current_data.get("name_en") if current_data else None
+        
+        if english_name:
+            cached_analyses = cache_manager.analysis.get_analysis_results(english_name)
+            if cached_analyses:
+                logger.info(f"Using cached analysis for: {english_name}")
+                # Return the most recent analysis
+                return cached_analyses[-1]['description']
+        
+        # Create a wrapper function that matches the expected signature
+        def gemini_client_wrapper(prompt: str, use_google_search: bool = False) -> Optional[str]:
+            response = call_gemini_api(
+                prompt=prompt,
+                client=client,
+                model_name=model_name,
+                query_type="molecular_analysis"
+            )
+            # Handle response (backward compatibility)
+            return response if isinstance(response, str) else response['text'] if isinstance(response, dict) else None
+        
+        # Use common function for analysis
+        return analyze_molecule_properties(detailed_info, molecule_name, gemini_client_wrapper, cache_manager)
 
 # =============================================================================
 # APPLICATION INITIALIZATION
@@ -450,7 +743,7 @@ def create_default_molecule_data() -> Dict[str, Union[str, None, Any]]:
         "xyz_data": None
     }
 
-def parse_gemini_response(response_text: str, save_to_query_cache: bool = True) -> Dict[str, Union[str, None, Any]]:
+def parse_gemini_response(response_text: str, save_to_query_cache: bool = True, is_similar_search: bool = False) -> Dict[str, Union[str, None, Any]]:
     """Parse Gemini's JSON response and fetch comprehensive data from PubChem.
     
     Args:
@@ -479,6 +772,19 @@ def parse_gemini_response(response_text: str, save_to_query_cache: bool = True) 
             logger.info(f"Extracted: name_jp='{molecule_name_jp}', name_en='{molecule_name_en}', description='{description[:50]}...'")
             
             if molecule_name_jp and molecule_name_jp != "該当なし" and molecule_name_en:
+                # For similar search, use basic data without PubChem lookup
+                if is_similar_search:
+                    logger.info(f"Similar search mode: using basic data for {molecule_name_en}")
+                    data["name"] = molecule_name_jp
+                    data["name_jp"] = molecule_name_jp
+                    data["name_en"] = molecule_name_en
+                    data["memo"] = description if description else "関連する分子の情報です。"
+                    # For similar molecules, we don't need xyz_data or detailed_info
+                    data["xyz_data"] = None
+                    data["detailed_info"] = None
+                    data["cid"] = None
+                    return data
+                
                 # Check if molecule is in failed list first
                 if cache_manager.failed_molecules.is_molecule_failed(molecule_name_en):
                     logger.info(f"Molecule {molecule_name_en} is in failed list, using fallback directly")
@@ -579,7 +885,9 @@ def parse_gemini_response(response_text: str, save_to_query_cache: bool = True) 
 def validate_molecule_data() -> bool:
     """Validate that molecule data exists and has required fields."""
     current_data = st.session_state.get("current_molecule_data", None)
-    return current_data and current_data.get("cid") is not None
+    return (current_data and 
+            current_data.get("cid") is not None and 
+            current_data.get("detailed_info") is not None)
 
 def get_molecule_name() -> str:
     """Get molecule name from current data."""
@@ -621,17 +929,31 @@ def process_molecule_query():
         
         # Log query response action
         log_user_action("query_response")
-            
-        response_text = search_molecule_by_query(user_query)
-        if response_text:
-            # 通常のクエリ処理時はqueriesキャッシュに保存する
-            parsed_output = parse_gemini_response(response_text, save_to_query_cache=True)
-            st.session_state.gemini_output = parsed_output
+        
+        cache_mode = get_cache_mode()
+        if cache_mode == 'cache_only':
+            # Cache Onlyモードでもsearch_molecule_by_query()を呼び出してデータをセッションに保存
+            logger.info("Cache Only mode: Calling search_molecule_by_query to save data to session")
+            response_text = search_molecule_by_query(user_query)
+            if not response_text:
+                # データが取得できなかった場合のエラーハンドリング
+                error_data = create_error_molecule_data(
+                    "キャッシュからデータを取得できませんでした。"
+                )
+                st.session_state.gemini_output = error_data
+            return
         else:
-            error_data = create_error_molecule_data(
-                "AIからの応答を取得できませんでした。"
-            )
-            st.session_state.gemini_output = error_data
+            # Fallback Onlyモードの既存処理
+            response_text = search_molecule_by_query(user_query)
+            if response_text:
+                # 通常のクエリ処理時はqueriesキャッシュに保存する
+                parsed_output = parse_gemini_response(response_text, save_to_query_cache=True)
+                st.session_state.gemini_output = parsed_output
+            else:
+                error_data = create_error_molecule_data(
+                    "AIからの応答を取得できませんでした。"
+                )
+                st.session_state.gemini_output = error_data
     except Exception as e:
         error_data = create_error_molecule_data(
             f"予期しないエラーが発生しました: {e}"
@@ -644,6 +966,7 @@ def get_molecule_analysis() -> str:
         current_data = st.session_state.get("current_molecule_data", None)
         
         if not current_data or not current_data.get("detailed_info"):
+            logger.warning("No detailed_info available in current_molecule_data")
             return Config.ERROR_MESSAGES['no_data']
         
         detailed_info = current_data["detailed_info"]
@@ -665,8 +988,10 @@ def get_molecule_analysis() -> str:
         if analysis_result:
             return analysis_result
         else:
+            logger.warning(f"No analysis result generated for: {molecule_name}")
             return Config.ERROR_MESSAGES['display_error']
     except Exception as e:
+        logger.error(f"Error in get_molecule_analysis: {e}")
         return f"{Config.ERROR_MESSAGES['display_error']}: {e}"
 
 def find_and_process_similar_molecule() -> Optional[Dict]:
@@ -674,8 +999,38 @@ def find_and_process_similar_molecule() -> Optional[Dict]:
     try:
         similar_response = find_similar_molecules_with_cache(get_molecule_name())
         if similar_response:
-            # 関連分子処理時はqueriesキャッシュに保存しない
-            return parse_gemini_response(similar_response, save_to_query_cache=False)
+            # Parse the basic response first
+            basic_data = parse_gemini_response(similar_response, save_to_query_cache=False, is_similar_search=True)
+            
+            if basic_data:
+                # Get the English name for cache lookup
+                english_name = basic_data.get("name_en")
+                if english_name:
+                    logger.info(f"Looking up PubChem data for similar molecule: {english_name}")
+                    
+                    # Try to get comprehensive data from cache
+                    success, detailed_info, cid, error_msg = get_comprehensive_molecule_data_with_cache(english_name)
+                    
+                    if success and detailed_info:
+                        logger.info(f"Found PubChem data for similar molecule: {english_name}")
+                        # Update the basic data with comprehensive information
+                        basic_data["detailed_info"] = detailed_info
+                        basic_data["xyz_data"] = detailed_info.xyz_data
+                        basic_data["cid"] = cid
+                        basic_data["molecular_formula"] = detailed_info.molecular_formula
+                        basic_data["molecular_weight"] = detailed_info.molecular_weight
+                        
+                        # Get Japanese name from name mapping if available
+                        name_jp, name_en = cache_manager.get_compound_names_for_display(english_name)
+                        if name_jp:
+                            basic_data["name"] = name_jp
+                            basic_data["name_jp"] = name_jp
+                        
+                        logger.info(f"Successfully enhanced similar molecule data for: {english_name}")
+                    else:
+                        logger.warning(f"No PubChem data found for similar molecule: {english_name}")
+                
+                return basic_data
         return None
     except Exception as e:
         logger.error(f"Error finding similar molecules: {e}")
@@ -700,6 +1055,11 @@ def show_initial_screen():
                     logger.info(f"User selected sample: {query['text']}")
                     st.session_state.selected_sample = query['text']
                     st.rerun()
+
+def handle_cache_only_errors():
+    """Cache Onlyモード用のエラーメッセージ"""
+    return "キャッシュモードでは新しいデータを取得できません。既存のキャッシュから選択してください。"
+
 
 def show_query_response_screen():
     """Display query response screen."""
@@ -739,7 +1099,12 @@ def show_query_response_screen():
         if gemini_output:
             st.write(gemini_output["memo"])
         else:
-            st.write("エラーが発生しました。")
+            # Cache Onlyモードでエラーの場合
+            cache_mode = get_cache_mode()
+            if cache_mode == 'cache_only':
+                st.write(handle_cache_only_errors())
+            else:
+                st.write("エラーが発生しました。")
         show_action_buttons("error_main")
 
 def show_detail_response_screen():
@@ -815,7 +1180,7 @@ def show_similar_response_screen():
     if not st.session_state.get("similar_search_executed", False):
         similar_data = find_and_process_similar_molecule()
         
-        if similar_data and similar_data.get("xyz_data"):
+        if similar_data:
             st.session_state.current_molecule_data = similar_data
         else:
             error_message = Config.ERROR_MESSAGES['molecule_not_found']
@@ -826,11 +1191,19 @@ def show_similar_response_screen():
     
     # Display current molecule data
     current_data = st.session_state.get("current_molecule_data", None)
-    if current_data and current_data.get("xyz_data"):
-        message = f"あなたにオススメする分子は「 **[{current_data['name']}](https://pubchem.ncbi.nlm.nih.gov/compound/{current_data['cid']})** 」だよ。{current_data['memo']}"
+    if current_data:
+        # For similar molecules, we may not have xyz_data or cid
+        if current_data.get("cid"):
+            message = f"あなたにオススメする分子は「 **[{current_data['name']}](https://pubchem.ncbi.nlm.nih.gov/compound/{current_data['cid']})** 」だよ。{current_data['memo']}"
+        else:
+            message = f"あなたにオススメする分子は「 **{current_data['name']}** 」だよ。{current_data['memo']}"
+        
         with st.chat_message("assistant"):
             st.write(message)
-        display_molecule_3d(current_data)
+        
+        # Only display 3D structure if xyz_data is available
+        if current_data.get("xyz_data"):
+            display_molecule_3d(current_data)
     
     show_action_buttons("similar_main_action")
 

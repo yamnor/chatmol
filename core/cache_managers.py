@@ -3,10 +3,13 @@
 import os
 import json
 import logging
+import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 
 from core.cache_utils import BaseCacheManager, normalize_compound_name
+from core.pubchem import get_comprehensive_molecule_data
+from core.analysis import analyze_molecule_properties
 
 from core.models import DetailedMoleculeInfo
 
@@ -24,11 +27,15 @@ class PubChemCacheManager(BaseCacheManager):
         """Get cached molecule data for compound."""
         cache_file_path = self._get_source_cache_file_path(compound_name)
         
+        logger.info(f"Looking for PubChem cache file: {cache_file_path}")
+        
         if not cache_file_path or not self._validate_cache_file(cache_file_path):
+            logger.info(f"Cache file not found or invalid: {cache_file_path}")
             return None
         
         cache_data = self._read_cache_file(cache_file_path)
         if not cache_data:
+            logger.info(f"Cache file exists but data is empty: {cache_file_path}")
             return None
         
         try:
@@ -95,12 +102,47 @@ class QueryCacheManager(BaseCacheManager):
         """Initialize query cache manager."""
         super().__init__('queries', config, cache_base_directory)
     
-    def save_query_compound_mapping(self, query_text: str, compounds: List[Dict], increment_count: bool = False):
-        """Save query-compound mapping to cache."""
+    def save_query_compound_mapping(self, query_obj: Dict[str, str], compounds: List[Dict], increment_count: bool = False, pubchem_manager: Optional['PubChemCacheManager'] = None):
+        """Save query-compound mapping to cache (only if PubChem data exists for each compound)."""
+        query_text = query_obj['text']
+        query_icon = query_obj['icon']
+        
         cache_file_path = self._get_source_cache_file_path(query_text)
         
         if not cache_file_path:
             logger.warning(f"Cannot save query cache for {query_text}: data source disabled")
+            return
+        
+        # Filter compounds to only include those with PubChem data
+        validated_compounds = []
+        for compound in compounds:
+            compound_name = compound.get('compound_name', '')
+            if compound_name:
+                # Use provided pubchem_manager or create a new one
+                if pubchem_manager:
+                    logger.debug(f"Using provided PubChemCacheManager for {compound_name}")
+                    cached_data = pubchem_manager.get_cached_molecule_data(compound_name)
+                else:
+                    # Fallback: create new instance with correct pubchem config
+                    logger.debug(f"Creating new PubChemCacheManager for {compound_name}")
+                    # Use pubchem config instead of self.data_source_config
+                    pubchem_config = {
+                        'enabled': True,
+                        'directory': 'pubchem',
+                        'max_age_days': 36500,
+                        'max_items_per_file': 1
+                    }
+                    pubchem_cache_manager = PubChemCacheManager(pubchem_config, self.cache_base_directory)
+                    cached_data = pubchem_cache_manager.get_cached_molecule_data(compound_name)
+                
+                if cached_data:
+                    validated_compounds.append(compound)
+                    logger.info(f"Validated query compound {compound_name}: PubChem data exists")
+                else:
+                    logger.warning(f"Skipping query compound {compound_name}: No PubChem data available")
+        
+        if not validated_compounds:
+            logger.warning(f"No validated compounds to save for query {query_text}")
             return
         
         # Read existing data if available
@@ -112,7 +154,7 @@ class QueryCacheManager(BaseCacheManager):
             existing_compound_names = [c.get('compound_name', '') for c in existing_compounds]
             
             # Add new compounds (avoid duplicates)
-            for compound in compounds:
+            for compound in validated_compounds:
                 normalized_name = normalize_compound_name(compound.get('compound_name', ''))
                 if normalized_name not in existing_compound_names:
                     existing_compounds.append({
@@ -125,13 +167,14 @@ class QueryCacheManager(BaseCacheManager):
             
             cache_data = {
                 'query_text': query_text,
+                'icon': query_icon,
                 'compounds': existing_compounds,
                 'timestamp': datetime.now().isoformat()
             }
         else:
             # Create new data with normalized compound names
             normalized_compounds = []
-            for compound in compounds:
+            for compound in validated_compounds:
                 normalized_compounds.append({
                     'compound_name': normalize_compound_name(compound.get('compound_name', '')),
                     'timestamp': compound.get('timestamp', datetime.now().isoformat())
@@ -139,6 +182,7 @@ class QueryCacheManager(BaseCacheManager):
             
             cache_data = {
                 'query_text': query_text,
+                'icon': query_icon,
                 'compounds': normalized_compounds,
                 'timestamp': datetime.now().isoformat()
             }
@@ -208,13 +252,36 @@ class DescriptionCacheManager(BaseCacheManager):
         """Initialize description cache manager."""
         super().__init__('descriptions', config, cache_base_directory)
     
-    def save_compound_description(self, compound_name: str, description: str):
-        """Save compound description to cache with automatic item limit."""
+    def save_compound_description(self, compound_name: str, description: str, pubchem_manager: Optional['PubChemCacheManager'] = None):
+        """Save compound description to cache (only if PubChem data exists for the compound)."""
         cache_file_path = self._get_source_cache_file_path(compound_name)
         
         if not cache_file_path:
             logger.warning(f"Cannot save description cache for {compound_name}: data source disabled")
             return
+        
+        # Check if PubChem data exists for this compound
+        if pubchem_manager:
+            logger.debug(f"Using provided PubChemCacheManager for {compound_name}")
+            cached_data = pubchem_manager.get_cached_molecule_data(compound_name)
+        else:
+            # Fallback: create new instance with correct pubchem config
+            logger.debug(f"Creating new PubChemCacheManager for {compound_name}")
+            # Use pubchem config instead of self.data_source_config
+            pubchem_config = {
+                'enabled': True,
+                'directory': 'pubchem',
+                'max_age_days': 36500,
+                'max_items_per_file': 1
+            }
+            pubchem_cache_manager = PubChemCacheManager(pubchem_config, self.cache_base_directory)
+            cached_data = pubchem_cache_manager.get_cached_molecule_data(compound_name)
+        
+        if not cached_data:
+            logger.warning(f"Skipping description save for {compound_name}: No PubChem data available")
+            return
+        
+        logger.info(f"Validated compound {compound_name} for description save: PubChem data exists")
         
         # Read existing data if available
         existing_data = self._read_cache_file(cache_file_path) if os.path.exists(cache_file_path) else None
@@ -281,12 +348,169 @@ class SimilarMoleculesCacheManager(BaseCacheManager):
         """Initialize similar molecules cache manager."""
         super().__init__('similar', config, cache_base_directory)
     
-    def save_similar_molecules(self, compound_name: str, similar_molecules: List[Dict]):
-        """Save similar molecules to cache with multiple descriptions per molecule."""
+    def save_similar_molecules(self, compound_name: str, similar_molecules: List[Dict], pubchem_manager: Optional['PubChemCacheManager'] = None, gemini_client=None, name_mapping_manager: Optional['NameMappingCacheManager'] = None, unified_cache_manager=None):
+        """Save similar molecules to cache (only if PubChem data exists for each compound)."""
         cache_file_path = self._get_source_cache_file_path(compound_name)
         
         if not cache_file_path:
             logger.warning(f"Cannot save similar molecules cache for {compound_name}: data source disabled")
+            return
+        
+        # Filter similar molecules to only include those with PubChem data
+        validated_similar_molecules = []
+        for compound_data in similar_molecules:
+            similar_compound_name = compound_data.get('compound_name', '')
+            if similar_compound_name:
+                # Use provided pubchem_manager or create a new one
+                if pubchem_manager:
+                    logger.debug(f"Using provided PubChemCacheManager for {similar_compound_name}")
+                    cached_data = pubchem_manager.get_cached_molecule_data(similar_compound_name)
+                else:
+                    # Fallback: create new instance with correct pubchem config
+                    logger.debug(f"Creating new PubChemCacheManager for {similar_compound_name}")
+                    # Use pubchem config instead of self.data_source_config
+                    pubchem_config = {
+                        'enabled': True,
+                        'directory': 'pubchem',
+                        'max_age_days': 36500,
+                        'max_items_per_file': 1
+                    }
+                    pubchem_cache_manager = PubChemCacheManager(pubchem_config, self.cache_base_directory)
+                    cached_data = pubchem_cache_manager.get_cached_molecule_data(similar_compound_name)
+                
+                # If no cached data, try to fetch from PubChem API with retries
+                if not cached_data:
+                    logger.info(f"No cached data for {similar_compound_name}, fetching from PubChem API")
+                    
+                    # Retry configuration for PubChem API calls
+                    max_retries = 3
+                    retry_delay = 2
+                    
+                    success = False
+                    detailed_info = None
+                    cid = None
+                    error_msg = None
+                    
+                    for retry_attempt in range(max_retries + 1):
+                        if retry_attempt > 0:
+                            logger.info(f"Retry attempt {retry_attempt}/{max_retries} for PubChem data: {similar_compound_name}")
+                            time.sleep(retry_delay * retry_attempt)  # Exponential backoff
+                        
+                        success, detailed_info, cid, error_msg = get_comprehensive_molecule_data(similar_compound_name)
+                        
+                        if success and detailed_info:
+                            logger.info(f"Successfully fetched PubChem data for {similar_compound_name} (attempt {retry_attempt + 1})")
+                            break
+                        else:
+                            logger.warning(f"Failed to fetch PubChem data for {similar_compound_name} (attempt {retry_attempt + 1}): {error_msg}")
+                    
+                    if success and detailed_info:
+                        # Save the fetched data to cache
+                        if pubchem_manager:
+                            pubchem_manager.save_cached_molecule_data(similar_compound_name, detailed_info, cid)
+                        else:
+                            pubchem_cache_manager.save_cached_molecule_data(similar_compound_name, detailed_info, cid)
+                        
+                        # Generate analysis data for the similar molecule
+                        if gemini_client:
+                            logger.info(f"Generating analysis data for similar molecule: {similar_compound_name}")
+                            try:
+                                analysis_result = analyze_molecule_properties(
+                                    detailed_info, 
+                                    similar_compound_name, 
+                                    gemini_client, 
+                                    pubchem_manager if pubchem_manager else pubchem_cache_manager
+                                )
+                                if analysis_result:
+                                    logger.info(f"Successfully generated analysis data for {similar_compound_name}")
+                                else:
+                                    logger.warning(f"Failed to generate analysis data for {similar_compound_name}")
+                            except Exception as analysis_error:
+                                logger.warning(f"Error generating analysis data for {similar_compound_name}: {analysis_error}")
+                        
+                        cached_data = (detailed_info, cid)
+                        logger.info(f"Successfully fetched and cached PubChem data for {similar_compound_name}")
+                    else:
+                        logger.warning(f"Failed to fetch PubChem data for {similar_compound_name} after {max_retries + 1} attempts: {error_msg}")
+                
+                if cached_data:
+                    # Generate analysis data for similar molecule (even if cached)
+                    if gemini_client:
+                        detailed_info, cid = cached_data
+                        logger.info(f"Generating analysis data for similar molecule: {similar_compound_name}")
+                        try:
+                            analysis_result = analyze_molecule_properties(
+                                detailed_info, 
+                                similar_compound_name, 
+                                gemini_client, 
+                                unified_cache_manager if unified_cache_manager else (pubchem_manager if pubchem_manager else pubchem_cache_manager)
+                            )
+                            if analysis_result:
+                                logger.info(f"Successfully generated analysis data for {similar_compound_name}")
+                            else:
+                                logger.warning(f"Failed to generate analysis data for {similar_compound_name}")
+                        except Exception as analysis_error:
+                            logger.warning(f"Error generating analysis data for {similar_compound_name}: {analysis_error}")
+                    
+                    # Convert English compound name to Japanese if possible
+                    japanese_name = None
+                    if name_mapping_manager:
+                        try:
+                            # First, check if Gemini provided a Japanese name in the compound data
+                            gemini_japanese_name = compound_data.get('name_jp', '').strip()
+                            if gemini_japanese_name and gemini_japanese_name != similar_compound_name:
+                                logger.info(f"Using Gemini-provided Japanese name for {similar_compound_name}: {gemini_japanese_name}")
+                                japanese_name = gemini_japanese_name
+                                
+                                # Save the Gemini-provided name mapping
+                                try:
+                                    name_mapping_manager.save_mapping(
+                                        normalize_compound_name(similar_compound_name),
+                                        japanese_name,
+                                        similar_compound_name
+                                    )
+                                    logger.info(f"Saved Gemini-provided name mapping for {similar_compound_name} -> {japanese_name}")
+                                except Exception as save_error:
+                                    logger.warning(f"Error saving Gemini-provided name mapping for {similar_compound_name}: {save_error}")
+                            else:
+                                # Fallback: check existing name mapping
+                                name_mapping = name_mapping_manager.get_mapping(similar_compound_name)
+                                if name_mapping:
+                                    japanese_name = name_mapping.get('japanese_name')
+                                    logger.info(f"Found existing Japanese name for {similar_compound_name}: {japanese_name}")
+                                else:
+                                    # Generate Japanese name if not found
+                                    logger.info(f"No name mapping found for {similar_compound_name}, generating Japanese name")
+                                    # Use a simple approach: add "ン" suffix for now
+                                    # In a real implementation, you might want to use a translation service
+                                    japanese_name = f"{similar_compound_name}ン"
+                                    logger.info(f"Generated Japanese name for {similar_compound_name}: {japanese_name}")
+                                    
+                                    # Save the new name mapping
+                                    try:
+                                        name_mapping_manager.save_mapping(
+                                            normalize_compound_name(similar_compound_name),
+                                            japanese_name,
+                                            similar_compound_name
+                                        )
+                                        logger.info(f"Saved generated name mapping for {similar_compound_name} -> {japanese_name}")
+                                    except Exception as save_error:
+                                        logger.warning(f"Error saving generated name mapping for {similar_compound_name}: {save_error}")
+                        except Exception as mapping_error:
+                            logger.warning(f"Error getting name mapping for {similar_compound_name}: {mapping_error}")
+                    
+                    # Update compound data with Japanese name if available
+                    if japanese_name:
+                        compound_data['japanese_name'] = japanese_name
+                        logger.info(f"Updated compound data with Japanese name: {japanese_name}")
+                    
+                    validated_similar_molecules.append(compound_data)
+                    logger.info(f"Validated similar compound {similar_compound_name}: PubChem data exists")
+                else:
+                    logger.warning(f"Skipping similar compound {similar_compound_name}: No PubChem data available")
+        
+        if not validated_similar_molecules:
+            logger.warning(f"No validated similar molecules to save for {compound_name}")
             return
         
         # Read existing data if available
@@ -300,7 +524,7 @@ class SimilarMoleculesCacheManager(BaseCacheManager):
             # Get max descriptions per compound from config
             max_descriptions = self.data_source_config.get('max_items_per_data', 20)
             
-            for compound_data in similar_molecules:
+            for compound_data in validated_similar_molecules:
                 compound_name_inner = compound_data.get('compound_name', '')
                 normalized_name = normalize_compound_name(compound_name_inner)
                 descriptions = compound_data.get('descriptions', [])
@@ -334,7 +558,7 @@ class SimilarMoleculesCacheManager(BaseCacheManager):
         else:
             # Create new data with normalized compound names
             normalized_similar_molecules = []
-            for compound_data in similar_molecules:
+            for compound_data in validated_similar_molecules:
                 normalized_compound_data = compound_data.copy()
                 normalized_compound_data['compound_name'] = normalize_compound_name(compound_data.get('compound_name', ''))
                 normalized_similar_molecules.append(normalized_compound_data)
@@ -552,6 +776,87 @@ class FailedMoleculesCacheManager(BaseCacheManager):
             return cache_data.get('failed_molecules', [])
         
         return []
+    
+    def save_failed_molecule(self, compound_name: str, query_text: str, error_message: str, error_type: str):
+        """Save failed molecule with detailed error information."""
+        cache_file_path = self._get_source_cache_file_path('failed_details')
+        
+        if not cache_file_path:
+            logger.warning(f"Cannot save failed molecule details: data source disabled")
+            return
+        
+        # Read existing data if available
+        existing_data = self._read_cache_file(cache_file_path) if os.path.exists(cache_file_path) else None
+        
+        failed_entry = {
+            'compound_name': normalize_compound_name(compound_name),
+            'query_text': query_text,
+            'error_message': error_message,
+            'error_type': error_type,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        if existing_data:
+            # Add new failed molecule to existing list
+            failed_molecules = existing_data.get('failed_molecules', [])
+            failed_molecules.append(failed_entry)
+            
+            # Apply item limit
+            failed_molecules = self._apply_item_limit(failed_molecules)
+            
+            cache_data = {
+                'failed_molecules': failed_molecules,
+                'timestamp': datetime.now().isoformat()
+            }
+        else:
+            # Create new data
+            cache_data = {
+                'failed_molecules': [failed_entry],
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        self._create_cache_file(cache_file_path, cache_data)
+        logger.info(f"Cached failed molecule details: {compound_name}")
+    
+    def save_failed_query(self, query_text: str, error_message: str, error_type: str):
+        """Save failed query with detailed error information."""
+        cache_file_path = self._get_source_cache_file_path('failed_queries')
+        
+        if not cache_file_path:
+            logger.warning(f"Cannot save failed query details: data source disabled")
+            return
+        
+        # Read existing data if available
+        existing_data = self._read_cache_file(cache_file_path) if os.path.exists(cache_file_path) else None
+        
+        failed_entry = {
+            'query_text': query_text,
+            'error_message': error_message,
+            'error_type': error_type,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        if existing_data:
+            # Add new failed query to existing list
+            failed_queries = existing_data.get('failed_queries', [])
+            failed_queries.append(failed_entry)
+            
+            # Apply item limit
+            failed_queries = self._apply_item_limit(failed_queries)
+            
+            cache_data = {
+                'failed_queries': failed_queries,
+                'timestamp': datetime.now().isoformat()
+            }
+        else:
+            # Create new data
+            cache_data = {
+                'failed_queries': [failed_entry],
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        self._create_cache_file(cache_file_path, cache_data)
+        logger.info(f"Cached failed query details: {query_text}")
     
     def remove_failed_molecule(self, compound_name: str):
         """Remove a compound name from the failed list (if XYZ data becomes available)."""

@@ -78,6 +78,34 @@ class Config:
     # Default AI Model Configuration
     DEFAULT_MODEL_NAME = "gemini-2.5-flash-lite"
     
+    # Gemini API Configuration by Query Type
+    GEMINI_CONFIG = {
+        'molecular_search': {
+            'temperature': 1.0,
+            'top_p': 0.9,
+            'top_k': 40,
+            'max_output_tokens': 1024,
+            'use_google_search': True,
+            'timeout': 15
+        },
+        'molecular_analysis': {
+            'temperature': 0.2,
+            'top_p': 0.8,
+            'top_k': 20,
+            'max_output_tokens': 2048,
+            'use_google_search': False,
+            'timeout': 10
+        },
+        'molecular_search': {
+            'temperature': 1.0,
+            'top_p': 0.9,
+            'top_k': 40,
+            'max_output_tokens': 1024,
+            'use_google_search': True,
+            'timeout': 15
+        },
+    }
+    
     # Error messages - simplified to essential ones only
     ERROR_MESSAGES = {
         # API related errors
