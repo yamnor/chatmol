@@ -482,7 +482,7 @@ def search_molecule_by_query(user_input_text: str) -> Optional[str]:
         
         return response_text
 
-def find_similar_molecules_cache_only(molecule_name: str) -> Optional[str]:
+def find_similar_molecules_cache_only(molecule_name: str) -> Optional[Dict[str, Any]]:
     """Cache Onlyモード用: キャッシュのみを使用する類似分子検索関数"""
     logger.info(f"Cache Only mode: Finding similar molecules for: {molecule_name}")
     
@@ -514,14 +514,23 @@ def find_similar_molecules_cache_only(molecule_name: str) -> Optional[str]:
         if not name_jp:
             name_jp = name_en
         
-        similar_response = f'{{"name_jp": "{name_jp}", "name_en": "{name_en}", "description": "{random_description}"}}'
-        return similar_response
+        # 文字列化せずに直接辞書を返す
+        return {
+            "name_jp": name_jp,
+            "name_en": name_en,
+            "description": random_description,
+            "memo": random_description,  # memoフィールドを追加
+            "name": name_jp,  # nameフィールドも追加
+            "xyz_data": None,  # 初期値としてNoneを設定
+            "detailed_info": None,  # 初期値としてNoneを設定
+            "cid": None  # 初期値としてNoneを設定
+        }
     
     logger.info(f"No cached similar compounds available for: {normalized_english_name}")
     return None
 
 
-def find_similar_molecules_with_cache(molecule_name: str) -> Optional[str]:
+def find_similar_molecules_with_cache(molecule_name: str) -> Union[Optional[str], Optional[Dict[str, Any]]]:
     """Find similar molecules using common function with cache support."""
     cache_mode = get_cache_mode()
     logger.info(f"Searching for similar molecules to: {molecule_name} (Cache mode: {cache_mode})")
@@ -997,12 +1006,15 @@ def get_molecule_analysis() -> str:
 def find_and_process_similar_molecule() -> Optional[Dict]:
     """Find and process similar molecule data."""
     try:
+        cache_mode = get_cache_mode()
         similar_response = find_similar_molecules_with_cache(get_molecule_name())
+        
         if similar_response:
-            # Parse the basic response first
-            basic_data = parse_gemini_response(similar_response, save_to_query_cache=False, is_similar_search=True)
-            
-            if basic_data:
+            if cache_mode == 'cache_only' and isinstance(similar_response, dict):
+                # Cache only mode: 直接辞書データを処理
+                logger.info("Cache only mode: Processing dictionary data directly")
+                basic_data = similar_response
+                
                 # Get the English name for cache lookup
                 english_name = basic_data.get("name_en")
                 if english_name:
@@ -1031,6 +1043,40 @@ def find_and_process_similar_molecule() -> Optional[Dict]:
                         logger.warning(f"No PubChem data found for similar molecule: {english_name}")
                 
                 return basic_data
+            else:
+                # Fallback mode: 文字列レスポンスをパース
+                logger.info("Fallback mode: Parsing string response")
+                basic_data = parse_gemini_response(similar_response, save_to_query_cache=False, is_similar_search=True)
+                
+                if basic_data:
+                    # Get the English name for cache lookup
+                    english_name = basic_data.get("name_en")
+                    if english_name:
+                        logger.info(f"Looking up PubChem data for similar molecule: {english_name}")
+                        
+                        # Try to get comprehensive data from cache
+                        success, detailed_info, cid, error_msg = get_comprehensive_molecule_data_with_cache(english_name)
+                        
+                        if success and detailed_info:
+                            logger.info(f"Found PubChem data for similar molecule: {english_name}")
+                            # Update the basic data with comprehensive information
+                            basic_data["detailed_info"] = detailed_info
+                            basic_data["xyz_data"] = detailed_info.xyz_data
+                            basic_data["cid"] = cid
+                            basic_data["molecular_formula"] = detailed_info.molecular_formula
+                            basic_data["molecular_weight"] = detailed_info.molecular_weight
+                            
+                            # Get Japanese name from name mapping if available
+                            name_jp, name_en = cache_manager.get_compound_names_for_display(english_name)
+                            if name_jp:
+                                basic_data["name"] = name_jp
+                                basic_data["name_jp"] = name_jp
+                            
+                            logger.info(f"Successfully enhanced similar molecule data for: {english_name}")
+                        else:
+                            logger.warning(f"No PubChem data found for similar molecule: {english_name}")
+                    
+                    return basic_data
         return None
     except Exception as e:
         logger.error(f"Error finding similar molecules: {e}")
