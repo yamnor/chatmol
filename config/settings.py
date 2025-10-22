@@ -141,7 +141,6 @@ ANNOUNCEMENT_MESSAGE: str = """
 
 [![Image from Gyazo](https://i.gyazo.com/9dcdd96f968748d29c1667516660ad55.png)](https://yamlab.jp)
 
-
 このアプリの開発をご支援いただける方は、**[こちら](https://buymeacoffee.com/yamnor)** からお願いします！
 
 ![](https://i.gyazo.com/602d3779cdf830009e0c5f7dcc9d6d63.png)
