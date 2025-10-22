@@ -1135,13 +1135,14 @@ def show_query_response_screen():
         else:
             st.session_state.current_molecule_data = output_data
 
-            message = f"あなたにオススメする分子は「 **[{output_data['name']}](https://pubchem.ncbi.nlm.nih.gov/compound/{output_data['cid']})** 」だよ。"
+            message = f"あなたへのオススメは「 **[{output_data['name']}](https://pubchem.ncbi.nlm.nih.gov/compound/{output_data['cid']})** 」だよ。"
             with st.chat_message("assistant"):
                 st.write(message)
 
+            display_molecule_3d(output_data)
+
             st.write(output_data['memo'])
                             
-            display_molecule_3d(output_data)
             show_action_buttons("main_action")
     else:
         if gemini_output:
@@ -1172,6 +1173,9 @@ def show_detail_response_screen():
 
     with st.chat_message("assistant"):
         st.write("この分子の化学的な性質を示すよ。")
+
+    current_data = st.session_state.get("current_molecule_data", None)
+    display_molecule_3d(current_data)
 
     # Display cached analysis result
     cached_result = st.session_state.get("cached_analysis_result", "")
@@ -1211,11 +1215,8 @@ def show_detail_response_screen():
                     if detailed_info.rotatable_bond_count is not None:
                         st.write(f"回転可能結合数: `{detailed_info.rotatable_bond_count}`")
         
-        st.write("このデータを読み解くと、次のようなことが分かるんだ。")
-        st.write(cached_result)
-
-    current_data = st.session_state.get("current_molecule_data", None)
-    display_molecule_3d(current_data)
+    st.write("このデータを読み解くと、次のようなことが分かるんだ。")
+    st.write(cached_result)
 
     show_action_buttons("detail_action")
 
@@ -1255,12 +1256,13 @@ def show_similar_response_screen():
         
             st.write(message)
         
-        st.write(current_data['memo'])
         
         # Only display 3D structure if xyz_data is available
         if current_data.get("xyz_data"):
             display_molecule_3d(current_data)
     
+        st.write(current_data['memo'])
+
     show_action_buttons("similar_main_action")
 
 
